@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!--
+    output.html — Chroma Key Overlay Output Window
+    ───────────────────────────────────────────────
+    Open this window and position/resize it to the capture input used by
+    your ATEM, Wirecast, or OBS.  The solid background colour is removed
+    by chroma key, leaving only the lower-third graphic over your video.
+
+    Recommended workflow:
+      • ATEM    → Add this as a Media Player source; use DVE/Chroma key
+      • Wirecast → Add as Window Capture source; apply Chroma Key filter
+      • OBS     → Add as Window Capture or Browser source; apply Chroma Key
+  -->
+  <title>Reference Overlay — Output</title>
+  <link rel="stylesheet" href="css/output.css" />
+</head>
+<body id="output-body" class="chroma-blue">
+
+  <!--
+    .stage fills the entire viewport.
+    Its background-color is the chroma key colour.
+    Nothing here should be touched — all rendering is done by output.js.
+  -->
+  <div class="stage" id="stage">
+
+    <div class="lower-third-wrap" id="lt-wrap">
+      <div class="lower-third" id="lt-root">
+        <div class="lt-accent" id="lt-accent"></div>
+        <div class="lt-text">
+          <div class="lt-line1" id="lt-line1"></div>
+          <div class="lt-line2" id="lt-line2"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/output.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   output.css  —  Chroma Key Overlay Output Window
+   ─────────────────────────────────────────────────────────────────────────────
+   This window is captured by ATEM / Wirecast / OBS.
+   The body background is the chroma key colour.  Everything on top of it
+   (the lower-third bar) survives the key and becomes the overlay graphic.
+───────────────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Updated by output.js from BroadcastChannel/localStorage settings */
+  --chroma:       #0000FF;
+  --accent-color: #C8A951;
+  --lt-font:      system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Layout constants (relative to 1920×1080 reference frame) */
+  --stage-w:      1920px;
+  --stage-h:      1080px;
+}
+
+/* ── Body / Stage ─────────────────────────────────────────────────────────── */
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--chroma);
+}
+
+/* Chroma colour classes applied on <body> by JS */
+body.chroma-blue    { background: #0000FF; }
+body.chroma-green   { background: #00B140; }
+body.chroma-magenta { background: #FF00FF; }
+body.chroma-custom  { background: var(--chroma); }
+
+.stage {
+  /* The stage is a 1920×1080 rectangle anchored at top-left.
+     For full-screen capture set your window to exactly 1920×1080.
+     The output window tries to honour this via JS, but the CSS scales it
+     down proportionally when the window is smaller. */
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Lower-Third Wrapper ──────────────────────────────────────────────────── */
+.lower-third-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+
+  /* Default: lower third */
+  bottom: 10%;
+  padding: 0 4%;
+
+  /* Transitions driven by CSS classes toggled by JS */
+  transition: bottom .4s ease;
+}
+
+/* Position overrides */
+.lower-third-wrap.pos-upper  { bottom: auto; top: 8%; }
+.lower-third-wrap.pos-center { bottom: auto; top: 50%; transform: translateY(-50%); }
+
+/* ── Lower-Third Root ─────────────────────────────────────────────────────── */
+.lower-third {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 4px 32px rgba(0,0,0,.6);
+
+  /* Animation states */
+  opacity: 0;
+  transform: translateY(0);
+  transition: opacity .45s ease, transform .45s ease;
+  pointer-events: none;
+}
+
+/* Visible state – added by JS */
+.lower-third.visible { opacity: 1; transform: translateY(0); }
+
+/* ── Animation variants ───────────────────────────────────────────────────── */
+
+/* slide: enter from below */
+.anim-slide .lower-third               { transform: translateY(60px); }
+.anim-slide .lower-third.visible       { transform: translateY(0); }
+
+/* fade: just opacity */
+.anim-fade .lower-third                { transform: none; }
+
+/* none: instant */
+.anim-none .lower-third                { transition: none; }
+.anim-none .lower-third.visible        { opacity: 1; transform: none; }
+
+/* ── Accent Strip ─────────────────────────────────────────────────────────── */
+.lt-accent {
+  width: 8px;
+  background: var(--accent-color);
+  flex-shrink: 0;
+  /* hidden in styles that don't use it */
+}
+
+/* ── Text Block ───────────────────────────────────────────────────────────── */
+.lt-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 18px 28px;
+  gap: 4px;
+  background: rgba(0,0,0,.82);
+  flex: 1;
+  min-width: 0;
+  font-family: var(--lt-font);
+}
+
+.lt-line1 {
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lt-line2 {
+  font-size: clamp(18px, 2.6vw, 34px);
+  font-weight: 400;
+  color: rgba(255,255,255,.75);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Style: classic (default) ─────────────────────────────────────────────── */
+/* already defined above — dark bar + accent strip */
+
+/* ── Style: accent-only ───────────────────────────────────────────────────── */
+.style-accent .lt-text {
+  background: transparent;
+  border-top: 4px solid var(--accent-color);
+  padding-left: 0;
+  padding-bottom: 0;
+}
+.style-accent .lt-accent    { display: none; }
+.style-accent .lt-line1     { color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.9); }
+.style-accent .lt-line2     { color: rgba(255,255,255,.85); text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+
+/* ── Style: minimal (text only, no bar) ───────────────────────────────────── */
+.style-minimal .lt-text     { background: transparent; }
+.style-minimal .lt-accent   { display: none; }
+.style-minimal .lt-line1    { color: #fff; text-shadow: 0 0 24px rgba(0,0,0,1), 0 2px 6px rgba(0,0,0,.9); }
+.style-minimal .lt-line2    { color: rgba(255,255,255,.85); text-shadow: 0 0 20px rgba(0,0,0,1); }
+.style-minimal .lower-third { box-shadow: none; }
+
+/* ── Style: outline text ──────────────────────────────────────────────────── */
+.style-outline .lt-text     { background: transparent; }
+.style-outline .lt-accent   { display: none; }
+.style-outline .lt-line1    {
+  color: #fff;
+  -webkit-text-stroke: 2px rgba(0,0,0,.9);
+  text-shadow: 0 0 20px rgba(0,0,0,.7);
+}
+.style-outline .lt-line2    {
+  color: rgba(255,255,255,.85);
+  -webkit-text-stroke: 1px rgba(0,0,0,.8);
+}
+.style-outline .lower-third { box-shadow: none; }
