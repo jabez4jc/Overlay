@@ -101,7 +101,29 @@ body.chroma-custom  { background: var(--chroma); }
   width: 8px;
   background: var(--accent-color);
   flex-shrink: 0;
-  /* hidden in styles that don't use it */
+}
+
+/* ── Logo ─────────────────────────────────────────────────────────────────── */
+.lt-logo {
+  /* Constrained to lower-third height; width scales automatically */
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 20%;          /* never wider than 20% of the bar */
+  object-fit: contain;
+  object-position: center;
+  flex-shrink: 0;
+  background: transparent; /* preserve PNG transparency */
+}
+
+/* Logo on the right side: JS appends it after lt-text */
+.lt-logo.logo-right {
+  order: 3;
+}
+
+/* Logo on the left side: JS inserts it before lt-text */
+.lt-logo.logo-left {
+  order: 1;   /* after lt-accent (order 0) */
 }
 
 /* ── Text Block ───────────────────────────────────────────────────────────── */
@@ -115,7 +137,15 @@ body.chroma-custom  { background: var(--chroma); }
   flex: 1;
   min-width: 0;
   font-family: var(--lt-font);
+
+  /* Text alignment — overridden by applySettings() */
+  text-align: left;
 }
+
+/* Text alignment classes applied by JS */
+.lt-text.align-left   { text-align: left; }
+.lt-text.align-center { text-align: center; }
+.lt-text.align-right  { text-align: right; }
 
 .lt-line1 {
   font-size: clamp(28px, 4vw, 52px);

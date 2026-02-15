@@ -249,6 +249,16 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 input::placeholder { color: var(--text-dim); }
 
+/* ── Verse Reference Validation ───────────────────────────────────────────── */
+.verse-validation {
+  font-size: .78rem;
+  min-height: 1.2em;
+  padding: 2px 0;
+  transition: color .15s;
+}
+.verse-validation.valid   { color: #4caf50; }
+.verse-validation.invalid { color: #f44336; }
+
 /* ── Preview Section ──────────────────────────────────────────────────────── */
 .preview-section {
   display: flex;
@@ -308,6 +318,18 @@ input::placeholder { color: var(--text-dim); }
   flex-shrink: 0;
   transition: background .3s;
 }
+
+/* Logo in preview */
+.lt-logo {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 18%;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: transparent;
+}
+.lt-logo.hidden { display: none; }
 
 .lt-text {
   display: flex;
@@ -422,6 +444,8 @@ input::placeholder { color: var(--text-dim); }
   gap: 8px;
 }
 
+.setting-group.span-full { grid-column: 1 / -1; }
+
 .setting-label {
   font-size: .78rem;
   font-weight: 600;
@@ -481,6 +505,146 @@ input[type="color"] {
   width: 100%;
 }
 
+/* ── Text Alignment Options ───────────────────────────────────────────────── */
+.align-options {
+  display: flex;
+  gap: 8px;
+}
+
+.align-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: .85rem;
+  color: var(--text);
+  transition: border-color .15s, color .15s;
+  flex: 1;
+  justify-content: center;
+}
+.align-opt:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+.align-opt input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.align-opt svg {
+  width: 20px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ── File Upload Rows ─────────────────────────────────────────────────────── */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: .85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+.file-btn svg { width: 14px; height: 14px; }
+.file-btn:hover { background: var(--border); border-color: var(--accent); color: var(--accent); }
+.file-btn input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.file-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  background: rgba(198,40,40,.15);
+  border: 1px solid rgba(198,40,40,.3);
+  border-radius: var(--radius-sm);
+  color: #ef9a9a;
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s;
+}
+.file-clear-btn svg { width: 12px; height: 12px; }
+.file-clear-btn:hover { background: rgba(198,40,40,.3); }
+
+.file-name {
+  font-size: .82rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.file-preview-wrap {
+  margin-top: 8px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  max-height: 80px;
+}
+
+.file-preview-img {
+  display: block;
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+}
+
+/* ── Logo Controls ────────────────────────────────────────────────────────── */
+.logo-controls {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.logo-preview-wrap {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: repeating-linear-gradient(45deg, #22263a 0, #22263a 6px, #1a1d27 6px, #1a1d27 12px);
+  height: 60px;
+  width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.logo-preview-img {
+  max-height: 56px;
+  max-width: 116px;
+  object-fit: contain;
+}
+
 /* ── Keyboard Hint ────────────────────────────────────────────────────────── */
 .kbd-hint {
   text-align: center;
@@ -512,6 +676,10 @@ kbd {
 
   .actions {
     grid-template-columns: 1fr;
+  }
+
+  .align-options {
+    flex-wrap: wrap;
   }
 
   h1 { font-size: 1rem; }
