@@ -12,12 +12,13 @@ const body    = document.getElementById('output-body');
 const ltWrap  = document.getElementById('lt-wrap');
 const ltRoot  = document.getElementById('lt-root');
 const ltAccent = document.getElementById('lt-accent');
+const ltLogo  = document.getElementById('lt-logo');
+const ltText  = document.getElementById('lt-text');
 const ltLine1 = document.getElementById('lt-line1');
 const ltLine2 = document.getElementById('lt-line2');
 
 // ── window.postMessage listener (primary — works on file:// and http://) ───────
 window.addEventListener('message', e => {
-  // Only accept messages from our own opener or same-origin windows
   if (e.data && typeof e.data === 'object' && e.data.action) {
     handleMessage(e.data);
   }
@@ -74,8 +75,8 @@ function handleMessage(msg) {
 function showOverlay(data) {
   if (!data) return;
 
-  ltLine1.textContent  = data.line1 || '';
-  ltLine2.textContent  = data.line2 || '';
+  ltLine1.textContent   = data.line1 || '';
+  ltLine2.textContent   = data.line2 || '';
   ltLine2.style.display = data.line2 ? '' : 'none';
 
   // Force reflow so CSS transition fires even on re-show
@@ -138,6 +139,46 @@ function applySettings(s) {
   if (s.font) {
     ltLine1.style.fontFamily = s.font;
     ltLine2.style.fontFamily = s.font;
+    if (ltText) ltText.style.fontFamily = s.font;
+  }
+
+  // ── Text alignment ────────────────────────────────────────────────────────
+  if (ltText) {
+    ltText.classList.remove('align-left', 'align-center', 'align-right');
+    ltText.classList.add('align-' + (s.textAlign || 'center'));
+    ltText.style.textAlign = s.textAlign || 'center';
+  }
+
+  // ── Lower third background image ──────────────────────────────────────────
+  if (s.ltBgImage) {
+    ltRoot.style.backgroundImage    = `url('${s.ltBgImage}')`;
+    ltRoot.style.backgroundSize     = 'cover';
+    ltRoot.style.backgroundPosition = 'center';
+    ltRoot.style.backgroundRepeat   = 'no-repeat';
+  } else {
+    ltRoot.style.backgroundImage = '';
+  }
+
+  // ── Logo ──────────────────────────────────────────────────────────────────
+  if (s.logoDataUrl) {
+    ltLogo.src         = s.logoDataUrl;
+    ltLogo.style.display = '';
+
+    // Apply position class
+    ltLogo.classList.remove('logo-left', 'logo-right');
+    ltLogo.classList.add(s.logoPosition === 'right' ? 'logo-right' : 'logo-left');
+
+    // Re-order in DOM to match position setting
+    if (s.logoPosition === 'right') {
+      // Right of text block: move logo to end of ltRoot
+      ltRoot.appendChild(ltLogo);
+    } else {
+      // Left of text block: insert after accent strip
+      ltRoot.insertBefore(ltLogo, ltText);
+    }
+  } else {
+    ltLogo.style.display = 'none';
+    ltLogo.src           = '';
   }
 }
 
@@ -145,6 +186,14 @@ function applySettings(s) {
 function applyInitialSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem('overlaySettings') || '{}');
+
+    // Restore images from their own localStorage keys
+    const ltBg = localStorage.getItem('overlayLtBg');
+    if (ltBg) saved.ltBgImage = ltBg;
+
+    const logo = localStorage.getItem('overlayLogo');
+    if (logo) saved.logoDataUrl = logo;
+
     if (Object.keys(saved).length) applySettings(saved);
   } catch (_) {}
 }
@@ -154,7 +203,6 @@ function restoreLastState() {
   try {
     const live = JSON.parse(sessionStorage.getItem('overlayLive') || 'null');
     if (live && live.data) {
-      // Small delay so CSS transitions are set up first
       setTimeout(() => showOverlay(live.data), 100);
     }
   } catch (_) {}

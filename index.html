@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reference Overlay — Control</title>
+  <!-- Google Fonts: Display, Elegant Serif, and Modern Sans options -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Crimson+Pro:wght@400;700&family=EB+Garamond:wght@400;700&family=Josefin+Sans:wght@400;700&family=Libre+Baskerville:wght@400;700&family=Lora:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/control.css" />
 </head>
 <body>
@@ -50,7 +54,7 @@
 
         <div class="field-group span-2">
           <label for="book">Book</label>
-          <select id="book" onchange="onBibleChange()">
+          <select id="book" onchange="onBookChange()">
             <optgroup label="Old Testament" id="optgroup-ot"></optgroup>
             <optgroup label="New Testament" id="optgroup-nt"></optgroup>
           </select>
@@ -58,28 +62,20 @@
 
         <div class="field-group">
           <label for="chapter">Chapter</label>
-          <input type="number" id="chapter" min="1" max="150" value="3"
-                 onchange="onBibleChange()" oninput="onBibleChange()" />
+          <select id="chapter" onchange="onBibleChange()"></select>
         </div>
 
-        <div class="field-group">
-          <label for="verse-start">Verse</label>
-          <input type="number" id="verse-start" min="1" max="176" value="19"
-                 placeholder="e.g. 3"
-                 onchange="onBibleChange()" oninput="onBibleChange()" />
-        </div>
-
-        <div class="field-group">
-          <label for="verse-end">
-            To Verse
-            <span class="label-hint">optional</span>
+        <div class="field-group span-full">
+          <label for="verse-ref">
+            Verse(s)
+            <span class="label-hint">e.g. 19 &nbsp;·&nbsp; 19-21 &nbsp;·&nbsp; 19, 22 &nbsp;·&nbsp; 19-21, 25</span>
           </label>
-          <input type="number" id="verse-end" min="1" max="176" value=""
-                 placeholder="e.g. 21"
+          <input type="text" id="verse-ref" placeholder="e.g. 19 or 19-21 or 19-21, 25"
                  onchange="onBibleChange()" oninput="onBibleChange()" />
+          <div id="verse-validation" class="verse-validation"></div>
         </div>
 
-        <div class="field-group span-2">
+        <div class="field-group span-full">
           <label for="translation">Translation</label>
           <select id="translation" onchange="onBibleChange()"></select>
         </div>
@@ -119,6 +115,7 @@
         <div class="lower-third-wrap" id="preview-wrap">
           <div class="lower-third" id="preview-lower-third">
             <div class="lt-accent"></div>
+            <img class="lt-logo hidden" id="preview-logo" alt="Logo" />
             <div class="lt-text">
               <div class="lt-line1" id="preview-line1">Revelation 3:19</div>
               <div class="lt-line2" id="preview-line2">King James Version</div>
@@ -148,8 +145,9 @@
       </summary>
       <div class="settings-body">
 
+        <!-- Chroma Key -->
         <div class="setting-row">
-          <div class="setting-group">
+          <div class="setting-group span-full">
             <label class="setting-label">Chroma Key Background</label>
             <div class="chroma-options">
               <label class="chroma-opt">
@@ -177,6 +175,7 @@
           </div>
         </div>
 
+        <!-- Animation + Style -->
         <div class="setting-row">
           <div class="setting-group">
             <label class="setting-label" for="anim-select">Animation</label>
@@ -198,6 +197,7 @@
           </div>
         </div>
 
+        <!-- Accent Color + Position -->
         <div class="setting-row">
           <div class="setting-group">
             <label class="setting-label" for="accent-color">Accent Color</label>
@@ -214,16 +214,36 @@
           </div>
         </div>
 
+        <!-- Text Alignment -->
+        <div class="setting-row">
+          <div class="setting-group span-full">
+            <label class="setting-label">Text Alignment</label>
+            <div class="align-options">
+              <label class="align-opt">
+                <input type="radio" name="textAlign" value="left" onchange="onSettingsChange()" />
+                <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="1" y1="7" x2="13" y2="7"/><line x1="1" y1="12" x2="16" y2="12"/></svg>
+                Left
+              </label>
+              <label class="align-opt">
+                <input type="radio" name="textAlign" value="center" checked onchange="onSettingsChange()" />
+                <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="4" y1="7" x2="16" y2="7"/><line x1="2" y1="12" x2="18" y2="12"/></svg>
+                Center
+              </label>
+              <label class="align-opt">
+                <input type="radio" name="textAlign" value="right" onchange="onSettingsChange()" />
+                <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="7" y1="7" x2="19" y2="7"/><line x1="4" y1="12" x2="19" y2="12"/></svg>
+                Right
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Font + Resolution -->
         <div class="setting-row">
           <div class="setting-group">
             <label class="setting-label" for="font-select">Font</label>
             <select id="font-select" onchange="onSettingsChange()">
-              <option value="system-ui">System (Default)</option>
-              <option value="'Georgia', serif">Georgia (Serif)</option>
-              <option value="'Arial', sans-serif">Arial</option>
-              <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
-              <option value="'Verdana', sans-serif">Verdana</option>
-              <option value="'Times New Roman', serif">Times New Roman</option>
+              <!-- populated by JS from FONT_OPTIONS -->
             </select>
           </div>
 
@@ -234,6 +254,59 @@
               <option value="1280x720">1280 × 720 (HD)</option>
               <option value="3840x2160">3840 × 2160 (4K UHD)</option>
             </select>
+          </div>
+        </div>
+
+        <!-- Lower Third Background Image -->
+        <div class="setting-row">
+          <div class="setting-group span-full">
+            <label class="setting-label">Lower Third Background Image</label>
+            <div class="file-row">
+              <label class="file-btn" for="lt-bg-file">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Choose Image
+                <input type="file" id="lt-bg-file" accept="image/*" onchange="onLtBgChange()" />
+              </label>
+              <button class="file-clear-btn" id="lt-bg-clear" onclick="clearLtBg()" style="display:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Clear
+              </button>
+              <span class="file-name" id="lt-bg-name">No image selected</span>
+            </div>
+            <div class="file-preview-wrap" id="lt-bg-preview-wrap" style="display:none">
+              <img id="lt-bg-preview" class="file-preview-img" alt="Lower third background preview" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Logo -->
+        <div class="setting-row">
+          <div class="setting-group span-full">
+            <label class="setting-label">Logo (PNG with transparency)</label>
+            <div class="file-row">
+              <label class="file-btn" for="logo-file">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                Choose Logo
+                <input type="file" id="logo-file" accept="image/png,image/svg+xml,image/*" onchange="onLogoChange()" />
+              </label>
+              <button class="file-clear-btn" id="logo-clear" onclick="clearLogo()" style="display:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Clear
+              </button>
+              <span class="file-name" id="logo-name">No logo selected</span>
+            </div>
+            <div class="logo-controls" id="logo-controls" style="display:none">
+              <div class="logo-preview-wrap">
+                <img id="logo-preview" class="logo-preview-img" alt="Logo preview" />
+              </div>
+              <div class="setting-group">
+                <label class="setting-label" for="logo-position">Logo Position</label>
+                <select id="logo-position" onchange="onSettingsChange()">
+                  <option value="left">Left side</option>
+                  <option value="right">Right side</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 

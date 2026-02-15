@@ -15,6 +15,10 @@
       • OBS     → Add as Window Capture or Browser source; apply Chroma Key
   -->
   <title>Reference Overlay — Output</title>
+  <!-- Google Fonts (same set as control panel) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Crimson+Pro:wght@400;700&family=EB+Garamond:wght@400;700&family=Josefin+Sans:wght@400;700&family=Libre+Baskerville:wght@400;700&family=Lora:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/output.css" />
 </head>
 <body id="output-body" class="chroma-blue">
@@ -29,7 +33,9 @@
     <div class="lower-third-wrap" id="lt-wrap">
       <div class="lower-third" id="lt-root">
         <div class="lt-accent" id="lt-accent"></div>
-        <div class="lt-text">
+        <!-- Logo: shown when a logo data URL is set; position (left/right) applied by JS -->
+        <img class="lt-logo" id="lt-logo" alt="" aria-hidden="true" style="display:none" />
+        <div class="lt-text" id="lt-text">
           <div class="lt-line1" id="lt-line1"></div>
           <div class="lt-line2" id="lt-line2"></div>
         </div>
