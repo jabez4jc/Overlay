@@ -393,7 +393,7 @@ function openOutputWindow() {
 
   outputWindow = window.open(
     'output.html?session=' + SESSION_ID,
-    'ReferenceOverlayOutput-' + SESSION_ID,
+    'OverlayOutput-' + SESSION_ID,
     `width=${w},height=${h},left=${left},top=${top},` +
     `resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
   );
