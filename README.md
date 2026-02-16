@@ -127,7 +127,7 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 # Clone the repository
-git clone https://github.com/your-org/reference-overlay.git /var/www/reference-overlay
+git clone https://github.com/jabez4jc/Overlay.git /var/www/reference-overlay
 cd /var/www/reference-overlay
 npm install
 ```
