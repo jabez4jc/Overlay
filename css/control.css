@@ -1036,6 +1036,15 @@ input[type="color"] {
   white-space: pre-wrap;
   word-break: break-word;
 }
+.verse-ref-note {
+  font-size: .75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 2px 0;
+}
+.verse-text-include input[type="checkbox"]:disabled { opacity: .45; cursor: not-allowed; }
+.verse-text-include:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+
 .verse-text-include {
   display: flex;
   align-items: center;
