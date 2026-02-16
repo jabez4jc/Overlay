@@ -38,9 +38,9 @@ let ltBgDataUrl  = null;
 let logoDataUrl  = null;
 
 // Verse text lookup state
-let verseTextCurrent = null;    // last successfully fetched verse text
-let verseTextCache   = {};      // { "Book Ch:V|trans": "verse text..." }
-let lookupTimer      = null;    // debounce handle
+let verseTextCurrent    = null;   // last successfully fetched verse text
+let verseTextCache      = {};     // { cacheKey: { text, refOnly } }
+let referenceOnlyLookup = false;  // true when text is ASV reference, not for output
 
 // Presets — separate stores for overlay (bible/speaker) vs ticker
 let overlayPresets = [];
@@ -143,7 +143,7 @@ function populateTranslations() {
     const opt = document.createElement('option');
     opt.value       = t.abbr;
     opt.textContent = `${t.abbr} — ${t.name}`;
-    if (BIBLE_API_MAP[t.abbr]) {
+    if (BIBLE_API_MAP[t.abbr] || HELLOAO_MAP[t.abbr]) {
       grpFree.appendChild(opt);
     } else if (APIBIBLE_IDS[t.abbr]) {
       grpPremium.appendChild(opt);
@@ -339,24 +339,64 @@ function formatVerseRef(raw, maxVerse) {
 // ── Bible API — Verse Text Lookup ─────────────────────────────────────────────
 // Three-tier lookup:
 //   Tier 1: bible-api.com (free, no key)      — KJV, ASV, WEB, YLT, DARBY, BBE
-//   Tier 2: rest.api.bible (API key)           — AMP, MSG, NASB, NASB95, LSV + more
+//   Tier 2: rest.api.bible (API key)           — AMP, MSG, NASB, NASB95, LSV
 //   Tier 3: bible.helloao.org (free, no key)   — BSB
+//   Fallback: ASV via Tier 1 (reference-only) — unsupported translations & NONE
 // See data.js for BIBLE_API_MAP, APIBIBLE_IDS, HELLOAO_MAP, and USFM_CODES.
 
 const APIBIBLE_BASE = 'https://rest.api.bible/v1';
 const APIBIBLE_KEY  = '8LWqzQ47HMAtKGhfXVY2K';
 const HELLOAO_BASE  = 'https://bible.helloao.org/api';
 
+// Chapter-level verse cache for api.bible (one fetch per chapter, not per verse)
+const apiBibleChapterCache = {};
+
+// Cache size guards — prevent unbounded growth during long sessions
+const MAX_VERSE_CACHE   = 200;
+const MAX_CHAPTER_CACHE = 40;
+function pruneCacheIfNeeded(cache, max) {
+  const keys = Object.keys(cache);
+  if (keys.length >= max) delete cache[keys[0]];  // evict oldest (insertion order)
+}
+
+// ── Superscript verse number helpers ──────────────────────────────────────────
+const _SUPER_DIGITS = ['⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹'];
+function toSuperNum(n) {
+  return String(n).split('').map(d => _SUPER_DIGITS[+d]).join('');
+}
+function countTokenVerses(tokens) {
+  return tokens.reduce((n, t) => n + (t.type === 'single' ? 1 : t.to - t.from + 1), 0);
+}
+
+// ── api.bible chapter JSON verse extractor ────────────────────────────────────
+// Walks the USX-style JSON returned by /chapters/{id}?content-type=json and
+// builds a verse-number → plain-text map.
+function extractApiVerseMap(content) {
+  const verseMap = {};
+  let curVerse = null;
+  function walkNode(node) {
+    if (!node) return;
+    if (Array.isArray(node)) { node.forEach(walkNode); return; }
+    if (typeof node !== 'object') return;
+    if (node.name === 'verse' || node.type === 'verse') {
+      const num = parseInt(node.number ?? node.attrs?.number ?? '', 10);
+      if (num > 0) curVerse = num;
+    }
+    if (node.type === 'text' && typeof node.text === 'string' && curVerse !== null) {
+      verseMap[curVerse] = (verseMap[curVerse] || '') + node.text;
+    }
+    if (node.items) walkNode(node.items);
+  }
+  walkNode(content);
+  for (const k of Object.keys(verseMap)) verseMap[k] = verseMap[k].replace(/\s+/g, ' ').trim();
+  return verseMap;
+}
+
 function lookupVerse() {
   const book      = document.getElementById('book').value;
   const chapter   = document.getElementById('chapter').value;
   const verseRaw  = document.getElementById('verse-ref').value.trim();
   const transAbbr = document.getElementById('translation').value;
-
-  if (transAbbr === 'NONE') {
-    setLookupStatus('Select a translation to look up verse text.', 'error');
-    return;
-  }
 
   if (!chapter || !verseRaw) {
     setLookupStatus('Enter a chapter and verse first.', 'error');
@@ -380,22 +420,32 @@ function lookupVerse() {
     return;
   }
 
-  // Canonical cache key built from sanitised tokens so partial-valid refs share the same entry
+  // Determine if this translation has no API support — fall back to ASV for reference
+  const isSupported = !!(BIBLE_API_MAP[transAbbr] || APIBIBLE_IDS[transAbbr] || HELLOAO_MAP[transAbbr]);
+  const isRefOnly   = (transAbbr === 'NONE') || !isSupported;
+
+  // Canonical cache key. Reference-only lookups share a single ASV-sourced cache entry.
   const verseKey = validTokens.map(t =>
     t.type === 'single' ? String(t.v) : `${t.from}-${t.to}`
   ).join(',');
-  const cacheKey = `${book}|${chapter}|${verseKey}|${transAbbr}`;
+  const cacheKey = isRefOnly
+    ? `${book}|${chapter}|${verseKey}|_REF`
+    : `${book}|${chapter}|${verseKey}|${transAbbr}`;
 
-  if (verseTextCache[cacheKey]) {
-    displayVerseText(verseTextCache[cacheKey]);
+  const cached = verseTextCache[cacheKey];
+  if (cached) {
+    displayVerseText(cached.text, cached.refOnly);
     return;
   }
 
+  // Verse-number prefix: prepend superscript number when multiple verses are shown
+  const showVerseNums = countTokenVerses(validTokens) > 1;
+  const prefixed = (num, text) => showVerseNums ? `${toSuperNum(num)} ${text}` : text;
+
   setLookupStatus('Looking up…', 'loading');
 
-  // ── Tier 1: bible-api.com (free, public-domain) ───────────────────────────
-  // Pass the full comma/range verse string — bible-api.com natively handles it.
-  const freeApiTrans = BIBLE_API_MAP[transAbbr];
+  // ── Tier 1: bible-api.com (free) — also handles reference-only fallback (ASV) ─
+  const freeApiTrans = isRefOnly ? 'asv' : BIBLE_API_MAP[transAbbr];
   if (freeApiTrans) {
     const verseParam = validTokens.map(t =>
       t.type === 'single' ? String(t.v) : `${t.from}-${t.to}`
@@ -405,18 +455,22 @@ function lookupVerse() {
     fetch(url)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(data => {
-        let text = data.text;
-        if (!text && Array.isArray(data.verses)) text = data.verses.map(v => v.text.trim()).join(' ');
+        let text;
+        if (Array.isArray(data.verses) && data.verses.length > 0) {
+          text = data.verses.map(v => prefixed(v.verse, v.text.trim())).join(' ');
+        } else if (data.text) {
+          text = data.text.trim();
+        }
         if (!text) throw new Error('No text in response');
-        finaliseLookup(cacheKey, text);
+        finaliseLookup(cacheKey, text, isRefOnly);
       })
       .catch(err => setLookupStatus(`Lookup failed: ${err.message}`, 'error'));
     return;
   }
 
-  // ── Tier 2: rest.api.bible (API key, premium translations) ───────────────
-  // api.bible doesn't support discontinuous verse lists, so each token is
-  // fetched as its own passage request and the results are concatenated.
+  // ── Tier 2: rest.api.bible (API key) — one chapter fetch, then filter verses ─
+  // Fetches the full chapter JSON once and caches the verse map, eliminating
+  // multiple requests for discontinuous verse selections.
   const apiBibleId = APIBIBLE_IDS[transAbbr];
   if (apiBibleId) {
     const usfmBook = USFM_CODES[book];
@@ -425,31 +479,47 @@ function lookupVerse() {
       return;
     }
 
-    const fetchToken = tok => {
-      const passageId = tok.type === 'single'
-        ? `${usfmBook}.${chapter}.${tok.v}`
-        : `${usfmBook}.${chapter}.${tok.from}-${usfmBook}.${chapter}.${tok.to}`;
-      const url = `${APIBIBLE_BASE}/bibles/${apiBibleId}/passages/${passageId}` +
-                  `?content-type=text&include-notes=false&include-titles=false` +
-                  `&include-chapter-numbers=false&include-verse-numbers=false`;
-      return fetch(url, { headers: { 'api-key': APIBIBLE_KEY } })
-        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-        .then(data => {
-          const text = data?.data?.content;
-          if (!text) throw new Error('No text in response');
-          return text;
-        });
-    };
+    const chapCacheKey = `${transAbbr}|${book}|${chapter}`;
 
-    Promise.all(validTokens.map(fetchToken))
-      .then(texts => finaliseLookup(cacheKey, texts.join(' ')))
+    function applyVerseMap(verseMap) {
+      const parts = [];
+      for (const tok of validTokens) {
+        if (tok.type === 'single') {
+          if (verseMap[tok.v]) parts.push(prefixed(tok.v, verseMap[tok.v]));
+        } else {
+          for (let i = tok.from; i <= tok.to; i++) {
+            if (verseMap[i]) parts.push(prefixed(i, verseMap[i]));
+          }
+        }
+      }
+      const text = parts.join(' ');
+      if (!text) throw new Error('Verses not found in chapter data');
+      finaliseLookup(cacheKey, text);
+    }
+
+    if (apiBibleChapterCache[chapCacheKey]) {
+      try { applyVerseMap(apiBibleChapterCache[chapCacheKey]); }
+      catch (e) { setLookupStatus(e.message, 'error'); }
+      return;
+    }
+
+    const chapUrl = `${APIBIBLE_BASE}/bibles/${apiBibleId}/chapters/${usfmBook}.${chapter}` +
+      `?content-type=json&include-notes=false&include-titles=false` +
+      `&include-chapter-numbers=false&include-verse-numbers=false`;
+    fetch(chapUrl, { headers: { 'api-key': APIBIBLE_KEY } })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(data => {
+        const verseMap = extractApiVerseMap(data?.data?.content || []);
+        pruneCacheIfNeeded(apiBibleChapterCache, MAX_CHAPTER_CACHE);
+        apiBibleChapterCache[chapCacheKey] = verseMap;
+        applyVerseMap(verseMap);
+      })
       .catch(err => setLookupStatus(`Lookup failed: ${err.message}`, 'error'));
     return;
   }
 
   // ── Tier 3: bible.helloao.org (free, no key, chapter-level fetch) ────────
-  // The API returns a full chapter; we filter to the requested verse numbers.
-  // Content items are either plain strings or {noteId} footnote refs (skipped).
+  // Returns a full chapter; filter to requested verses and prepend verse numbers.
   const helloaoId = HELLOAO_MAP[transAbbr];
   if (helloaoId) {
     const usfmBook = USFM_CODES[book];
@@ -463,26 +533,21 @@ function lookupVerse() {
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(data => {
         const verses = (data?.chapter?.content || []).filter(c => c.type === 'verse');
-
-        // Build verse-number → text map, skipping inline footnote ref objects
         const verseMap = {};
         for (const v of verses) {
           const text = v.content.filter(c => typeof c === 'string').join('').trim();
           if (text) verseMap[v.number] = text;
         }
-
-        // Collect requested verses in token order
         const parts = [];
         for (const tok of validTokens) {
           if (tok.type === 'single') {
-            if (verseMap[tok.v]) parts.push(verseMap[tok.v]);
+            if (verseMap[tok.v]) parts.push(prefixed(tok.v, verseMap[tok.v]));
           } else {
             for (let i = tok.from; i <= tok.to; i++) {
-              if (verseMap[i]) parts.push(verseMap[i]);
+              if (verseMap[i]) parts.push(prefixed(i, verseMap[i]));
             }
           }
         }
-
         const text = parts.join(' ');
         if (!text) throw new Error('No text in response');
         finaliseLookup(cacheKey, text);
@@ -491,17 +556,15 @@ function lookupVerse() {
     return;
   }
 
-  // ── No API supports this translation ─────────────────────────────────────
-  setLookupStatus(
-    `${transAbbr} is not available for lookup. Supported: KJV, ASV, WEB, YLT, AMP, MSG, NASB, NASB95, LSV, BSB`,
-    'error'
-  );
+  // Should not reach here — isRefOnly handles all unsupported translations above
+  setLookupStatus('Translation not available for lookup.', 'error');
 }
 
-function finaliseLookup(cacheKey, rawText) {
+function finaliseLookup(cacheKey, rawText, refOnly = false) {
   const clean = rawText.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-  verseTextCache[cacheKey] = clean;
-  displayVerseText(clean);
+  pruneCacheIfNeeded(verseTextCache, MAX_VERSE_CACHE);
+  verseTextCache[cacheKey] = { text: clean, refOnly };
+  displayVerseText(clean, refOnly);
   setLookupStatus('', '');
 }
 
@@ -512,22 +575,31 @@ function setLookupStatus(msg, type) {
   el.className   = 'lookup-status' + (type ? ' lookup-' + type : '');
 }
 
-function displayVerseText(text) {
-  verseTextCurrent = text;
+function displayVerseText(text, refOnly = false) {
+  referenceOnlyLookup = refOnly;
+  verseTextCurrent    = text;
   const box     = document.getElementById('verse-text-box');
   const content = document.getElementById('verse-text-content');
+  const note    = document.getElementById('verse-ref-note');
+  const chk     = document.getElementById('include-verse-text');
   if (!box || !content) return;
-  box.style.display    = '';
-  content.textContent  = text;
+  box.style.display   = '';
+  content.textContent = text;
+  // Reference-only: disable "use as line 2" — text is for verification, not output
+  if (chk) { chk.checked = false; chk.disabled = refOnly; }
+  if (note) note.style.display = refOnly ? '' : 'none';
   updatePreview();
 }
 
 function clearVerseText() {
-  verseTextCurrent = null;
-  const box = document.getElementById('verse-text-box');
-  if (box) box.style.display = 'none';
-  const chk = document.getElementById('include-verse-text');
-  if (chk) chk.checked = false;
+  referenceOnlyLookup = false;
+  verseTextCurrent    = null;
+  const box  = document.getElementById('verse-text-box');
+  const chk  = document.getElementById('include-verse-text');
+  const note = document.getElementById('verse-ref-note');
+  if (box)  box.style.display  = 'none';
+  if (chk)  { chk.checked = false; chk.disabled = false; }
+  if (note) note.style.display = 'none';
   setLookupStatus('', '');
 }
 
@@ -582,7 +654,7 @@ function buildOverlayData() {
     }
 
     const includeText = document.getElementById('include-verse-text')?.checked;
-    const showingText = !!(includeText && verseTextCurrent);
+    const showingText = !!(includeText && verseTextCurrent && !referenceOnlyLookup);
 
     // Append (ABBR) to the reference line when verse text is shown as line 2
     const line1 = (showingText && translAbbr !== 'NONE')
@@ -1177,17 +1249,20 @@ function updateOutputCount() {
 // ── WebSocket Client (server.js mode) ─────────────────────────────────────────
 // Automatically connects when the app is served via http:// rather than file://.
 // Lets tablets/phones on the same network control this session as a remote.
+let wsRetryDelay = 5000;   // starts at 5 s; doubles on each failure, caps at 60 s
+
 function initWebSocket() {
   if (location.protocol === 'file:') return;   // WS only available on http://
 
   const url = `ws://${location.hostname}:${WS_PORT}?session=${SESSION_ID}&role=control`;
   try {
     ws = new WebSocket(url);
-    ws.onopen    = () => setWsIndicator('online');
+    ws.onopen    = () => { wsRetryDelay = 5000; setWsIndicator('online'); };
     ws.onclose   = () => {
       ws = null;
       setWsIndicator('offline');
-      setTimeout(initWebSocket, 5000);   // auto-reconnect
+      setTimeout(initWebSocket, wsRetryDelay);
+      wsRetryDelay = Math.min(wsRetryDelay * 2, 60000);
     };
     ws.onerror   = () => setWsIndicator('error');
     ws.onmessage = e => {
