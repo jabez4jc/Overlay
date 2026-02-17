@@ -38,6 +38,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Output Window
       </button>
+      <button class="btn-settings-toggle" id="btn-settings-toggle" onclick="toggleSettingsPanel()" title="Toggle settings panel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+        <span class="btn-settings-label">Settings</span>
+      </button>
     </div>
   </header>
 
@@ -59,6 +63,7 @@
 
   <!-- ── Main Content ─────────────────────────────────────────────────────── -->
   <main class="app-main">
+    <div class="control-column">
 
     <!-- ── Bible Reference Panel ──────────────────────────────────────────── -->
     <section id="panel-bible" class="panel">
@@ -90,6 +95,10 @@
         <div class="field-group span-2">
           <label for="translation">Translation</label>
           <select id="translation" onchange="onBibleChange()"></select>
+          <label class="verse-text-include" style="margin-top:6px;">
+            <input type="checkbox" id="hide-translation-line2" checked onchange="updatePreview()" />
+            Hide translation line (Line 2)
+          </label>
         </div>
         <div class="field-group">
           <label for="reference-language">Reference Language</label>
@@ -154,13 +163,13 @@
           <textarea id="ticker-message" rows="3"
             style="width:100%;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:.95rem;resize:vertical;"
             placeholder="e.g. ⚠ Emergency service cancelled — please check the foyer for updates"
-            oninput="onTickerChange()"></textarea>
+            oninput="onTickerChange()">The Live Stream has been restored.— Thank you for your patience, and our sincere apologies for the interruption.</textarea>
         </div>
 
         <div class="field-group">
           <label for="ticker-label">Badge Label</label>
-          <input type="text" id="ticker-label" value="⚠ ALERT"
-                 placeholder="⚠ ALERT"
+          <input type="text" id="ticker-label" value="INFO"
+                 placeholder="INFO"
                  oninput="onTickerChange()" onchange="onTickerChange()" />
         </div>
 
@@ -178,7 +187,7 @@
           <label for="ticker-style">Style</label>
           <select id="ticker-style" onchange="onTickerStyleChange()">
             <option value="alert">Alert (red)</option>
-            <option value="info">Info (blue)</option>
+            <option value="info" selected>Info (blue)</option>
             <option value="warning">Warning (amber)</option>
             <option value="dark">Dark</option>
             <option value="custom">Custom colors…</option>
@@ -238,7 +247,7 @@
           <!-- Ticker content when ticker is live -->
           <div class="preview-ticker-wrap" id="program-ticker-wrap" style="display:none">
             <div class="preview-ticker-bar" id="program-ticker-bar">
-              <div class="preview-ticker-badge" id="program-ticker-badge">⚠ ALERT</div>
+              <div class="preview-ticker-badge" id="program-ticker-badge">INFO</div>
               <div class="preview-ticker-text" id="program-ticker-text"></div>
             </div>
           </div>
@@ -272,7 +281,7 @@
           <!-- Ticker preview (shown when ticker mode is active) -->
           <div class="preview-ticker-wrap" id="preview-ticker-wrap" style="display:none">
             <div class="preview-ticker-bar" id="preview-ticker-bar">
-              <div class="preview-ticker-badge" id="preview-ticker-badge">⚠ ALERT</div>
+              <div class="preview-ticker-badge" id="preview-ticker-badge">INFO</div>
               <div class="preview-ticker-text" id="preview-ticker-text"></div>
             </div>
           </div>
@@ -284,7 +293,7 @@
     <!-- ── Presets ────────────────────────────────────────────────────────── -->
     <section class="presets-section">
       <div class="presets-header">
-        <span class="presets-label" id="presets-label">Reference &amp; Speaker Presets</span>
+        <span class="presets-label" id="presets-label">Reference Presets</span>
         <div class="presets-actions">
           <button class="btn-save-preset" onclick="saveCurrentPreset()" title="Save current settings as a preset">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -322,11 +331,17 @@
       </button>
     </section>
 
+    <!-- ── Keyboard Shortcut Hint ─────────────────────────────────────────── -->
+    <div class="kbd-hint">
+      <kbd>Enter</kbd> Cut to Air &nbsp;·&nbsp; <kbd>Esc</kbd> Clear &nbsp;·&nbsp; <kbd>B</kbd> Bible &nbsp;·&nbsp; <kbd>S</kbd> Speaker &nbsp;·&nbsp; <kbd>T</kbd> Ticker
+    </div>
+    </div>
+
     <!-- ── Settings ───────────────────────────────────────────────────────── -->
-    <details class="settings-panel">
+    <details class="settings-panel" id="settings-panel">
       <summary>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
-        Settings
+        <span class="settings-summary-label">Settings</span>
       </summary>
       <div class="settings-body">
 
@@ -381,10 +396,13 @@
                 <button class="bsi-copy" onclick="copyOutputLink()" title="Copy URL">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 </button>
-              </div>
-              <div class="bsi-notes">
-                <p><strong>OBS / vMix:</strong> Add a Browser Source → paste the URL above → set width/height to match your output resolution → tick <em>Allow transparency</em> if using Transparent mode above, or add a Chroma Key filter if using a colour background.</p>
-                <p><strong>Cross-device control (phone → TV):</strong> Run <code>node server.js</code> on the same computer that serves the files. Use the server's IP address in the URL above. Both the control panel and the Browser Source must connect via <code>http://</code> (not <code>file://</code>) for messages to relay through the WebSocket server.</p>
+                <details class="bsi-help">
+                  <summary class="bsi-help-btn" title="Setup guidance">i</summary>
+                  <div class="bsi-notes">
+                    <p><strong>OBS / vMix:</strong> Add a Browser Source → paste the URL above → set width/height to match your output resolution → tick <em>Allow transparency</em> if using Transparent mode above, or add a Chroma Key filter if using a colour background.</p>
+                    <p><strong>Cross-device control (phone → TV):</strong> Run <code>node server.js</code> on the same computer that serves the files. Use the server's IP address in the URL above. Both the control panel and the Browser Source must connect via <code>http://</code> (not <code>file://</code>) for messages to relay through the WebSocket server.</p>
+                  </div>
+                </details>
               </div>
             </div>
           </div>
@@ -482,8 +500,12 @@
         <div class="setting-row">
           <div class="setting-group span-full">
             <label class="setting-label">Text Effects (Per Line)</label>
+            <div class="textfx-tabs" role="tablist" aria-label="Text effects line selector">
+              <button type="button" id="textfx-tab-line1" class="textfx-tab active" onclick="switchTextEffectsLine('line1')">Line 1</button>
+              <button type="button" id="textfx-tab-line2" class="textfx-tab" onclick="switchTextEffectsLine('line2')">Line 2</button>
+            </div>
             <div class="text-effects-grid">
-              <div class="text-effects-card">
+              <div class="text-effects-card" id="textfx-card-line1">
                 <div class="text-effects-title">Line 1</div>
                 <div class="setting-group">
                   <label class="setting-label" for="line1-font-weight">Font Weight</label>
@@ -569,7 +591,7 @@
                 </div>
               </div>
 
-              <div class="text-effects-card">
+              <div class="text-effects-card" id="textfx-card-line2" style="display:none">
                 <div class="text-effects-title">Line 2</div>
                 <div class="setting-group">
                   <label class="setting-label" for="line2-font-weight">Font Weight</label>
@@ -824,11 +846,6 @@
 
       </div>
     </details>
-
-    <!-- ── Keyboard Shortcut Hint ─────────────────────────────────────────── -->
-    <div class="kbd-hint">
-      <kbd>Enter</kbd> Cut to Air &nbsp;·&nbsp; <kbd>Esc</kbd> Clear &nbsp;·&nbsp; <kbd>B</kbd> Bible &nbsp;·&nbsp; <kbd>S</kbd> Speaker &nbsp;·&nbsp; <kbd>T</kbd> Ticker
-    </div>
 
   </main>
 </div>

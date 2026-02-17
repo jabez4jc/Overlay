@@ -130,6 +130,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedChroma = document.querySelector('input[name="chroma"]:checked')?.value;
   const note = document.getElementById('chroma-transparent-note');
   if (note) note.style.display = (savedChroma === 'transparent') ? '' : 'none';
+
+  initSettingsPanelUi();
+  switchTextEffectsLine('line1');
+  // Ensure output windows follow the control's current live state after reload.
+  setTimeout(() => syncCurrentStateToOutputs(), 120);
 });
 
 // ── Populate Dropdowns ────────────────────────────────────────────────────────
@@ -924,12 +929,13 @@ function displayVerseText(text, refOnly = false) {
   // Reference-only: disable "use as line 2" — text is for verification, not output.
   // When real verse text exists, auto-enable line2 usage for immediate output.
   if (chk) {
-    if (refOnly) {
+    const translAbbr = document.getElementById('translation')?.value || '';
+    if (refOnly || translAbbr === 'NONE') {
       chk.checked = false;
       chk.disabled = true;
     } else {
       chk.disabled = false;
-      chk.checked = true;
+      chk.checked = false;
     }
   }
   if (note) note.style.display = refOnly ? '' : 'none';
@@ -951,9 +957,9 @@ function clearVerseText() {
 // ── Build Ticker Data Object ──────────────────────────────────────────────────
 function buildTickerData() {
   const message  = document.getElementById('ticker-message')?.value.trim() || '';
-  const label    = document.getElementById('ticker-label')?.value.trim()   || '⚠ ALERT';
+  const label    = document.getElementById('ticker-label')?.value.trim()   || 'INFO';
   const speed    = parseInt(document.getElementById('ticker-speed')?.value) || 140;
-  const style    = document.getElementById('ticker-style')?.value           || 'alert';
+  const style    = document.getElementById('ticker-style')?.value           || 'info';
   const position = document.getElementById('ticker-position')?.value        || 'bottom';
 
   // Resolve colors from style preset or custom pickers
@@ -1000,6 +1006,7 @@ function buildOverlayData() {
     }
 
     const includeText = document.getElementById('include-verse-text')?.checked;
+    const hideTranslationLine2 = !!document.getElementById('hide-translation-line2')?.checked;
     const showingText = !!(includeText && verseTextCurrent && !referenceOnlyLookup);
 
     // Append (ABBR) to the reference line when verse text is shown as line 2
@@ -1011,6 +1018,8 @@ function buildOverlayData() {
     let line2;
     if (showingText) {
       line2 = verseTextCurrent;
+    } else if (hideTranslationLine2) {
+      line2 = '';
     } else if (translAbbr === 'NONE') {
       line2 = '';
     } else {
@@ -1045,7 +1054,7 @@ function substitutePreviewVars(str, s, data) {
 function applyMonitorTextFit(ltEl, viewportEl, style, line2Text) {
   if (!ltEl || !viewportEl) return;
   const vpWidth = viewportEl.offsetWidth || 320;
-  const scale = Math.max(0.12, Math.min(1, vpWidth / 1920));
+  const scale = Math.max(0.2, Math.min(1, vpWidth / 1280));
   const len = (line2Text || '').trim().length;
 
   // Base sizes at output reference width (1920px), then scaled into monitor.
@@ -1068,12 +1077,26 @@ function applyMonitorTextFit(ltEl, viewportEl, style, line2Text) {
   else if (len > 220) density = 0.66;
   else if (len > 160) density = 0.78;
   else if (len > 120) density = 0.88;
+  else if (len > 0 && len < 36) density = 1.12;
 
-  const line2Px = Math.max(10, Math.round(baseLine2 * scale * density * 10) / 10);
-  const line1Px = Math.max(12, Math.round(baseLine1 * scale * Math.max(0.72, density + 0.08) * 10) / 10);
+  const line2Px = Math.max(12, Math.round(baseLine2 * scale * density * 10) / 10);
+  const line1Px = Math.max(18, Math.round(baseLine1 * scale * Math.max(0.78, density + 0.08) * 10) / 10);
   ltEl.style.setProperty('--monitor-line1-size', `${line1Px}px`);
   ltEl.style.setProperty('--monitor-line2-size', `${line2Px}px`);
   ltEl.style.setProperty('--monitor-line2-lh', String(baseLine2Lh));
+}
+
+function switchTextEffectsLine(lineKey) {
+  const l1Btn  = document.getElementById('textfx-tab-line1');
+  const l2Btn  = document.getElementById('textfx-tab-line2');
+  const l1Card = document.getElementById('textfx-card-line1');
+  const l2Card = document.getElementById('textfx-card-line2');
+  const showLine1 = lineKey !== 'line2';
+
+  if (l1Btn)  l1Btn.classList.toggle('active', showLine1);
+  if (l2Btn)  l2Btn.classList.toggle('active', !showLine1);
+  if (l1Card) l1Card.style.display = showLine1 ? '' : 'none';
+  if (l2Card) l2Card.style.display = showLine1 ? 'none' : '';
 }
 
 function applyMonitorCustomStageScale(stageEl, viewportEl) {
@@ -1262,14 +1285,15 @@ function saveCurrentPreset() {
           chapter:     document.getElementById('chapter').value,
           verse:       document.getElementById('verse-ref').value,
           translation: document.getElementById('translation').value,
-          refLanguage: document.getElementById('reference-language')?.value || 'en' }
+          refLanguage: document.getElementById('reference-language')?.value || 'en',
+          hideLine2:   !!document.getElementById('hide-translation-line2')?.checked }
       : currentMode === 'speaker'
       ? { name:  document.getElementById('speaker-name').value,
           title: document.getElementById('speaker-title').value }
       : { message:  document.getElementById('ticker-message')?.value || '',
-          label:    document.getElementById('ticker-label')?.value   || '⚠ ALERT',
+          label:    document.getElementById('ticker-label')?.value   || 'INFO',
           speed:    document.getElementById('ticker-speed')?.value   || '140',
-          style:    document.getElementById('ticker-style')?.value   || 'alert',
+          style:    document.getElementById('ticker-style')?.value   || 'info',
           position: document.getElementById('ticker-position')?.value || 'bottom' },
   };
 
@@ -1299,6 +1323,8 @@ function loadPreset(id) {
       document.getElementById('translation').value = p.data.translation;
       const refLangEl = document.getElementById('reference-language');
       if (refLangEl) refLangEl.value = p.data.refLanguage || 'en';
+      const hideLine2El = document.getElementById('hide-translation-line2');
+      if (hideLine2El) hideLine2El.checked = !!p.data.hideLine2;
       updateBookOptionLabels();
       if (refLangEl && refLangEl.value !== 'en') maybeApplyLanguageFont(refLangEl.value, false);
       validateVerseInput();
@@ -1310,11 +1336,11 @@ function loadPreset(id) {
     if (document.getElementById('ticker-message'))
       document.getElementById('ticker-message').value  = p.data.message  || '';
     if (document.getElementById('ticker-label'))
-      document.getElementById('ticker-label').value    = p.data.label    || '⚠ ALERT';
+      document.getElementById('ticker-label').value    = p.data.label    || 'INFO';
     if (document.getElementById('ticker-speed'))
       document.getElementById('ticker-speed').value    = p.data.speed    || '140';
     if (document.getElementById('ticker-style')) {
-      document.getElementById('ticker-style').value    = p.data.style    || 'alert';
+      document.getElementById('ticker-style').value    = p.data.style    || 'info';
       onTickerStyleChange();
     }
     if (document.getElementById('ticker-position'))
@@ -1387,11 +1413,19 @@ function importPresets() {
 }
 
 function renderPresets() {
-  const isTicker = currentMode === 'ticker';
+  const isTicker  = currentMode === 'ticker';
+  const isSpeaker = currentMode === 'speaker';
+  const isBible   = currentMode === 'bible';
 
   // Update section label
   const labelEl = document.getElementById('presets-label');
-  if (labelEl) labelEl.textContent = isTicker ? 'Ticker Presets' : 'Reference & Speaker Presets';
+  if (labelEl) {
+    labelEl.textContent = isTicker
+      ? 'Ticker Presets'
+      : isSpeaker
+      ? 'Speaker Presets'
+      : 'Reference Presets';
+  }
 
   // Show / hide the correct list
   const overlayList = document.getElementById('presets-list-overlay');
@@ -1401,12 +1435,19 @@ function renderPresets() {
 
   const list  = isTicker ? tickerList  : overlayList;
   const empty = document.getElementById(isTicker ? 'presets-empty-ticker' : 'presets-empty-overlay');
-  const store = isTicker ? tickerPresets : overlayPresets;
+  const store = isTicker
+    ? tickerPresets
+    : overlayPresets.filter(p => isBible ? p.mode === 'bible' : p.mode === 'speaker');
   if (!list) return;
 
   list.querySelectorAll('.preset-chip').forEach(el => el.remove());
 
   if (store.length === 0) {
+    if (empty && !isTicker) {
+      empty.textContent = isBible
+        ? 'No reference presets saved — click Save Current to add one'
+        : 'No speaker presets saved — click Save Current to add one';
+    }
     if (empty) empty.style.display = '';
     return;
   }
@@ -1593,7 +1634,7 @@ function updateProgramMonitor() {
       pgmTickerBar.style.background = td.bgColor   || '#cc0000';
       pgmTickerBar.style.color      = td.textColor || '#ffffff';
     }
-    if (pgmTickerBadge) pgmTickerBadge.textContent = td.label   || '⚠ ALERT';
+    if (pgmTickerBadge) pgmTickerBadge.textContent = td.label   || 'INFO';
     if (pgmTickerText)  pgmTickerText.textContent  = td.message || '';
     if (pgmTickerWrap)  pgmTickerWrap.classList.toggle('pos-top', td.position === 'top');
   } else {
@@ -1634,6 +1675,41 @@ function broadcast(msg) {
 // ── New Session ───────────────────────────────────────────────────────────────
 function openNewSession() {
   window.open(location.pathname, '_blank');
+}
+
+function initSettingsPanelUi() {
+  const panel = document.getElementById('settings-panel');
+  if (!panel) return;
+
+  // Desktop defaults to open side panel.
+  if (window.matchMedia('(min-width: 1101px)').matches && !panel.open) {
+    panel.open = true;
+  }
+
+  const sync = () => setSettingsPanelState(panel.open);
+  panel.addEventListener('toggle', sync);
+  window.addEventListener('resize', sync);
+  sync();
+}
+
+function setSettingsPanelState(isOpen) {
+  const desktop = window.matchMedia('(min-width: 1101px)').matches;
+  const main = document.querySelector('.app-main');
+  const btn = document.getElementById('btn-settings-toggle');
+  if (main) main.classList.toggle('settings-open', !!isOpen && desktop);
+  if (btn) {
+    btn.classList.toggle('active', !!isOpen && desktop);
+    btn.setAttribute('aria-expanded', (isOpen && desktop) ? 'true' : 'false');
+    const label = btn.querySelector('.btn-settings-label');
+    if (label) label.textContent = (isOpen && desktop) ? 'Hide Settings' : 'Settings';
+  }
+}
+
+function toggleSettingsPanel() {
+  const panel = document.getElementById('settings-panel');
+  if (!panel) return;
+  panel.open = !panel.open;
+  setSettingsPanelState(panel.open);
 }
 
 // ── Copy Output Link ──────────────────────────────────────────────────────────
@@ -1711,7 +1787,11 @@ function initWebSocket() {
   const url = `ws://${location.hostname}:${WS_PORT}?session=${SESSION_ID}&role=control`;
   try {
     ws = new WebSocket(url);
-    ws.onopen    = () => { wsRetryDelay = 5000; setWsIndicator('online'); };
+    ws.onopen    = () => {
+      wsRetryDelay = 5000;
+      setWsIndicator('online');
+      syncCurrentStateToOutputs();
+    };
     ws.onclose   = () => {
       ws = null;
       setWsIndicator('offline');
@@ -1811,11 +1891,31 @@ function getSettings() {
 function onSettingsChange() {
   updatePreview();
   const settings = getSettings();
-  broadcast({ action: 'settings', settings });
+  // Do not mutate live output styling mid-air; apply on next CUT.
+  if (!overlayVisible && !tickerActive) {
+    broadcast({ action: 'settings', settings });
+  }
   persistSettings(settings);
   // Toggle transparent-mode helper note
   const note = document.getElementById('chroma-transparent-note');
   if (note) note.style.display = (settings.chroma === 'transparent') ? '' : 'none';
+}
+
+function syncCurrentStateToOutputs() {
+  const settings = getSettings();
+  if (!overlayVisible && !tickerActive) {
+    broadcast({ action: 'settings', settings });
+  }
+  if (tickerActive) {
+    broadcast({ action: 'show-ticker', data: buildTickerData() });
+  } else {
+    broadcast({ action: 'clear-ticker' });
+  }
+  if (overlayVisible) {
+    broadcast({ action: 'show', data: buildOverlayData(), settings });
+  } else {
+    broadcast({ action: 'clear' });
+  }
 }
 
 function onCustomChromaChange() {

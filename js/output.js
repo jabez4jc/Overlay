@@ -206,7 +206,7 @@ function showTicker(data) {
   tickerBar.style.color      = data.textColor || '#ffffff';
 
   // Badge label
-  tickerBadge.textContent = data.label || '⚠ ALERT';
+  tickerBadge.textContent = data.label || 'INFO';
   tickerBadge.style.color = data.textColor || '#ffffff';
 
   // Position (top / bottom)
