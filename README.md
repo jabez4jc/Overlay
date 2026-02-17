@@ -1,4 +1,4 @@
-# Reference Overlay
+# Overlay
 
 A browser-based lower-third overlay controller for live video production.
 Display **Bible references**, **speaker names**, or **news-ticker alerts** as a real-time
@@ -25,7 +25,30 @@ network.
 - **Keyboard shortcuts** — CUT, CLEAR, mode switch, output open
 - **Fully offline** — no CDN dependencies after `npm install`
 
-![Reference Overlay control panel — Bible Reference mode](assets/screenshots/control-panel.png)
+![Overlay control panel — Bible Reference mode](assets/screenshots/control-panel.png)
+
+## Feature Screenshot Tour
+
+### Bible reference + verse text lookup
+![Bible mode with translation, language, and verse-text lookup](assets/screenshots/feature-bible-lookup.png)
+
+### Speaker lower third mode
+![Speaker mode with live preview monitors](assets/screenshots/feature-speaker-mode.png)
+
+### Ticker mode
+![Ticker mode with speed, style, position, and custom colors](assets/screenshots/feature-ticker-mode.png)
+
+### Settings: browser source + style controls
+![Settings panel showing browser source setup, animation, style, and alignment](assets/screenshots/feature-settings-general.png)
+
+### Settings: per-line text effects
+![Line 1 and Line 2 text effects including size, color, shadow, and stroke](assets/screenshots/feature-settings-effects.png)
+
+### Settings: custom template editor
+![Custom template HTML/CSS editor and template preset controls](assets/screenshots/feature-settings-assets-template.png)
+
+### Presets and recall workflow
+![Saved presets with quick load/export/import actions](assets/screenshots/feature-presets.png)
 
 ---
 
@@ -349,9 +372,9 @@ Verse text is fetched live using a multi-source fallback system:
 If the selected source fails, the app attempts same-language alternatives before falling
 back to default NASB retrieval. Results are cached per session.
 
-![Output window — Bible reference overlay on chroma key background](assets/screenshots/output-reference.png)
+![Output window — Bible reference overlay (Gradient Fade, long passage)](assets/screenshots/output-reference.png)
 
-![Output window — alternate Bible reference overlay view](assets/screenshots/output-reference2.png)
+![Output window — Bible reference overlay (Scripture Panel style)](assets/screenshots/output-reference2.png)
 
 ### Speaker / Lower Third
 
@@ -359,6 +382,8 @@ back to default NASB retrieval. Results are cached per session.
 |---|---|
 | **Name** | Displayed large on the primary line |
 | **Title / Role** | Optional — displayed smaller on the secondary line |
+
+![Output window — Speaker lower-third example](assets/screenshots/feature-output-speaker.png)
 
 ### News Ticker
 
@@ -369,6 +394,8 @@ back to default NASB retrieval. Results are cached per session.
 | **Speed** | Slow (80 px/s) · Normal (140 px/s) · Fast (220 px/s) · Very Fast (320 px/s) |
 | **Style preset** | Alert (red) · Info (blue) · Warning (amber) · Dark · Custom |
 | **Position** | Bottom · Top |
+
+![Output window — Ticker example](assets/screenshots/feature-output-ticker.png)
 
 ---
 
@@ -394,6 +421,9 @@ back to default NASB retrieval. Results are cached per session.
 All settings are saved to `localStorage` and restored automatically on next open.
 
 ![Settings panel — chroma key, browser source setup, animation and style options](assets/screenshots/settings-panel.png)
+![Settings panel — browser source setup and style controls](assets/screenshots/feature-settings-general.png)
+![Settings panel — per-line text effects controls](assets/screenshots/feature-settings-effects.png)
+![Settings panel — custom template editor and template presets](assets/screenshots/feature-settings-assets-template.png)
 
 ---
 
@@ -425,6 +455,8 @@ Save and recall frequently used references or ticker messages.
 - **Template presets** — save/load/delete custom HTML+CSS template presets from Settings.
 
 Presets are stored in `localStorage` and shared across all sessions on the same browser.
+
+![Preset management — saved items with export/import](assets/screenshots/feature-presets.png)
 
 ---
 
