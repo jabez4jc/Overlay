@@ -35,6 +35,74 @@ let usingCustomTemplate = false;
 // Tracks the most recently applied settings so showOverlay can access them
 let currentSettings = {};
 
+const FONT_FALLBACK_STACK = "'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Malayalam', 'Noto Sans Kannada', sans-serif";
+const DEFAULT_TEXT_EFFECTS = {
+  line1: { fontWeight: 700, italic: false, fontScale: 1, useCustomColor: false, fontColor: '#ffffff', shadowColor: '#000000', shadowAngle: 120, shadowDepth: 6, shadowBlur: 8, shadowOpacity: 0.85, strokeColor: '#000000', strokeWidth: 0 },
+  line2: { fontWeight: 400, italic: false, fontScale: 1, useCustomColor: false, fontColor: '#ffffff', shadowColor: '#000000', shadowAngle: 120, shadowDepth: 4, shadowBlur: 6, shadowOpacity: 0.75, strokeColor: '#000000', strokeWidth: 0 },
+};
+
+function resolvedFontFamily(fontValue) {
+  const raw = (fontValue || '').trim() || "'Cinzel', serif";
+  return raw.includes('Noto Sans')
+    ? `${raw}, sans-serif`
+    : `${raw}, ${FONT_FALLBACK_STACK}`;
+}
+
+function hexToRgba(hex, alpha) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex || '').trim());
+  if (!m) return `rgba(0,0,0,${Math.max(0, Math.min(1, alpha))})`;
+  const r = parseInt(m[1], 16);
+  const g = parseInt(m[2], 16);
+  const b = parseInt(m[3], 16);
+  const a = Math.max(0, Math.min(1, alpha));
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function getLineTextEffect(s, key) {
+  return { ...DEFAULT_TEXT_EFFECTS[key], ...(s?.textEffects?.[key] || {}) };
+}
+
+function applyLineEffectToEl(el, effect) {
+  if (!el || !effect) return;
+  el.style.fontWeight = String(effect.fontWeight || '');
+  el.style.fontStyle = effect.italic ? 'italic' : '';
+  el.style.color = effect.useCustomColor ? (effect.fontColor || '#ffffff') : '';
+  const depth = Math.max(0, parseFloat(effect.shadowDepth) || 0);
+  const angle = ((parseFloat(effect.shadowAngle) || 0) % 360) * (Math.PI / 180);
+  const blur = Math.max(0, parseFloat(effect.shadowBlur) || 0);
+  const opacity = Math.max(0, Math.min(1, parseFloat(effect.shadowOpacity) || 0));
+  const x = Math.cos(angle) * depth;
+  const y = Math.sin(angle) * depth;
+  const shadowColor = hexToRgba(effect.shadowColor, opacity);
+  el.style.textShadow = (depth > 0 || blur > 0)
+    ? `${x.toFixed(1)}px ${y.toFixed(1)}px ${blur.toFixed(1)}px ${shadowColor}`
+    : 'none';
+  const strokeWidth = Math.max(0, parseFloat(effect.strokeWidth) || 0);
+  el.style.webkitTextStroke = strokeWidth > 0
+    ? `${strokeWidth.toFixed(1)}px ${effect.strokeColor || '#000000'}`
+    : '0px transparent';
+}
+
+function applyLineTextEffects(s) {
+  const l1 = getLineTextEffect(s, 'line1');
+  const l2 = getLineTextEffect(s, 'line2');
+  applyLineEffectToEl(ltLine1, l1);
+  applyLineEffectToEl(ltLine2, l2);
+
+  if (ltLine1) {
+    ltLine1.style.fontSize = '';
+    const base = parseFloat(getComputedStyle(ltLine1).fontSize) || 28;
+    const scale = Math.max(0.3, parseFloat(l1.fontScale) || 1);
+    ltLine1.style.fontSize = `${(base * scale).toFixed(1)}px`;
+  }
+  if (ltLine2) {
+    ltLine2.style.fontSize = '';
+    const base = parseFloat(getComputedStyle(ltLine2).fontSize) || 18;
+    const scale = Math.max(0.3, parseFloat(l2.fontScale) || 1);
+    ltLine2.style.fontSize = `${(base * scale).toFixed(1)}px`;
+  }
+}
+
 // ── window.postMessage listener ───────────────────────────────────────────────
 window.addEventListener('message', e => {
   if (e.data && typeof e.data === 'object' && e.data.action) {
@@ -225,11 +293,12 @@ function applySettings(s) {
 
   // ── Font ──────────────────────────────────────────────────────────────────
   if (s.font) {
-    ltLine1.style.fontFamily = s.font;
-    ltLine2.style.fontFamily = s.font;
-    if (ltText)      ltText.style.fontFamily      = s.font;
-    if (tickerText)  tickerText.style.fontFamily  = s.font;
-    if (tickerBadge) tickerBadge.style.fontFamily = s.font;
+    const font = resolvedFontFamily(s.font);
+    ltLine1.style.fontFamily = font;
+    ltLine2.style.fontFamily = font;
+    if (ltText)      ltText.style.fontFamily      = font;
+    if (tickerText)  tickerText.style.fontFamily  = font;
+    if (tickerBadge) tickerBadge.style.fontFamily = font;
   }
 
   // ── Text alignment ────────────────────────────────────────────────────────
@@ -238,6 +307,7 @@ function applySettings(s) {
     ltText.classList.add('align-' + (s.textAlign || 'left'));
     ltText.style.textAlign = s.textAlign || 'left';
   }
+  applyLineTextEffects(s);
 
   // ── Lower third background image ──────────────────────────────────────────
   if (s.ltBgImage) {
@@ -306,7 +376,7 @@ function substituteVars(str, s, data) {
     .replace(/\{\{line1\}\}/g,       (data && data.line1)  ? escapeHtml(data.line1)  : '')
     .replace(/\{\{line2\}\}/g,       (data && data.line2)  ? escapeHtml(data.line2)  : '')
     .replace(/\{\{accentColor\}\}/g, s.accentColor  || '#C8A951')
-    .replace(/\{\{font\}\}/g,        s.font          || "'Cinzel', serif")
+    .replace(/\{\{font\}\}/g,        resolvedFontFamily(s.font))
     .replace(/\{\{logoUrl\}\}/g,     s.logoDataUrl   || '')
     .replace(/\{\{bgUrl\}\}/g,       s.ltBgImage     || '');
 }

@@ -28,6 +28,40 @@ const cheerio = require('cheerio');
 const PORT = parseInt(process.env.PORT, 10) || 3333;
 const ROOT = __dirname;
 
+// YouVersion IDs from Glowstudent777/YouVersion-Core versions.json
+const YOUVERSION_VERSION_IDS = {
+  'AMP': 1588,
+  'AMPC': 8,
+  'ASV': 12,
+  'B21': 1,
+  'BIBEL.HEUTE': 877,
+  'BKR': 15,
+  'CPDV': 42,
+  'CSP': 449,
+  'DELUT': 51,
+  'HFA': 73,
+  'ICL00D': 1196,
+  'KJV': 1,
+  'LUTHEUTE': 999,
+  'MB20': 328,
+  'NIV': 111,
+  'NLT': 116,
+  'GNV': 2163,
+  'HINOVBSI': 1683,
+  'TAOVBSI': 339,
+  'IRVTEL': 1895,
+  'MALOVBSI': 1693,
+  'MALCLBSI': 1685,
+  'NPK': 413,
+  'NR06': 122,
+  'SEB': 1944,
+  'SEBDT': 1944,
+  'SLB': 102,
+  'SNC': 392,
+  'SSV': 331,
+  'VULG': 823,
+};
+
 // ── MIME types ────────────────────────────────────────────────────────────────
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -80,6 +114,51 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({
         code: 502,
         message: 'Verse lookup failed',
+        detail: err && err.message ? err.message : 'Unknown error',
+      }));
+      return;
+    }
+  }
+
+  // YouVersion verse proxy endpoint (used as an extra free fallback source)
+  if (req.method === 'GET' && reqUrl.pathname === '/api/youversion') {
+    const book      = (reqUrl.searchParams.get('book') || '').trim();
+    const bookAlias = (reqUrl.searchParams.get('book_alias') || '').trim().toUpperCase();
+    const chapter   = (reqUrl.searchParams.get('chapter') || '').trim();
+    const verses    = (reqUrl.searchParams.get('verses') || '').trim();
+    const version   = (reqUrl.searchParams.get('version') || 'NIV').trim().toUpperCase();
+
+    if (!book || !chapter || !verses) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ code: 400, message: 'Missing required params: book, chapter, verses' }));
+      return;
+    }
+
+    if (!/^[0-9]+$/.test(chapter) || !/^[0-9]+$/.test(verses)) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ code: 400, message: 'chapter and verses must be numeric' }));
+      return;
+    }
+
+    try {
+      const result = await getYouVersionVerse({
+        book,
+        bookAlias: bookAlias || null,
+        chapter: parseInt(chapter, 10),
+        verse: parseInt(verses, 10),
+        version,
+      });
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      });
+      res.end(JSON.stringify(result));
+      return;
+    } catch (err) {
+      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        code: 502,
+        message: 'YouVersion lookup failed',
         detail: err && err.message ? err.message : 'Unknown error',
       }));
       return;
@@ -141,6 +220,58 @@ async function getBibleGatewayVerse(book, passage, version = 'KJV') {
   };
   if (footnotes) payload.footnotes = footnotes;
   return payload;
+}
+
+function cleanYouVersionText(html) {
+  return String(html || '')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([.,;:!?])/g, '$1')
+    .replace(/\s+([)"”'’\]\}])/g, '$1')
+    .replace(/([.,;:!?'"”’\)\]\}])(?=[A-Za-z0-9(\[\{])/g, '$1 ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resolveYouVersion(version) {
+  const parsed = parseInt(String(version), 10);
+  if (!Number.isNaN(parsed)) return { id: parsed, key: String(version) };
+  const key = String(version || 'NIV').toUpperCase();
+  return { id: YOUVERSION_VERSION_IDS[key] || 111, key };
+}
+
+async function getYouVersionVerse({ book, bookAlias, chapter, verse, version }) {
+  const { id: versionId, key: versionKey } = resolveYouVersion(version);
+  const alias = (bookAlias || '').trim().toUpperCase();
+  if (!alias) throw new Error('Missing/invalid book alias');
+
+  const url = `https://www.bible.com/bible/${versionId}/${alias}.${chapter}.${verse}`;
+  const response = await axios.get(url, {
+    timeout: 15000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; Overlay/2.0; +https://github.com/jabez4jc/Overlay)',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+  });
+  const $ = cheerio.load(response.data);
+
+  // Primary parse path: __NEXT_DATA__ (same strategy as YouVersion-Core)
+  const nextScript = $('script#__NEXT_DATA__').first();
+  if (nextScript.length) {
+    const json = JSON.parse(nextScript.html() || '{}');
+    const verseData = json?.props?.pageProps?.verses?.[0];
+    if (verseData?.content) {
+      const text = cleanYouVersionText(cheerio.load(verseData.content).text());
+      if (text) {
+        const citation = verseData?.reference?.human || `${book} ${chapter}:${verse} ${versionKey}`;
+        return { citation, passage: text };
+      }
+    }
+  }
+
+  // Fallback parse path
+  const text = cleanYouVersionText($('.text-17').first().text());
+  if (!text) throw new Error(`Could not find passage ${book} ${chapter}:${verse} ${versionKey}`);
+  return { citation: `${book} ${chapter}:${verse} ${versionKey}`, passage: text };
 }
 
 // ── WebSocket Server ──────────────────────────────────────────────────────────

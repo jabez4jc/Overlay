@@ -61,11 +61,51 @@ try {
 // WebSocket client — only active when served via http:// (server.js mode)
 let ws      = null;
 const WS_PORT = parseInt(location.port) || 3333;
+const FONT_FALLBACK_STACK = "'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Malayalam', 'Noto Sans Kannada', sans-serif";
+const LANGUAGE_DEFAULT_FONT = {
+  en: "'Cinzel', serif",
+  hi: "'Noto Sans Devanagari', sans-serif",
+  ta: "'Noto Sans Tamil', sans-serif",
+  te: "'Noto Sans Telugu', sans-serif",
+  ml: "'Noto Sans Malayalam', sans-serif",
+  kn: "'Noto Sans Kannada', sans-serif",
+};
+const DEFAULT_TEXT_EFFECTS = {
+  line1: {
+    fontWeight: 700,
+    italic: false,
+    fontScale: 1,
+    useCustomColor: false,
+    fontColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowAngle: 120,
+    shadowDepth: 6,
+    shadowBlur: 8,
+    shadowOpacity: 0.85,
+    strokeColor: '#000000',
+    strokeWidth: 0,
+  },
+  line2: {
+    fontWeight: 400,
+    italic: false,
+    fontScale: 1,
+    useCustomColor: false,
+    fontColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowAngle: 120,
+    shadowDepth: 4,
+    shadowBlur: 6,
+    shadowOpacity: 0.75,
+    strokeColor: '#000000',
+    strokeWidth: 0,
+  },
+};
 
 // ── Initialise ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   populateBooks();
   populateTranslations();
+  populateReferenceLanguages();
   populateFonts();
   loadSettings();
   loadPresets();
@@ -100,6 +140,7 @@ function populateBooks() {
     const opt = document.createElement('option');
     opt.value        = b.name;
     opt.dataset.abbr = b.abbr;
+    opt.dataset.enName = b.name;
     opt.textContent  = b.name;
     (b.testament === 'OT' ? otGroup : ntGroup).appendChild(opt);
   });
@@ -107,6 +148,20 @@ function populateBooks() {
   bookEl.value = 'John';
   populateChapters('John', 3);
   document.getElementById('verse-ref').value = '16-18';
+  updateBookOptionLabels();
+}
+
+function populateReferenceLanguages() {
+  const sel = document.getElementById('reference-language');
+  if (!sel) return;
+  sel.innerHTML = '';
+  REFERENCE_LANGUAGES.forEach(lang => {
+    const opt = document.createElement('option');
+    opt.value = lang.value;
+    opt.textContent = lang.label;
+    sel.appendChild(opt);
+  });
+  sel.value = 'en';
 }
 
 function populateChapters(bookName, selectedChapter) {
@@ -127,6 +182,7 @@ function populateChapters(bookName, selectedChapter) {
 
 function populateTranslations() {
   const sel = document.getElementById('translation');
+  sel.innerHTML = '';
 
   // "None" — hides the translation name from output (line2 will be empty)
   const noneOpt = document.createElement('option');
@@ -134,16 +190,22 @@ function populateTranslations() {
   noneOpt.textContent = '— None (hide translation) —';
   sel.appendChild(noneOpt);
 
-  // Three optgroups based on lookup availability
-  const grpFree    = document.createElement('optgroup');
-  grpFree.label    = 'Lookup Available — Free';
-  const grpPremium = document.createElement('optgroup');
-  grpPremium.label = 'Lookup Available — Premium';
-  const grpRef     = document.createElement('optgroup');
-  grpRef.label     = 'Reference Only';
+  const langLabel = {
+    en: 'English',
+    hi: 'Hindi (हिन्दी)',
+    ta: 'Tamil (தமிழ்)',
+    te: 'Telugu (తెలుగు)',
+    ml: 'Malayalam (മലയാളം)',
+    kn: 'Kannada (ಕನ್ನಡ)',
+  };
 
   function hasFreeSource(t) {
-    return !!(((t.bg && canUseBibleGatewayProxy())) || BIBLE_API_MAP[t.abbr] || HELLOAO_MAP[t.abbr]);
+    return !!(
+      ((t.bg && canUseBibleGatewayProxy())) ||
+      BIBLE_API_MAP[t.abbr] ||
+      HELLOAO_MAP[t.abbr] ||
+      (canUseBibleGatewayProxy() && YOUVERSION_MAP[t.abbr])
+    );
   }
   function hasPremiumSource(t) {
     return !!APIBIBLE_IDS[t.abbr];
@@ -155,17 +217,33 @@ function populateTranslations() {
     return opt;
   }
 
+  function makeGroup(label, list) {
+    if (!list.length) return;
+    const grp = document.createElement('optgroup');
+    grp.label = label;
+    list.forEach(t => grp.appendChild(makeOption(t)));
+    sel.appendChild(grp);
+  }
+
+  const langOrder = ['en', 'hi', 'ta', 'te', 'ml', 'kn'];
+  const byLang = {};
   TRANSLATIONS.forEach(t => {
-    const free = hasFreeSource(t);
-    const premium = hasPremiumSource(t);
-    if (free) grpFree.appendChild(makeOption(t));
-    if (premium) grpPremium.appendChild(makeOption(t)); // appears in both when both are available
-    if (!free && !premium) grpRef.appendChild(makeOption(t));
+    const lang = t.lang || 'en';
+    if (!byLang[lang]) byLang[lang] = [];
+    byLang[lang].push(t);
   });
 
-  sel.appendChild(grpFree);
-  sel.appendChild(grpPremium);
-  sel.appendChild(grpRef);
+  langOrder.forEach(lang => {
+    const list = byLang[lang] || [];
+    if (!list.length) return;
+    const free = list.filter(t => hasFreeSource(t));
+    const premium = list.filter(t => hasPremiumSource(t));
+    const refOnly = list.filter(t => !hasFreeSource(t) && !hasPremiumSource(t));
+    makeGroup(`${langLabel[lang] || lang} — Lookup Available (Free)`, free);
+    makeGroup(`${langLabel[lang] || lang} — Lookup Available (Premium)`, premium);
+    makeGroup(`${langLabel[lang] || lang} — Reference Only`, refOnly);
+  });
+
   sel.value = 'NONE';
 }
 
@@ -185,6 +263,110 @@ function populateFonts() {
     sel.lastElementChild.appendChild(opt);
   });
   sel.value = "'Cinzel', serif";
+}
+
+function getReferenceLanguage() {
+  return document.getElementById('reference-language')?.value || 'en';
+}
+
+function getLocalizedBookName(bookName, langCode) {
+  if (!bookName || !langCode || langCode === 'en') return bookName;
+  return BOOK_NAME_I18N?.[langCode]?.[bookName] || bookName;
+}
+
+function formatReferenceBookName(bookName, langCode) {
+  if (!bookName) return '';
+  if (!langCode || langCode === 'en') return bookName;
+  const local = getLocalizedBookName(bookName, langCode);
+  return local && local !== bookName ? `${local} (${bookName})` : bookName;
+}
+
+function updateBookOptionLabels() {
+  const lang = getReferenceLanguage();
+  const sel = document.getElementById('book');
+  if (!sel) return;
+  Array.from(sel.options).forEach(opt => {
+    const enName = opt.dataset.enName || opt.value;
+    if (lang === 'en') {
+      opt.textContent = enName;
+      return;
+    }
+    const local = getLocalizedBookName(enName, lang);
+    opt.textContent = local && local !== enName ? `${local} (${enName})` : enName;
+  });
+}
+
+function resolvedFontFamily(fontValue) {
+  const raw = (fontValue || '').trim() || "'Cinzel', serif";
+  return raw.includes('Noto Sans')
+    ? `${raw}, sans-serif`
+    : `${raw}, ${FONT_FALLBACK_STACK}`;
+}
+
+function maybeApplyLanguageFont(lang, force = false) {
+  const sel = document.getElementById('font-select');
+  if (!sel) return;
+  const current = sel.value;
+  const next = LANGUAGE_DEFAULT_FONT[lang] || LANGUAGE_DEFAULT_FONT.en;
+  if (force || current === LANGUAGE_DEFAULT_FONT.en) {
+    sel.value = next;
+  }
+}
+
+function getLineTextEffect(settings, lineKey) {
+  return { ...DEFAULT_TEXT_EFFECTS[lineKey], ...(settings?.textEffects?.[lineKey] || {}) };
+}
+
+function hexToRgba(hex, alpha) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex || '').trim());
+  if (!m) return `rgba(0,0,0,${Math.max(0, Math.min(1, alpha))})`;
+  const r = parseInt(m[1], 16);
+  const g = parseInt(m[2], 16);
+  const b = parseInt(m[3], 16);
+  const a = Math.max(0, Math.min(1, alpha));
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function applyLineEffectToEl(el, effect) {
+  if (!el || !effect) return;
+  el.style.fontWeight = String(effect.fontWeight || '');
+  el.style.fontStyle = effect.italic ? 'italic' : '';
+  el.style.color = effect.useCustomColor ? (effect.fontColor || '#ffffff') : '';
+  const depth = Math.max(0, parseFloat(effect.shadowDepth) || 0);
+  const angle = ((parseFloat(effect.shadowAngle) || 0) % 360) * (Math.PI / 180);
+  const blur = Math.max(0, parseFloat(effect.shadowBlur) || 0);
+  const opacity = Math.max(0, Math.min(1, parseFloat(effect.shadowOpacity) || 0));
+  const x = Math.cos(angle) * depth;
+  const y = Math.sin(angle) * depth;
+  const shadowColor = hexToRgba(effect.shadowColor, opacity);
+  el.style.textShadow = (depth > 0 || blur > 0)
+    ? `${x.toFixed(1)}px ${y.toFixed(1)}px ${blur.toFixed(1)}px ${shadowColor}`
+    : 'none';
+
+  const strokeWidth = Math.max(0, parseFloat(effect.strokeWidth) || 0);
+  el.style.webkitTextStroke = strokeWidth > 0
+    ? `${strokeWidth.toFixed(1)}px ${effect.strokeColor || '#000000'}`
+    : '0px transparent';
+}
+
+function applyLineTextEffects(line1El, line2El, settings) {
+  const l1 = getLineTextEffect(settings, 'line1');
+  const l2 = getLineTextEffect(settings, 'line2');
+  applyLineEffectToEl(line1El, l1);
+  applyLineEffectToEl(line2El, l2);
+
+  if (line1El) {
+    line1El.style.fontSize = '';
+    const base = parseFloat(getComputedStyle(line1El).fontSize) || 20;
+    const scale = Math.max(0.3, parseFloat(l1.fontScale) || 1);
+    line1El.style.fontSize = `${(base * scale).toFixed(1)}px`;
+  }
+  if (line2El) {
+    line2El.style.fontSize = '';
+    const base = parseFloat(getComputedStyle(line2El).fontSize) || 16;
+    const scale = Math.max(0.3, parseFloat(l2.fontScale) || 1);
+    line2El.style.fontSize = `${(base * scale).toFixed(1)}px`;
+  }
 }
 
 // ── Mode Toggle ───────────────────────────────────────────────────────────────
@@ -219,8 +401,15 @@ function onBookChange() {
 }
 
 function onBibleChange() {
+  autoSyncReferenceLanguageFromTranslation();
   validateVerseInput();
   clearVerseText();
+  updatePreview();
+}
+function onReferenceLanguageChange() {
+  const lang = getReferenceLanguage();
+  updateBookOptionLabels();
+  if (lang !== 'en') maybeApplyLanguageFont(lang, false);
   updatePreview();
 }
 function onSpeakerChange() { updatePreview(); }
@@ -232,6 +421,21 @@ function onTickerStyleChange() {
   const custom = document.getElementById('ticker-custom-colors');
   if (custom) custom.classList.toggle('visible', style === 'custom');
   updatePreview();
+}
+
+function autoSyncReferenceLanguageFromTranslation() {
+  const transAbbr = document.getElementById('translation')?.value;
+  if (!transAbbr || transAbbr === 'NONE') return;
+  const translation = TRANSLATIONS.find(t => t.abbr === transAbbr);
+  const lang = translation?.lang;
+  if (!lang) return;
+  const langSel = document.getElementById('reference-language');
+  if (!langSel) return;
+  if (langSel.value === 'en') {
+    langSel.value = lang;
+    updateBookOptionLabels();
+    maybeApplyLanguageFont(lang, false);
+  }
 }
 
 // ── Verse Reference Validation ────────────────────────────────────────────────
@@ -348,13 +552,14 @@ function formatVerseRef(raw, maxVerse) {
 }
 
 // ── Bible API — Verse Text Lookup ─────────────────────────────────────────────
-// Four-tier lookup:
+// Five-tier lookup:
 //   Tier 0: local /api/verse proxy (BibleGateway scraper via server.js, free)
 //   Tier 1: bible-api.com (free, no key)       — KJV, ASV, WEB, YLT, DARBY, BBE
-//   Tier 2: rest.api.bible (API key)           — AMP, MSG, NASB, NASB95, LSV
-//   Tier 3: bible.helloao.org (free, no key)   — BSB
+//   Tier 2: bible.helloao.org (free, no key)   — BSB
+//   Tier 3: local /api/youversion proxy (free) — mapped translations in YOUVERSION_MAP
+//   Tier 4: rest.api.bible (API key)           — AMP, MSG, NASB, NASB95, LSV
 //   Fallback: ASV via Tier 1 (reference-only) — unsupported translations & NONE
-// See data.js for BIBLE_API_MAP, APIBIBLE_IDS, HELLOAO_MAP, and USFM_CODES.
+// See data.js for BIBLE_API_MAP, APIBIBLE_IDS, HELLOAO_MAP, YOUVERSION_MAP, and USFM_CODES.
 
 const APIBIBLE_BASE = 'https://rest.api.bible/v1';
 const APIBIBLE_KEY  = '8LWqzQ47HMAtKGhfXVY2K';
@@ -527,6 +732,57 @@ async function fetchHelloAoText(book, chapter, validTokens, transAbbr, prefixed)
   return text;
 }
 
+async function fetchYouVersionText(book, chapter, validTokens, transAbbr, prefixed) {
+  const yvVersion = YOUVERSION_MAP[transAbbr];
+  if (!yvVersion) throw new Error('youversion not configured for translation');
+  const bookAlias = USFM_CODES[book];
+  if (!bookAlias) throw new Error('Book not recognised for YouVersion lookup.');
+
+  const verseList = expandVerseTokens(validTokens);
+  const parts = [];
+  for (const verseNum of verseList) {
+    const url = `/api/youversion?book=${encodeURIComponent(book)}&book_alias=${encodeURIComponent(bookAlias)}&chapter=${encodeURIComponent(chapter)}&verses=${encodeURIComponent(verseNum)}&version=${encodeURIComponent(yvVersion)}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`YouVersion HTTP ${r.status}`);
+    const data = await r.json();
+    const text = (data?.passage || '').replace(/\s+/g, ' ').trim();
+    if (text) parts.push(prefixed(verseNum, text));
+  }
+  const text = parts.join(' ');
+  if (!text) throw new Error('No text in YouVersion response');
+  return text;
+}
+
+function hasExpectedScript(text, lang) {
+  if (!text || !lang || lang === 'en') return true;
+  const ranges = {
+    hi: /[\u0900-\u097F]/,
+    ta: /[\u0B80-\u0BFF]/,
+    te: /[\u0C00-\u0C7F]/,
+    ml: /[\u0D00-\u0D7F]/,
+    kn: /[\u0C80-\u0CFF]/,
+  };
+  const rx = ranges[lang];
+  return rx ? rx.test(text) : true;
+}
+
+function getLanguageFallbackAbbrs(requestedAbbr) {
+  if (!requestedAbbr || requestedAbbr === 'NONE') return [];
+  const tr = TRANSLATIONS.find(t => t.abbr === requestedAbbr);
+  const lang = tr?.lang;
+  if (!lang || lang === 'en') return [];
+  return TRANSLATIONS
+    .filter(t => t.lang === lang && t.abbr !== requestedAbbr)
+    .filter(t => (
+      ((t.bg && canUseBibleGatewayProxy()) || BIBLEGATEWAY_MAP[t.abbr]) ||
+      BIBLE_API_MAP[t.abbr] ||
+      HELLOAO_MAP[t.abbr] ||
+      (canUseBibleGatewayProxy() && YOUVERSION_MAP[t.abbr]) ||
+      APIBIBLE_IDS[t.abbr]
+    ))
+    .map(t => t.abbr);
+}
+
 async function lookupVerse() {
   const book      = document.getElementById('book').value;
   const chapter   = document.getElementById('chapter').value;
@@ -589,6 +845,7 @@ async function lookupVerse() {
     if (canBg) list.push('biblegateway');
     if (BIBLE_API_MAP[abbr]) list.push('bible-api');
     if (HELLOAO_MAP[abbr]) list.push('helloao');
+    if (canUseBibleGatewayProxy() && YOUVERSION_MAP[abbr]) list.push('youversion');
     if (APIBIBLE_IDS[abbr]) list.push('api.bible');
     list.forEach(id => {
       const key = `${id}|${abbr}`;
@@ -600,6 +857,10 @@ async function lookupVerse() {
 
   // Primary providers from selected translation
   addProvidersForTranslation(requestedAbbr, false);
+
+  // Language-level fallbacks: if selected translation fails, try same-language
+  // alternatives before defaulting to NASB.
+  getLanguageFallbackAbbrs(requestedAbbr).forEach(abbr => addProvidersForTranslation(abbr, true));
 
   // Default fallback when no translation is set or selected translation has no/failed text
   if (!requestedAbbr || requestedAbbr !== DEFAULT_FALLBACK_ABBR) {
@@ -616,9 +877,14 @@ async function lookupVerse() {
       if (p.id === 'biblegateway') text = await fetchBibleGatewayText(book, chapter, validTokens, p.abbr, prefixed);
       if (p.id === 'bible-api') text = await fetchBibleApiText(book, chapter, validTokens, p.abbr, prefixed, false);
       if (p.id === 'helloao') text = await fetchHelloAoText(book, chapter, validTokens, p.abbr, prefixed);
+      if (p.id === 'youversion') text = await fetchYouVersionText(book, chapter, validTokens, p.abbr, prefixed);
       if (p.id === 'api.bible') text = await fetchApiBibleText(book, chapter, validTokens, p.abbr, prefixed);
       if (p.id === 'reference-asv') text = await fetchBibleApiText(book, chapter, validTokens, p.abbr, prefixed, true);
       if (text) {
+        const lang = TRANSLATIONS.find(t => t.abbr === p.abbr)?.lang || 'en';
+        if (!hasExpectedScript(text, lang)) {
+          throw new Error(`${p.abbr} returned unexpected script for ${lang}`);
+        }
         finaliseLookup(cacheKey, text, p.refOnly);
         return;
       }
@@ -716,6 +982,7 @@ function buildOverlayData() {
     const chapter    = document.getElementById('chapter').value || '';
     const verseRaw   = document.getElementById('verse-ref').value.trim();
     const translAbbr = document.getElementById('translation').value;
+    const refLang    = getReferenceLanguage();
     const translation = TRANSLATIONS.find(t => t.abbr === translAbbr);
 
     // Compute maxVerse so the ref is sanitised before going to output
@@ -723,7 +990,7 @@ function buildOverlayData() {
     const chapIdx  = parseInt(chapter, 10) - 1;
     const maxVerse = bookObj && bookObj.verses ? bookObj.verses[chapIdx] : 999;
 
-    let ref = book;
+    let ref = formatReferenceBookName(book, refLang);
     if (chapter) {
       ref += ' ' + chapter;
       if (verseRaw) {
@@ -770,7 +1037,7 @@ function substitutePreviewVars(str, s, data) {
     .replace(/\{\{line1\}\}/g,       data?.line1 ? escapeHtml(data.line1) : '')
     .replace(/\{\{line2\}\}/g,       data?.line2 ? escapeHtml(data.line2) : '')
     .replace(/\{\{accentColor\}\}/g, s.accentColor || '#C8A951')
-    .replace(/\{\{font\}\}/g,        s.font        || "'Cinzel', serif")
+    .replace(/\{\{font\}\}/g,        resolvedFontFamily(s.font))
     .replace(/\{\{logoUrl\}\}/g,     s.logoDataUrl  || '')
     .replace(/\{\{bgUrl\}\}/g,       s.ltBgImage    || '');
 }
@@ -934,9 +1201,14 @@ function updatePreview() {
 
   const ltText = lt.querySelector('.lt-text');
   if (ltText) {
-    ltText.style.fontFamily = settings.font;
+    ltText.style.fontFamily = resolvedFontFamily(settings.font);
     ltText.style.textAlign  = settings.textAlign || 'left';
   }
+  applyLineTextEffects(
+    document.getElementById('preview-line1'),
+    document.getElementById('preview-line2'),
+    settings
+  );
 }
 
 // ── Presets ───────────────────────────────────────────────────────────────────
@@ -989,7 +1261,8 @@ function saveCurrentPreset() {
       ? { book:        document.getElementById('book').value,
           chapter:     document.getElementById('chapter').value,
           verse:       document.getElementById('verse-ref').value,
-          translation: document.getElementById('translation').value }
+          translation: document.getElementById('translation').value,
+          refLanguage: document.getElementById('reference-language')?.value || 'en' }
       : currentMode === 'speaker'
       ? { name:  document.getElementById('speaker-name').value,
           title: document.getElementById('speaker-title').value }
@@ -1024,6 +1297,10 @@ function loadPreset(id) {
       document.getElementById('chapter').value     = p.data.chapter;
       document.getElementById('verse-ref').value   = p.data.verse;
       document.getElementById('translation').value = p.data.translation;
+      const refLangEl = document.getElementById('reference-language');
+      if (refLangEl) refLangEl.value = p.data.refLanguage || 'en';
+      updateBookOptionLabels();
+      if (refLangEl && refLangEl.value !== 'en') maybeApplyLanguageFont(refLangEl.value, false);
       validateVerseInput();
     } else {
       document.getElementById('speaker-name').value  = p.data.name;
@@ -1144,7 +1421,8 @@ function renderPresets() {
     loadBtn.className   = 'preset-load';
     loadBtn.textContent = p.label;
     if (p.mode === 'bible') {
-      loadBtn.title = `${p.data.book} ${p.data.chapter}:${p.data.verse} (${p.data.translation})`;
+      const langTag = p.data.refLanguage ? `, ${p.data.refLanguage}` : '';
+      loadBtn.title = `${p.data.book} ${p.data.chapter}:${p.data.verse} (${p.data.translation}${langTag})`;
     } else if (p.mode === 'speaker') {
       loadBtn.title = `${p.data.name}${p.data.title ? ' — ' + p.data.title : ''}`;
     } else {
@@ -1293,9 +1571,10 @@ function updateProgramMonitor() {
       applyMonitorTextFit(pgmLt, pgmViewport, s?.style || 'gradient', programOverlayData.line2 || '');
       if (pgmAccent) pgmAccent.style.background  = s?.accentColor || '#C8A951';
       if (pgmLtText) {
-        pgmLtText.style.fontFamily = s?.font      || "'Cinzel', serif";
+        pgmLtText.style.fontFamily = resolvedFontFamily(s?.font);
         pgmLtText.style.textAlign  = s?.textAlign || 'left';
       }
+      applyLineTextEffects(pgmLine1, pgmLine2, s || {});
       if (pgmLogo) {
         if (s?.logoDataUrl) { pgmLogo.src = s.logoDataUrl; pgmLogo.classList.remove('hidden'); }
         else                               pgmLogo.classList.add('hidden');
@@ -1474,6 +1753,34 @@ function getSettings() {
   }
 
   const alignRadio = document.querySelector('input[name="textAlign"]:checked');
+  const line1Fx = {
+    fontWeight:   parseInt(document.getElementById('line1-font-weight')?.value || String(DEFAULT_TEXT_EFFECTS.line1.fontWeight), 10),
+    italic:       !!document.getElementById('line1-italic')?.checked,
+    fontScale:    parseFloat(document.getElementById('line1-font-scale')?.value || String(DEFAULT_TEXT_EFFECTS.line1.fontScale)),
+    useCustomColor: !!document.getElementById('line1-custom-color')?.checked,
+    fontColor:    document.getElementById('line1-font-color')?.value || DEFAULT_TEXT_EFFECTS.line1.fontColor,
+    shadowColor:  document.getElementById('line1-shadow-color')?.value || DEFAULT_TEXT_EFFECTS.line1.shadowColor,
+    shadowAngle:  parseFloat(document.getElementById('line1-shadow-angle')?.value || String(DEFAULT_TEXT_EFFECTS.line1.shadowAngle)),
+    shadowDepth:  parseFloat(document.getElementById('line1-shadow-depth')?.value || String(DEFAULT_TEXT_EFFECTS.line1.shadowDepth)),
+    shadowBlur:   parseFloat(document.getElementById('line1-shadow-blur')?.value || String(DEFAULT_TEXT_EFFECTS.line1.shadowBlur)),
+    shadowOpacity:parseFloat(document.getElementById('line1-shadow-opacity')?.value || String(DEFAULT_TEXT_EFFECTS.line1.shadowOpacity)),
+    strokeColor:  document.getElementById('line1-stroke-color')?.value || DEFAULT_TEXT_EFFECTS.line1.strokeColor,
+    strokeWidth:  parseFloat(document.getElementById('line1-stroke-width')?.value || String(DEFAULT_TEXT_EFFECTS.line1.strokeWidth)),
+  };
+  const line2Fx = {
+    fontWeight:   parseInt(document.getElementById('line2-font-weight')?.value || String(DEFAULT_TEXT_EFFECTS.line2.fontWeight), 10),
+    italic:       !!document.getElementById('line2-italic')?.checked,
+    fontScale:    parseFloat(document.getElementById('line2-font-scale')?.value || String(DEFAULT_TEXT_EFFECTS.line2.fontScale)),
+    useCustomColor: !!document.getElementById('line2-custom-color')?.checked,
+    fontColor:    document.getElementById('line2-font-color')?.value || DEFAULT_TEXT_EFFECTS.line2.fontColor,
+    shadowColor:  document.getElementById('line2-shadow-color')?.value || DEFAULT_TEXT_EFFECTS.line2.shadowColor,
+    shadowAngle:  parseFloat(document.getElementById('line2-shadow-angle')?.value || String(DEFAULT_TEXT_EFFECTS.line2.shadowAngle)),
+    shadowDepth:  parseFloat(document.getElementById('line2-shadow-depth')?.value || String(DEFAULT_TEXT_EFFECTS.line2.shadowDepth)),
+    shadowBlur:   parseFloat(document.getElementById('line2-shadow-blur')?.value || String(DEFAULT_TEXT_EFFECTS.line2.shadowBlur)),
+    shadowOpacity:parseFloat(document.getElementById('line2-shadow-opacity')?.value || String(DEFAULT_TEXT_EFFECTS.line2.shadowOpacity)),
+    strokeColor:  document.getElementById('line2-stroke-color')?.value || DEFAULT_TEXT_EFFECTS.line2.strokeColor,
+    strokeWidth:  parseFloat(document.getElementById('line2-stroke-width')?.value || String(DEFAULT_TEXT_EFFECTS.line2.strokeWidth)),
+  };
 
   return {
     chroma:        chromaValue,
@@ -1491,6 +1798,7 @@ function getSettings() {
     logoDataUrl:   logoDataUrl,
     logoPosition:  document.getElementById('logo-position')?.value    || 'left',
     logoSize:      parseInt(document.getElementById('logo-size')?.value || '110'),
+    textEffects:   { line1: line1Fx, line2: line2Fx },
     customTemplate: {
       enabled: document.getElementById('use-custom-template')?.checked || false,
       html:    document.getElementById('template-html')?.value         || '',
@@ -1562,6 +1870,7 @@ function loadSettings() {
       const el = document.getElementById('lt-min-height');
       if (el) { el.value = saved.ltMinHeight; document.getElementById('lt-min-height-val').textContent = saved.ltMinHeight > 0 ? saved.ltMinHeight + 'px' : 'auto'; }
     }
+    setTextEffectsUI(saved.textEffects || DEFAULT_TEXT_EFFECTS);
 
     if (saved.textAlign) {
       const r = document.querySelector(`input[name="textAlign"][value="${saved.textAlign}"]`);
@@ -1598,6 +1907,7 @@ function loadSettings() {
     if (savedLogo) { logoDataUrl = savedLogo; restoreLogoUI(savedLogo); }
 
   } catch (_) {}
+  updateTextEffectLabels();
 }
 
 // ── Slider label helpers ──────────────────────────────────────────────────────
@@ -1611,6 +1921,76 @@ function onLtMinHeightInput() {
   const v = parseInt(document.getElementById('lt-min-height')?.value || '0');
   const label = document.getElementById('lt-min-height-val');
   if (label) label.textContent = v > 0 ? v + 'px' : 'auto';
+}
+
+function setTextEffectsUI(textEffects) {
+  const l1 = { ...DEFAULT_TEXT_EFFECTS.line1, ...(textEffects?.line1 || {}) };
+  const l2 = { ...DEFAULT_TEXT_EFFECTS.line2, ...(textEffects?.line2 || {}) };
+
+  const map = [
+    ['line1-font-weight', l1.fontWeight],
+    ['line1-italic', !!l1.italic],
+    ['line1-font-scale', l1.fontScale],
+    ['line1-custom-color', !!l1.useCustomColor],
+    ['line1-font-color', l1.fontColor],
+    ['line1-shadow-color', l1.shadowColor],
+    ['line1-shadow-angle', l1.shadowAngle],
+    ['line1-shadow-depth', l1.shadowDepth],
+    ['line1-shadow-blur', l1.shadowBlur],
+    ['line1-shadow-opacity', l1.shadowOpacity],
+    ['line1-stroke-color', l1.strokeColor],
+    ['line1-stroke-width', l1.strokeWidth],
+    ['line2-font-weight', l2.fontWeight],
+    ['line2-italic', !!l2.italic],
+    ['line2-font-scale', l2.fontScale],
+    ['line2-custom-color', !!l2.useCustomColor],
+    ['line2-font-color', l2.fontColor],
+    ['line2-shadow-color', l2.shadowColor],
+    ['line2-shadow-angle', l2.shadowAngle],
+    ['line2-shadow-depth', l2.shadowDepth],
+    ['line2-shadow-blur', l2.shadowBlur],
+    ['line2-shadow-opacity', l2.shadowOpacity],
+    ['line2-stroke-color', l2.strokeColor],
+    ['line2-stroke-width', l2.strokeWidth],
+  ];
+  map.forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (!el || value === undefined || value === null) return;
+    if (el.type === 'checkbox') {
+      el.checked = !!value;
+    } else {
+      el.value = String(value);
+    }
+  });
+}
+
+function updateTextEffectLabels() {
+  const defs = [
+    ['line1-font-scale', 'line1-font-scale-val', '×'],
+    ['line1-shadow-angle', 'line1-shadow-angle-val', '°'],
+    ['line1-shadow-depth', 'line1-shadow-depth-val', 'px'],
+    ['line1-shadow-blur', 'line1-shadow-blur-val', 'px'],
+    ['line1-shadow-opacity', 'line1-shadow-opacity-val', ''],
+    ['line1-stroke-width', 'line1-stroke-width-val', 'px'],
+    ['line2-font-scale', 'line2-font-scale-val', '×'],
+    ['line2-shadow-angle', 'line2-shadow-angle-val', '°'],
+    ['line2-shadow-depth', 'line2-shadow-depth-val', 'px'],
+    ['line2-shadow-blur', 'line2-shadow-blur-val', 'px'],
+    ['line2-shadow-opacity', 'line2-shadow-opacity-val', ''],
+    ['line2-stroke-width', 'line2-stroke-width-val', 'px'],
+  ];
+  defs.forEach(([inputId, labelId, suffix]) => {
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(labelId);
+    if (input && label) label.textContent = `${input.value}${suffix}`;
+  });
+}
+
+function onTextFxRangeInput(inputId, labelId, suffix = '') {
+  const input = document.getElementById(inputId);
+  const label = document.getElementById(labelId);
+  if (input && label) label.textContent = `${input.value}${suffix}`;
+  onSettingsChange();
 }
 
 // ── Custom Template Examples ──────────────────────────────────────────────────
