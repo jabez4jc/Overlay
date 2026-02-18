@@ -68,7 +68,7 @@ For OBS, vMix, or Wirecast **Browser Source** integration the WebSocket server i
 **required** — it is the only channel that crosses application boundaries.
 
 ```
-┌─────────────────┐        WebSocket        ┌──────────────────┐
+┌─────────────────┐        WebSocket         ┌──────────────────┐
 │  Control Panel  │ ──── node server.js ──▶  │  Output Window   │
 │  (your browser) │                          │  (OBS / browser) │
 └─────────────────┘                          └──────────────────┘
