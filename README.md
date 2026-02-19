@@ -1,530 +1,235 @@
 # Overlay
 
-A browser-based lower-third overlay controller for live video production.
-Display **Bible references**, **speaker names**, or **news-ticker alerts** as a real-time
-overlay in OBS, vMix, Wirecast, or an ATEM switcher — controlled from any device on your
-network.
+Overlay is a browser-based lower-third control app for live production.
+Use it to drive an output overlay for:
+- Bible references
+- Speaker lower thirds
+- Ticker messages
 
----
+It is designed for OBS, vMix, Wirecast, and browser-based output workflows.
 
-## Features
+## What You Can Do
 
-- **Three overlay modes** — Bible Reference, Speaker / Lower Third, News Ticker
-- **10 lower-third styles** — Classic, Accent Line, Minimal, Outline, Gradient Fade, Scripture Wrap, Scripture Panel, Solid, Split Lines, Frosted Glass
-- **Custom HTML/CSS templates** — full code editor with live preview and built-in examples
-- **Logo & background image** — upload per-session with position and fit controls
-- **50+ Bible translations** — with live verse-text lookup (free and premium tiers)
-- **Multilingual references** — reference language selector with bilingual book names (English + selected language)
-- **Per-line text controls** — independent line 1 / line 2 color, size, weight, italic, shadow, and stroke controls
-- **Real-time sync** — WebSocket server relays messages across applications and devices
-- **OBS/vMix Browser Source** — transparent mode or chroma key, state replayed on connect
-- **Presets** — save, load, export, and import reference, ticker, and template presets
-- **Multi-device control** — run the control panel on a phone or tablet, output in OBS
-- **Session isolation** — multiple operators work independently on the same server
-- **Session watermark** — toggle session ID display on the output window for easy pairing
-- **Keyboard shortcuts** — CUT, CLEAR, mode switch, output open
-- **Fully offline** — no CDN dependencies after `npm install`
+- Switch between `Bible Reference`, `Speaker`, and `Ticker` modes.
+- Preview (`PVW`) and Program (`PGM`) before and after `CUT TO AIR`.
+- Fetch verse text from free sources with fallback support.
+- Use multilingual Bible references (including Indian languages in the translation list).
+- Hide translation line, append abbreviation on line 1, or use verse text as line 2.
+- Use separate text styling per line:
+  - font family
+  - supported font weights
+  - italic
+  - size scale
+  - color
+  - shadow controls
+  - stroke controls
+- Use built-in lower-third styles plus custom HTML/CSS templates.
+- Save and reuse:
+  - Reference presets
+  - Speaker presets
+  - Ticker presets
+  - Template presets
+  - Global Settings Profiles (save/load/export/import full session state)
+- Use multiple sessions via URL session ID.
 
-![Overlay control panel — Bible Reference mode](assets/screenshots/control-panel.png)
+## Current Default Behavior
 
-## Feature Screenshot Tour
+- Default Bible reference: `John 3:16-18`
+- Default translation selector: `None (hide translation)`
+- Translation line (Line 2) is hidden by default
+- `Use verse text as line 2` is unchecked by default
+- Default ticker text:
+  - `The Live Stream has been restored. Thank you for your patience, and our sincere apologies for the interruption.`
+- Default ticker style: `Dark`
+- Settings panel starts collapsed on load
+- In Speaker mode, `CUT TO AIR` is blocked/disabled until Speaker Name is entered
 
-### Bible reference + verse text lookup
-![Bible mode with translation, language, and verse-text lookup](assets/screenshots/feature-bible-lookup.png)
+## Quick Start
 
-### Speaker lower third mode
-![Speaker mode with live preview monitors](assets/screenshots/feature-speaker-mode.png)
-
-### Ticker mode
-![Ticker mode with speed, style, position, and custom colors](assets/screenshots/feature-ticker-mode.png)
-
-### Settings: browser source + style controls
-![Settings panel showing browser source setup, animation, style, and alignment](assets/screenshots/feature-settings-general.png)
-
-### Settings: per-line text effects
-![Line 1 and Line 2 text effects including size, color, shadow, and stroke](assets/screenshots/feature-settings-effects.png)
-
-### Settings: custom template editor
-![Custom template HTML/CSS editor and template preset controls](assets/screenshots/feature-settings-assets-template.png)
-
-### Presets and recall workflow
-![Saved presets with quick load/export/import actions](assets/screenshots/feature-presets.png)
-
----
-
-## How It Works
-
-Two browser windows (or browser tabs) communicate through one of four channels,
-depending on how the app is deployed:
-
-| Channel | When used |
-|---|---|
-| **WebSocket** (via `server.js`) | Control panel + OBS Browser Source on different apps or devices |
-| **BroadcastChannel** | Two tabs in the same browser (same origin) |
-| **postMessage** | Control panel → Output window opened with the built-in "↗ Output" button |
-| **localStorage** | Fallback / state persistence across reloads |
-
-For OBS, vMix, or Wirecast **Browser Source** integration the WebSocket server is
-**required** — it is the only channel that crosses application boundaries.
-
-```
-┌─────────────────┐        WebSocket         ┌──────────────────┐
-│  Control Panel  │ ──── node server.js ──▶  │  Output Window   │
-│  (your browser) │                          │  (OBS / browser) │
-└─────────────────┘                          └──────────────────┘
-```
-
-The output window displays a solid-colour **chroma key background** (or transparent)
-so your switcher can key out the background, leaving only the overlay graphic floating
-over your live video.
-
----
-
-## Installation
-
-### Option A — Local files, no server (simplest)
-
-> Best for: single-machine use, operator controls and output on the same computer.
-
-1. Download or clone this repository.
-2. Open `index.html` in **Chrome** or **Edge** directly from the file system.
-3. Click the **↗ Output** button — a second window opens ready for capture.
-4. Add that window as a **Window Capture** source in OBS/Wirecast and apply a Chroma Key filter.
-
-> **Limitation:** The output window opened this way communicates via `postMessage` /
-> `BroadcastChannel`. OBS's built-in Browser Source **cannot** receive those messages.
-> Use Option B if you need Browser Source integration.
-
----
-
-### Option B — Local Node.js server (recommended for OBS Browser Source)
-
-> Best for: OBS Browser Source, phone/tablet remote control, most production setups.
-
-**Prerequisites:** [Node.js](https://nodejs.org) v16 or later.
+### 1) Install
 
 ```bash
-# 1. Install the single dependency (run once)
-npm install
-
-# 2. Start the server
-node server.js
-# or: npm start
-```
-
-The terminal prints:
-
-```
-  Local (this machine):   http://localhost:3333
-  Network (tablet/phone): http://192.168.x.x:3333
-```
-
-3. Open the control panel at `http://localhost:3333/` in your browser.
-   Note the **session ID** badge (e.g. `#a3f9c2`) in the top-right corner.
-4. Copy the **Browser Source URL** from **Settings → Browser Source Setup** inside the
-   control panel — it looks like `http://localhost:3333/output.html?session=a3f9c2`.
-5. In OBS: **Sources → + → Browser** → paste the URL → set Width/Height to your canvas
-   resolution → click **OK**.
-6. Verify the server terminal shows both clients connected in the same room:
-   ```
-   [WS+] control  session=a3f9c2  (room: 1 clients)
-   [WS+] output   session=a3f9c2  (room: 2 clients)
-   ```
-7. Type a reference in the control panel and click **CUT TO AIR**.
-
-The server must be running the entire time you are using the overlay.
-Stop it with `Ctrl+C` when you are done.
-
----
-
-### Option C — Linux server with a custom domain
-
-> Best for: permanent install accessible over the internet or your organisation's LAN.
-
-This setup uses **Nginx** as a reverse proxy in front of the Node.js server, with
-**Let's Encrypt** for HTTPS. Nginx handles the WebSocket upgrade transparently.
-
-#### 1 — Install Node.js and the app
-
-```bash
-# Install Node.js (Debian / Ubuntu)
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Clone the repository
-git clone https://github.com/jabez4jc/Overlay.git /var/www/reference-overlay
-cd /var/www/reference-overlay
 npm install
 ```
 
-#### 2 — Create a systemd service
-
-This keeps the server running after reboots and restarts it on failure.
-
-Create `/etc/systemd/system/reference-overlay.service`:
-
-```ini
-[Unit]
-Description=Reference Overlay WebSocket server
-After=network.target
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/var/www/reference-overlay
-ExecStart=/usr/bin/node server.js
-Restart=on-failure
-RestartSec=5
-Environment=PORT=3333
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start it:
+### 2) Run
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable reference-overlay
-sudo systemctl start reference-overlay
-sudo systemctl status reference-overlay    # confirm it is running
+npm start
 ```
 
-#### 3 — Configure Nginx
+Server starts at:
+- `http://localhost:3333`
 
-Install Nginx and Certbot if not already present:
+Open:
+- Control UI: `http://localhost:3333/`
+- Output window: `http://localhost:3333/output.html?session=<session-id>`
+
+## Ubuntu Server Install (Automated)
+
+This project now includes a **two-stage server installer**:
+
+- `scripts/bootstrap_ubuntu_server.sh`
+  - updates server packages
+  - installs git/curl
+  - clones/updates the repo in `/opt/overlay`
+  - launches main installer
+- `scripts/install_ubuntu_server.sh`
+  - prompts only for:
+    - domain
+    - Let's Encrypt email
+  - auto-detects repo/branch from git
+  - uses fixed deployment defaults:
+    - app dir: `/opt/overlay`
+    - app user: `overlay`
+    - app port: `3333`
+    - systemd service: `overlay`
+  - configures Node, npm deps, systemd, Nginx, HTTPS
+
+### Prerequisites
+
+1. Ubuntu server with sudo/root access.
+2. DNS `A` record already pointing your domain to the server public IP.
+3. Ports `80` and `443` open in cloud/network firewall.
+
+### Recommended one-command install
 
 ```bash
-sudo apt-get install -y nginx certbot python3-certbot-nginx
+curl -fsSL https://raw.githubusercontent.com/jabez4jc/Overlay/main/scripts/bootstrap_ubuntu_server.sh | sudo bash
 ```
 
-Create `/etc/nginx/sites-available/reference-overlay`:
+What this command does:
+1. Runs `apt-get update && apt-get upgrade`
+2. Installs git/curl
+3. Clones/updates the app at `/opt/overlay`
+4. Runs the interactive installer (`install_ubuntu_server.sh`)
 
-```nginx
-server {
-    listen 80;
-    server_name overlay.yourdomain.com;
-
-    # Redirect HTTP to HTTPS
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name overlay.yourdomain.com;
-
-    ssl_certificate     /etc/letsencrypt/live/overlay.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/overlay.yourdomain.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    # Proxy all HTTP requests to Node.js
-    location / {
-        proxy_pass         http://127.0.0.1:3333;
-        proxy_http_version 1.1;
-        proxy_set_header   Host              $host;
-        proxy_set_header   X-Real-IP         $remote_addr;
-        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-
-        # WebSocket upgrade (required)
-        proxy_set_header   Upgrade    $http_upgrade;
-        proxy_set_header   Connection "upgrade";
-        proxy_read_timeout 86400s;
-    }
-}
-```
-
-Enable the site:
+### Manual install path (if you prefer)
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/reference-overlay \
-           /etc/nginx/sites-enabled/reference-overlay
-sudo nginx -t                                              # confirm no syntax errors
-sudo systemctl reload nginx
+sudo apt-get update -y && sudo apt-get upgrade -y
+sudo apt-get install -y git curl ca-certificates
+sudo git clone https://github.com/jabez4jc/Overlay.git /opt/overlay
+cd /opt/overlay
+sudo bash scripts/install_ubuntu_server.sh
 ```
 
-#### 4 — Obtain an SSL certificate
+### Result
+
+After successful install:
+- Control UI: `https://<your-domain>/`
+- Output URL format: `https://<your-domain>/output.html?session=<session-id>`
+
+Useful operations:
 
 ```bash
-sudo certbot --nginx -d overlay.yourdomain.com
+sudo systemctl status overlay
+sudo systemctl restart overlay
+sudo journalctl -u overlay -f
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Follow the prompts. Certbot auto-renews the certificate via a cron job.
+## Deploy on Coolify
 
-#### 5 — Open your firewall
+Overlay can be deployed directly as a Node application on Coolify.
 
-```bash
-sudo ufw allow 'Nginx Full'
-sudo ufw reload
-```
+### 1) Create application
 
-The control panel is now at `https://overlay.yourdomain.com/` and the Browser Source
-URL is `https://overlay.yourdomain.com/output.html?session=XXXX`.
+1. In Coolify, create a new **Application**.
+2. Connect/select repo: `https://github.com/jabez4jc/Overlay`
+3. Select branch: `main`
+4. Build pack: `Nixpacks` (Node)
 
-> **Note:** The Node.js server uses plain `ws://` internally, but Nginx upgrades the
-> connection to `wss://` for outside clients automatically via the proxy configuration
-> above. No changes to `server.js` are needed.
+### 2) Build and runtime settings
 
----
+Use:
+- Install command: `npm ci` (or `npm install`)
+- Build command: *(leave empty)*
+- Start command: `npm start`
+- Port: `3333`
 
-### Option D — Static cloud hosting (Netlify / Vercel / GitHub Pages)
+Notes:
+- `server.js` reads `PORT` from environment (`process.env.PORT`) with fallback `3333`.
+- Coolify reverse proxy supports WebSockets, which this app needs for control/output sync.
 
-> Best for: single-machine demos where both tabs are in the same browser.
-> **Not suitable** for OBS Browser Source or cross-device control — those require
-> a persistent WebSocket server, which static hosts do not provide.
+### 3) Domain and HTTPS
 
-Upload the static files only (no `server.js` or `node_modules`):
+1. Attach your domain in Coolify.
+2. Enable HTTPS/SSL (Let's Encrypt in Coolify).
+3. Deploy/redeploy the application.
 
-**Netlify** — drag the project folder to [app.netlify.com/drop](https://app.netlify.com/drop)
+After deploy:
+- Control UI: `https://<your-domain>/`
+- Output URL format: `https://<your-domain>/output.html?session=<session-id>`
 
-**Vercel:**
-```bash
-npm install -g vercel
-vercel deploy
-```
+### 4) OBS/vMix Browser Source
 
-**GitHub Pages:**
-```bash
-git checkout -b gh-pages
-git push origin gh-pages
-```
+Use the output URL above as Browser Source URL in OBS/vMix/Wirecast.
 
-Once deployed, open the URL in two browser tabs — one for the control panel, one for
-the output (`/output.html?session=XXXX`). `BroadcastChannel` keeps them in sync within
-the same browser. If you need OBS Browser Source, deploy Option B or C instead.
+## OBS / vMix / Wirecast Setup
 
----
+1. Open the control UI.
+2. Copy the output URL from `Settings -> Browser Source Setup`.
+3. Add that URL as a Browser Source in OBS/vMix.
+4. Set source resolution to match your output resolution.
+5. Use either:
+   - transparent mode, or
+   - chroma background with keying in your video software.
 
-## Connecting to Broadcast Equipment
+## Basic Operation
 
-### OBS Studio
+1. Choose a mode (`Bible`, `Speaker`, `Ticker`).
+2. Enter data.
+3. Confirm in `PVW`.
+4. Click `CUT TO AIR`.
+5. Use `CLEAR` to remove live overlay/ticker.
 
-1. Run the Node.js server (Option B or C).
-2. In OBS: **Sources → + → Browser**
-3. Paste the URL from **Settings → Browser Source Setup** in the control panel.
-4. Set **Width / Height** to match your OBS canvas (e.g. 1920 × 1080).
-5. Choose one of the two keying methods:
+## Compact UI Notes
 
-   **Transparent mode (no filter needed — recommended):**
-   - In the control panel Settings, select **Chroma Key Background → Transparent**.
-   - In OBS Browser Source properties, tick **Allow transparency**.
-   - No filter required. The overlay composites cleanly with correct alpha.
-
-   **Chroma Key filter (works on all OBS versions):**
-   - In the control panel Settings, select Blue, Green, or Magenta.
-   - Right-click the Browser Source → **Filters → + → Chroma Key**.
-   - Set **Key Color Type** to match your chosen background colour.
-
-6. Click **OK**. The server terminal should show `room: 2 clients` for your session.
-7. Type a reference and click **CUT TO AIR**.
-
-![Output window composited over live video in OBS via Browser Source](assets/screenshots/output-obs.png)
-
-### Wirecast
-
-1. Add a **Window Capture** shot layer pointing to an open Output Window
-   (opened with the **↗ Output** button in the control panel).
-2. In the shot layer properties, add a **Chroma Key** filter.
-3. Set the colour to match the selected background (Blue / Green / Magenta).
-
-### vMix
-
-1. **Add Input → Browser** → paste the URL from **Settings → Browser Source Setup**.
-2. Set resolution to match your vMix output.
-3. Add a **Chroma Key** colour correction effect, or enable **Transparent** mode and
-   use vMix's alpha compositing.
-
-### ATEM Switchers
-
-1. On the operator machine, open the Output Window via the **↗ Output** button.
-2. Resize the window to exactly your programme resolution (e.g. 1920 × 1080).
-3. In **ATEM Software Control → Upstream Key**:
-   - Source: screen/window capture of the Output Window.
-   - Key Type: **Luma** or **Chroma**.
-   - Chroma colour: match the selected background.
-4. Enable the key on the desired M/E bus.
-
----
-
-## Modes
-
-### Bible Reference
-
-| Field | Notes |
-|---|---|
-| **Book** | All 66 books, grouped by Old / New Testament |
-| **Chapter** | Chapter number (1 to maximum for the book) |
-| **Verse** | Supports single (`3`), ranges (`3–5`), and mixed (`3, 5–7, 10`) |
-| **Translation** | 50+ options, grouped by language and lookup availability |
-| **Reference Language** | English, Hindi, Tamil, Telugu, Malayalam, Kannada (book names shown as Local + English) |
-
-Verse text is fetched live using a multi-source fallback system:
-
-| Tier | Source | Translations |
-|---|---|---|
-| 1 | Local BibleGateway proxy (`/api/verse`) | Broad BibleGateway-supported list (including multiple Indic translations) |
-| 2 | [bible-api.com](https://bible-api.com) (free, no key) | KJV, ASV, WEB, YLT, DARBY, BBE |
-| 3 | [bible.helloao.org](https://bible.helloao.org) (free, no key) | BSB |
-| 4 | Local YouVersion proxy (`/api/youversion`) | Additional free translations including Indic |
-| 5 | [api.bible](https://scripture.api.bible) (API key) | AMP, MSG, NASB, NASB95, LSV |
-
-If the selected source fails, the app attempts same-language alternatives before falling
-back to default NASB retrieval. Results are cached per session.
-
-![Output window — Bible reference overlay (Gradient Fade, long passage)](assets/screenshots/output-reference.png)
-
-![Output window — Bible reference overlay (Scripture Panel style)](assets/screenshots/output-reference2.png)
-
-### Speaker / Lower Third
-
-| Field | Notes |
-|---|---|
-| **Name** | Displayed large on the primary line |
-| **Title / Role** | Optional — displayed smaller on the secondary line |
-
-![Output window — Speaker lower-third example](assets/screenshots/feature-output-speaker.png)
-
-### News Ticker
-
-| Field | Notes |
-|---|---|
-| **Message** | Scrolling text |
-| **Badge label** | Left-side label (default: `⚠ ALERT`) |
-| **Speed** | Slow (80 px/s) · Normal (140 px/s) · Fast (220 px/s) · Very Fast (320 px/s) |
-| **Style preset** | Alert (red) · Info (blue) · Warning (amber) · Dark · Custom |
-| **Position** | Bottom · Top |
-
-![Output window — Ticker example](assets/screenshots/feature-output-ticker.png)
-
----
-
-## Settings Reference
-
-| Setting | Options |
-|---|---|
-| **Chroma Key Background** | Blue `#0000FF` · Green `#00B140` · Magenta `#FF00FF` · Custom · Transparent |
-| **Animation** | Fade · Slide Up · None (instant) |
-| **Lower Third Style** | Classic · Accent Line · Minimal · Outline · Gradient Fade · Scripture Wrap · Scripture Panel · Solid · Split Lines · Frosted Glass |
-| **Accent Color** | Colour picker — default gold `#C8A951` |
-| **Position** | Lower Third · Upper Third · Centered |
-| **Text Alignment** | Left · Center · Right |
-| **Font** | Extended options across Display, Elegant Serif, Modern Sans, Indic Script, and System categories |
-| **Text Effects (Line 1 / Line 2)** | Font weight · Italic · Size scale · Optional custom color · Shadow direction/depth/blur/opacity · Stroke width/color |
-| **Output Resolution** | 1920 × 1080 (Full HD) · 1280 × 720 (HD) · 3840 × 2160 (4K UHD) |
-| **Lower Third BG Image** | Upload image · Fit (Cover / Contain / Stretch) · Focus (Top / Center / Bottom) · Min height |
-| **Logo** | Upload PNG/SVG · Position (Left / Right) · Size (40–240 px) |
-| **Session Watermark** | Shows session ID in the top-right corner of the output window |
-| **Custom Template** | Enable HTML + CSS editor with 5 built-in examples |
-| **Browser Source Setup** | Displays the output URL for your current session with a copy button |
-
-All settings are saved to `localStorage` and restored automatically on next open.
-
-![Settings panel — chroma key, browser source setup, animation and style options](assets/screenshots/settings-panel.png)
-![Settings panel — browser source setup and style controls](assets/screenshots/feature-settings-general.png)
-![Settings panel — per-line text effects controls](assets/screenshots/feature-settings-effects.png)
-![Settings panel — custom template editor and template presets](assets/screenshots/feature-settings-assets-template.png)
-
----
+- Bible controls are compacted into 3 logical rows on desktop.
+- Speaker Name and Title are on one row on desktop.
+- Ticker message is row 1, and badge/speed/style/position are row 2 on desktop.
+- Mobile layout stacks controls responsively for small screens.
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|---|---|
-| `Enter` | CUT TO AIR (show overlay) |
-| `Esc` | CLEAR (hide overlay) |
-| `B` | Switch to Bible Reference mode |
-| `S` | Switch to Speaker mode |
-| `T` | Switch to Ticker mode |
-| `O` | Open / focus Output Window |
+- `Enter`: Cut to Air
+- `Esc`: Clear
+- `B`: Bible mode
+- `S`: Speaker mode
+- `T`: Ticker mode
 
-Shortcuts are disabled while an input field has focus (except `Enter` in the verse,
-speaker name, and title fields which also triggers CUT TO AIR).
+## Screenshots (Placeholders)
 
----
+Add screenshots to `assets/screenshots/` and update paths as needed.
 
-## Presets
+- Control UI (Bible mode)
+  - `![Control UI - Bible](assets/screenshots/placeholder-control-bible.png)`
+- Speaker mode
+  - `![Speaker Mode](assets/screenshots/placeholder-speaker.png)`
+- Ticker mode
+  - `![Ticker Mode](assets/screenshots/placeholder-ticker.png)`
+- Settings panel
+  - `![Settings Panel](assets/screenshots/placeholder-settings.png)`
+- Text effects (per-line)
+  - `![Text Effects](assets/screenshots/placeholder-text-effects.png)`
+- Custom template editor
+  - `![Custom Template](assets/screenshots/placeholder-custom-template.png)`
+- Output window example
+  - `![Output Window](assets/screenshots/placeholder-output.png)`
 
-Save and recall frequently used references or ticker messages.
+## Project Structure
 
-- **Save** — click the bookmark icon next to CUT TO AIR; an auto-generated name is suggested.
-- **Load** — click any preset chip to restore all fields.
-- **Delete** — click the × on any preset chip.
-- **Export** — download all presets as `overlay-presets.json` for backup or sharing.
-- **Import** — merge presets from a JSON file (duplicate IDs are skipped).
-- **Template presets** — save/load/delete custom HTML+CSS template presets from Settings.
+- `index.html` -> Control UI
+- `output.html` -> Output renderer (Browser Source target)
+- `js/control.js` -> Control logic, presets, settings profiles, sync
+- `js/data.js` -> Bible books, translations, language/font metadata
+- `server.js` -> Static hosting + WebSocket relay + scripture proxy endpoints
+- `css/control.css` -> Control UI styles
+- `scripts/bootstrap_ubuntu_server.sh` -> Bootstrap (update server, install git/curl, clone repo, run installer)
+- `scripts/install_ubuntu_server.sh` -> Main Ubuntu installer (Nginx + HTTPS + systemd)
 
-Presets are stored in `localStorage` and shared across all sessions on the same browser.
+## Notes
 
-![Preset management — saved items with export/import](assets/screenshots/feature-presets.png)
-
----
-
-## Custom HTML Templates
-
-Enable **Settings → Custom Template** to replace the built-in lower-third with your
-own HTML and CSS. Five built-in examples are included as starting points.
-Template presets can be saved/loaded, and template presets are included in presets
-export/import.
-
-### Template variables
-
-| Variable | Value |
-|---|---|
-| `{{line1}}` | Primary text (e.g. `Revelation 3:19` or speaker name) |
-| `{{line2}}` | Secondary text (translation, title, or verse text) |
-| `{{accentColor}}` | Current accent colour hex value |
-| `{{font}}` | Current font-family string |
-| `{{logoUrl}}` | Logo image data URL (empty string if no logo) |
-| `{{bgUrl}}` | Background image data URL (empty string if no image) |
-
----
-
-## File Structure
-
-```
-reference-overlay/
-├── index.html          Control panel (operator view)
-├── output.html         Chroma-key / transparent output window
-├── server.js           WebSocket + HTTP relay server
-├── package.json        Node.js dependency manifest
-├── css/
-│   ├── control.css     Control panel styles
-│   └── output.css      Output window styles
-├── js/
-│   ├── control.js      Control panel logic
-│   ├── output.js       Output window logic
-│   └── data.js         Bible books, verse counts, translations, fonts
-└── assets/
-    └── brand/          Logos and icons
-```
-
----
-
-## Browser Compatibility
-
-| Browser | Local files (`file://`) | Via server (`http://`) |
-|---|---|---|
-| Chrome 74+ | Full support | Full support |
-| Edge 79+ | Full support | Full support |
-| Firefox 79+ | May block `window.open` | Full support |
-| Safari 15.4+ | May block `window.open` | Full support |
-
-For local file use, Chrome or Edge is recommended.
-
----
-
-## Adding Custom Bible Translations
-
-Edit `js/data.js` and add an entry to the `TRANSLATIONS` array:
-
-```js
-{ abbr: 'MY-VER', name: 'My Translation Name', lang: 'en', bg: false },
-```
-
-Translations listed under **Reference Only** in the UI will not attempt a verse lookup.
-To enable verse lookup for a custom translation, verify it is supported by
-[BibleGateway](https://www.biblegateway.com), [YouVersion](https://www.bible.com),
-[bible-api.com](https://bible-api.com), [bible.helloao.org](https://bible.helloao.org),
-or [api.bible](https://api.bible), then map it in `BIBLEGATEWAY_MAP`, `YOUVERSION_MAP`,
-`BIBLE_API_MAP`, `HELLOAO_MAP`, or `APIBIBLE_IDS` respectively.
+- Node.js `>=16` required.
+- For cross-device control and Browser Source sync, run through `server.js` (HTTP), not `file://`.
