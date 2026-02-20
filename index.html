@@ -221,6 +221,38 @@
           </div>
         </div>
 
+        <div class="field-group ticker-size">
+          <label for="ticker-bar-height">
+            Ticker Height
+            <span class="label-hint" id="ticker-bar-height-val">68px</span>
+          </label>
+          <input type="range" id="ticker-bar-height" min="36" max="120" step="2" value="68" oninput="onTickerSizeInput()" onchange="onTickerChange()" />
+        </div>
+
+        <div class="field-group ticker-text-size">
+          <label for="ticker-font-size">
+            Text Size
+            <span class="label-hint" id="ticker-font-size-val">28px</span>
+          </label>
+          <input type="range" id="ticker-font-size" min="16" max="56" step="1" value="28" oninput="onTickerSizeInput()" onchange="onTickerChange()" />
+        </div>
+
+        <div class="field-group ticker-badge-size">
+          <label for="ticker-badge-size">
+            Badge Size
+            <span class="label-hint" id="ticker-badge-size-val">22px</span>
+          </label>
+          <input type="range" id="ticker-badge-size" min="14" max="44" step="1" value="22" oninput="onTickerSizeInput()" onchange="onTickerChange()" />
+        </div>
+
+        <div class="field-group ticker-force-text">
+          <label class="template-toggle-label">
+            <input type="checkbox" id="ticker-force-text-color" onchange="onTickerChange()" />
+            Force Text Color
+          </label>
+          <input type="color" id="ticker-text-color-override" value="#ffffff" onchange="onTickerChange()" />
+        </div>
+
       </div>
     </section>
 
@@ -476,6 +508,53 @@
               <option value="upper">Upper Third</option>
               <option value="center">Centered</option>
             </select>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-group">
+            <label class="setting-label" for="lt-bg-color">Lower Third Background</label>
+            <input type="color" id="lt-bg-color" value="#000000" onchange="onSettingsChange()" />
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" for="lt-bg-opacity">
+              Background Opacity
+              <span class="label-hint" id="lt-bg-opacity-val">0.88</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="lt-bg-opacity" min="0" max="1" step="0.01" value="0.88"
+                     oninput="onLtBgOpacityInput()" onchange="onSettingsChange()" />
+              <span class="slider-value" id="lt-bg-opacity-display">0.88</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-group">
+            <label class="setting-label" for="lt-width">
+              Lower Third Width
+              <span class="label-hint" id="lt-width-val">100%</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="lt-width" min="40" max="100" step="1" value="100"
+                     oninput="onLtWidthInput()" onchange="onSettingsChange()" />
+              <span class="slider-value" id="lt-width-display">100%</span>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="template-toggle-label">
+              <input type="checkbox" id="line2-multiline" onchange="onSettingsChange()" />
+              Allow Line 2 multiline
+            </label>
+            <label class="setting-label" for="line2-max-lines">
+              Max Line 2 Lines
+              <span class="label-hint" id="line2-max-lines-val">2</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="line2-max-lines" min="1" max="6" step="1" value="2"
+                     oninput="onLine2MaxLinesInput()" onchange="onSettingsChange()" />
+              <span class="slider-value" id="line2-max-lines-display">2</span>
+            </div>
           </div>
         </div>
 

@@ -509,6 +509,42 @@ function onSpeakerChange() {
 
 function onTickerChange() { updatePreview(); }
 
+function onTickerSizeInput() {
+  const h = parseInt(document.getElementById('ticker-bar-height')?.value || '68', 10);
+  const t = parseInt(document.getElementById('ticker-font-size')?.value || '28', 10);
+  const b = parseInt(document.getElementById('ticker-badge-size')?.value || '22', 10);
+  const hVal = document.getElementById('ticker-bar-height-val');
+  const tVal = document.getElementById('ticker-font-size-val');
+  const bVal = document.getElementById('ticker-badge-size-val');
+  if (hVal) hVal.textContent = `${h}px`;
+  if (tVal) tVal.textContent = `${t}px`;
+  if (bVal) bVal.textContent = `${b}px`;
+}
+
+function onLtBgOpacityInput() {
+  const v = parseFloat(document.getElementById('lt-bg-opacity')?.value || '0.88').toFixed(2);
+  const a = document.getElementById('lt-bg-opacity-val');
+  const b = document.getElementById('lt-bg-opacity-display');
+  if (a) a.textContent = v;
+  if (b) b.textContent = v;
+}
+
+function onLtWidthInput() {
+  const v = parseInt(document.getElementById('lt-width')?.value || '100', 10);
+  const a = document.getElementById('lt-width-val');
+  const b = document.getElementById('lt-width-display');
+  if (a) a.textContent = `${v}%`;
+  if (b) b.textContent = `${v}%`;
+}
+
+function onLine2MaxLinesInput() {
+  const v = parseInt(document.getElementById('line2-max-lines')?.value || '2', 10);
+  const a = document.getElementById('line2-max-lines-val');
+  const b = document.getElementById('line2-max-lines-display');
+  if (a) a.textContent = String(v);
+  if (b) b.textContent = String(v);
+}
+
 function onTickerStyleChange() {
   const style  = document.getElementById('ticker-style')?.value;
   const custom = document.getElementById('ticker-custom-colors');
@@ -1085,6 +1121,11 @@ function buildTickerData() {
   const speed    = parseInt(document.getElementById('ticker-speed')?.value) || 140;
   const style    = document.getElementById('ticker-style')?.value           || DEFAULT_TICKER_STYLE;
   const position = document.getElementById('ticker-position')?.value        || 'bottom';
+  const barHeight = parseInt(document.getElementById('ticker-bar-height')?.value || '68', 10);
+  const textSize = parseInt(document.getElementById('ticker-font-size')?.value || '28', 10);
+  const badgeSize = parseInt(document.getElementById('ticker-badge-size')?.value || '22', 10);
+  const forceTextColor = !!document.getElementById('ticker-force-text-color')?.checked;
+  const textColorOverride = document.getElementById('ticker-text-color-override')?.value || '#ffffff';
 
   // Resolve colors from style preset or custom pickers
   const styleColors = {
@@ -1098,7 +1139,18 @@ function buildTickerData() {
     text: document.getElementById('ticker-text-color')?.value || '#ffffff',
   };
 
-  return { message, label, speed, position, bgColor: colors.bg, textColor: colors.text };
+  const textColor = forceTextColor ? textColorOverride : colors.text;
+  return {
+    message,
+    label,
+    speed,
+    position,
+    bgColor: colors.bg,
+    textColor,
+    barHeight: Math.max(24, Math.min(140, barHeight || 68)),
+    textSize: Math.max(12, Math.min(72, textSize || 28)),
+    badgeSize: Math.max(10, Math.min(64, badgeSize || 22)),
+  };
 }
 
 // ── Build Overlay Data Object ─────────────────────────────────────────────────
@@ -1217,6 +1269,41 @@ function applyMonitorTextFit(ltEl, viewportEl, style, line2Text) {
   ltEl.style.setProperty('--monitor-line2-lh', String(baseLine2Lh));
 }
 
+function applyMonitorTickerStyle(barEl, badgeEl, textEl, viewportEl, td) {
+  if (!barEl || !badgeEl || !textEl || !td) return;
+  const vpWidth = viewportEl?.offsetWidth || 320;
+  const scale = Math.max(0.15, Math.min(1, vpWidth / 1920));
+  const barH = Math.max(8, Math.round((td.barHeight || 68) * scale));
+  const textSize = Math.max(6, Math.round((td.textSize || 28) * scale * 10) / 10);
+  const badgeSize = Math.max(5, Math.round((td.badgeSize || 22) * scale * 10) / 10);
+  barEl.style.height = `${barH}px`;
+  textEl.style.fontSize = `${textSize}px`;
+  badgeEl.style.fontSize = `${badgeSize}px`;
+}
+
+function applyLowerThirdVisualSettings(ltEl, ltTextEl, line2El, settings) {
+  if (!ltEl || !ltTextEl || !settings) return;
+  const bgColor = settings.ltBgColor || '#000000';
+  const bgOpacity = Math.max(0, Math.min(1, parseFloat(settings.ltBgOpacity ?? 0.88)));
+  ltTextEl.style.background = hexToRgba(bgColor, bgOpacity);
+
+  const widthPct = Math.max(40, Math.min(100, parseInt(settings.ltWidth || 100, 10)));
+  ltEl.style.width = `${widthPct}%`;
+  ltEl.style.maxWidth = '100%';
+
+  if (line2El) {
+    const multiline = !!settings.line2Multiline;
+    const maxLines = Math.max(1, Math.min(6, parseInt(settings.line2MaxLines || 2, 10)));
+    line2El.style.whiteSpace = multiline ? 'normal' : 'nowrap';
+    line2El.style.overflow = multiline ? 'hidden' : 'hidden';
+    line2El.style.textOverflow = multiline ? 'clip' : 'ellipsis';
+    line2El.style.display = line2El.textContent ? (multiline ? '-webkit-box' : '') : 'none';
+    line2El.style.webkitBoxOrient = multiline ? 'vertical' : '';
+    line2El.style.webkitLineClamp = multiline ? String(maxLines) : '';
+    line2El.style.lineClamp = multiline ? String(maxLines) : '';
+  }
+}
+
 function switchTextEffectsLine(lineKey) {
   const l1Btn  = document.getElementById('textfx-tab-line1');
   const l2Btn  = document.getElementById('textfx-tab-line2');
@@ -1305,6 +1392,7 @@ function updatePreview() {
     if (bar)   { bar.style.background = td.bgColor; bar.style.color = td.textColor; }
     if (badge) badge.textContent = td.label;
     if (text)  text.textContent  = td.message || '(ticker message preview)';
+    applyMonitorTickerStyle(bar, badge, text, previewViewport, td);
     if (tickerPreview) {
       tickerPreview.classList.toggle('pos-top', td.position === 'top');
     }
@@ -1409,6 +1497,7 @@ function updatePreview() {
     previewLine2,
     settings
   );
+  applyLowerThirdVisualSettings(lt, ltText, previewLine2, settings);
 }
 
 // ── Presets ───────────────────────────────────────────────────────────────────
@@ -1482,7 +1571,12 @@ function saveCurrentPreset() {
           label:    document.getElementById('ticker-label')?.value   || 'INFO',
           speed:    document.getElementById('ticker-speed')?.value   || '140',
           style:    document.getElementById('ticker-style')?.value   || DEFAULT_TICKER_STYLE,
-          position: document.getElementById('ticker-position')?.value || 'bottom' },
+          position: document.getElementById('ticker-position')?.value || 'bottom',
+          barHeight: document.getElementById('ticker-bar-height')?.value || '68',
+          textSize: document.getElementById('ticker-font-size')?.value || '28',
+          badgeSize: document.getElementById('ticker-badge-size')?.value || '22',
+          forceTextColor: !!document.getElementById('ticker-force-text-color')?.checked,
+          textColorOverride: document.getElementById('ticker-text-color-override')?.value || '#ffffff' },
   };
 
   if (currentMode === 'ticker') {
@@ -1535,6 +1629,17 @@ function loadPreset(id) {
     }
     if (document.getElementById('ticker-position'))
       document.getElementById('ticker-position').value = p.data.position || 'bottom';
+    if (document.getElementById('ticker-bar-height'))
+      document.getElementById('ticker-bar-height').value = p.data.barHeight || '68';
+    if (document.getElementById('ticker-font-size'))
+      document.getElementById('ticker-font-size').value = p.data.textSize || '28';
+    if (document.getElementById('ticker-badge-size'))
+      document.getElementById('ticker-badge-size').value = p.data.badgeSize || '22';
+    if (document.getElementById('ticker-force-text-color'))
+      document.getElementById('ticker-force-text-color').checked = !!p.data.forceTextColor;
+    if (document.getElementById('ticker-text-color-override'))
+      document.getElementById('ticker-text-color-override').value = p.data.textColorOverride || '#ffffff';
+    onTickerSizeInput();
   }
   updatePreview();
 }
@@ -1632,6 +1737,11 @@ function buildSessionControlState() {
       position: document.getElementById('ticker-position')?.value || 'bottom',
       bgColor: document.getElementById('ticker-bg-color')?.value || '#cc0000',
       textColor: document.getElementById('ticker-text-color')?.value || '#ffffff',
+      barHeight: document.getElementById('ticker-bar-height')?.value || '68',
+      textSize: document.getElementById('ticker-font-size')?.value || '28',
+      badgeSize: document.getElementById('ticker-badge-size')?.value || '22',
+      forceTextColor: !!document.getElementById('ticker-force-text-color')?.checked,
+      textColorOverride: document.getElementById('ticker-text-color-override')?.value || '#ffffff',
     },
   };
 }
@@ -1765,6 +1875,11 @@ function applyProfileControlState(controlState) {
   const tickerPositionEl = document.getElementById('ticker-position');
   const tickerBgEl = document.getElementById('ticker-bg-color');
   const tickerTextEl = document.getElementById('ticker-text-color');
+  const tickerBarHeightEl = document.getElementById('ticker-bar-height');
+  const tickerFontSizeEl = document.getElementById('ticker-font-size');
+  const tickerBadgeSizeEl = document.getElementById('ticker-badge-size');
+  const tickerForceTextEl = document.getElementById('ticker-force-text-color');
+  const tickerTextOverrideEl = document.getElementById('ticker-text-color-override');
   if (tickerMessageEl) tickerMessageEl.value = ticker.message || DEFAULT_TICKER_MESSAGE;
   if (tickerLabelEl) tickerLabelEl.value = ticker.label || 'INFO';
   if (tickerSpeedEl) tickerSpeedEl.value = ticker.speed || '140';
@@ -1772,6 +1887,12 @@ function applyProfileControlState(controlState) {
   if (tickerPositionEl) tickerPositionEl.value = ticker.position || 'bottom';
   if (tickerBgEl) tickerBgEl.value = ticker.bgColor || '#cc0000';
   if (tickerTextEl) tickerTextEl.value = ticker.textColor || '#ffffff';
+  if (tickerBarHeightEl) tickerBarHeightEl.value = ticker.barHeight || '68';
+  if (tickerFontSizeEl) tickerFontSizeEl.value = ticker.textSize || '28';
+  if (tickerBadgeSizeEl) tickerBadgeSizeEl.value = ticker.badgeSize || '22';
+  if (tickerForceTextEl) tickerForceTextEl.checked = !!ticker.forceTextColor;
+  if (tickerTextOverrideEl) tickerTextOverrideEl.value = ticker.textColorOverride || '#ffffff';
+  onTickerSizeInput();
   onTickerStyleChange();
 
   setMode(controlState.mode || 'bible');
@@ -1923,13 +2044,19 @@ function renderPresets() {
 // ── Send to Output ────────────────────────────────────────────────────────────
 function sendShow() {
   if (currentMode === 'ticker') {
-    const td = buildTickerData();
-    if (!td.message) return;
-    broadcast({ action: 'show-ticker', data: td });
-    programTickerData = td;
-    programTickerLive = true;
-    setTickerStatus(true);
-    updateProgramMonitor();
+    // Commit any in-progress control edit (range/select/color pickers) before reading values.
+    const active = document.activeElement;
+    if (active && typeof active.blur === 'function') active.blur();
+
+    requestAnimationFrame(() => {
+      const td = buildTickerData();
+      if (!td.message) return;
+      broadcast({ action: 'show-ticker', data: td });
+      programTickerData = td;
+      programTickerLive = true;
+      setTickerStatus(true);
+      updateProgramMonitor();
+    });
     return;
   }
 
@@ -2070,6 +2197,7 @@ function updateProgramMonitor() {
       if (pgmLine1) pgmLine1.style.fontFamily = resolvedFontFamily(s?.line1Font || s?.font);
       if (pgmLine2) pgmLine2.style.fontFamily = resolvedFontFamily(s?.line2Font || s?.line1Font || s?.font);
       applyLineTextEffects(pgmLine1, pgmLine2, s || {});
+      applyLowerThirdVisualSettings(pgmLt, pgmLtText, pgmLine2, s || {});
       if (pgmLogo) {
         if (s?.logoDataUrl) { pgmLogo.src = s.logoDataUrl; pgmLogo.classList.remove('hidden'); }
         else                               pgmLogo.classList.add('hidden');
@@ -2090,6 +2218,7 @@ function updateProgramMonitor() {
     }
     if (pgmTickerBadge) pgmTickerBadge.textContent = td.label   || 'INFO';
     if (pgmTickerText)  pgmTickerText.textContent  = td.message || '';
+    applyMonitorTickerStyle(pgmTickerBar, pgmTickerBadge, pgmTickerText, pgmViewport, td);
     if (pgmTickerWrap)  pgmTickerWrap.classList.toggle('pos-top', td.position === 'top');
   } else {
     if (pgmTickerWrap) pgmTickerWrap.style.display = 'none';
@@ -2218,7 +2347,9 @@ function openOutputWindow() {
       const s = getSettings();
       broadcast({ action: 'settings', settings: s });
       if (overlayVisible) {
-        setTimeout(() => broadcast({ action: 'show', data: buildOverlayData(), settings: s }), 200);
+        // Rehydrate with the actual on-air overlay snapshot, not current edit-mode placeholder data.
+        const liveOverlayData = programOverlayData || buildOverlayData();
+        setTimeout(() => broadcast({ action: 'show', data: liveOverlayData, settings: s }), 200);
       }
     });
   }
@@ -2325,6 +2456,11 @@ function getSettings() {
     animation:     document.getElementById('anim-select')?.value      || 'fade',
     style:         document.getElementById('style-select')?.value     || 'gradient',
     accentColor:   document.getElementById('accent-color')?.value     || '#C8A951',
+    ltBgColor:     document.getElementById('lt-bg-color')?.value      || '#000000',
+    ltBgOpacity:   parseFloat(document.getElementById('lt-bg-opacity')?.value || '0.88'),
+    ltWidth:       parseInt(document.getElementById('lt-width')?.value || '100', 10),
+    line2Multiline: !!document.getElementById('line2-multiline')?.checked,
+    line2MaxLines: parseInt(document.getElementById('line2-max-lines')?.value || '2', 10),
     position:      document.getElementById('position-select')?.value  || 'lower',
     font:          line1Font, // legacy compatibility for templates/saved presets
     line1Font,
@@ -2372,7 +2508,9 @@ function syncCurrentStateToOutputs() {
     broadcast({ action: 'clear-ticker' });
   }
   if (overlayVisible) {
-    broadcast({ action: 'show', data: buildOverlayData(), settings });
+    // Keep output aligned to what is actually live in PGM.
+    const liveOverlayData = programOverlayData || buildOverlayData();
+    broadcast({ action: 'show', data: liveOverlayData, settings });
   } else {
     broadcast({ action: 'clear' });
   }
@@ -2415,6 +2553,23 @@ function loadSettings() {
     if (saved.animation)    document.getElementById('anim-select').value     = saved.animation;
     if (saved.style)        document.getElementById('style-select').value    = saved.style;
     if (saved.accentColor)  document.getElementById('accent-color').value    = saved.accentColor;
+    if (saved.ltBgColor)    { const el = document.getElementById('lt-bg-color'); if (el) el.value = saved.ltBgColor; }
+    if (saved.ltBgOpacity !== undefined) {
+      const el = document.getElementById('lt-bg-opacity');
+      if (el) el.value = String(saved.ltBgOpacity);
+    }
+    if (saved.ltWidth !== undefined) {
+      const el = document.getElementById('lt-width');
+      if (el) el.value = String(saved.ltWidth);
+    }
+    if (saved.line2Multiline !== undefined) {
+      const el = document.getElementById('line2-multiline');
+      if (el) el.checked = !!saved.line2Multiline;
+    }
+    if (saved.line2MaxLines !== undefined) {
+      const el = document.getElementById('line2-max-lines');
+      if (el) el.value = String(saved.line2MaxLines);
+    }
     if (saved.position)     document.getElementById('position-select').value = saved.position;
     const legacyFont = saved.font || "'Cinzel', serif";
     const line1Sel = document.getElementById('line1-font-select');
@@ -2472,6 +2627,10 @@ function loadSettings() {
 
   } catch (_) {}
   updateTextEffectLabels();
+  onLtBgOpacityInput();
+  onLtWidthInput();
+  onLine2MaxLinesInput();
+  onTickerSizeInput();
 }
 
 // ── Slider label helpers ──────────────────────────────────────────────────────

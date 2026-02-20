@@ -180,7 +180,13 @@ function showOverlay(data) {
   } else {
     ltLine1.textContent   = data.line1 || '';
     ltLine2.textContent   = data.line2 || '';
-    ltLine2.style.display = data.line2 ? '' : 'none';
+    if (!data.line2) {
+      ltLine2.style.display = 'none';
+    } else if (currentSettings?.line2Multiline) {
+      ltLine2.style.display = '-webkit-box';
+    } else {
+      ltLine2.style.display = '';
+    }
     ltRoot.classList.remove('visible');
     void ltRoot.offsetWidth;
     ltRoot.classList.add('visible');
@@ -208,6 +214,13 @@ function showTicker(data) {
   // Badge label
   tickerBadge.textContent = data.label || 'INFO';
   tickerBadge.style.color = data.textColor || '#ffffff';
+
+  const barHeight = Math.max(24, Math.min(140, parseInt(data.barHeight || 68, 10)));
+  const textSize = Math.max(12, Math.min(72, parseInt(data.textSize || 28, 10)));
+  const badgeSize = Math.max(10, Math.min(64, parseInt(data.badgeSize || 22, 10)));
+  tickerBar.style.height = `${barHeight}px`;
+  tickerText.style.fontSize = `${textSize}px`;
+  tickerBadge.style.fontSize = `${badgeSize}px`;
 
   // Position (top / bottom)
   tickerWrap.classList.remove('pos-top');
@@ -307,6 +320,28 @@ function applySettings(s) {
     ltText.style.textAlign = s.textAlign || 'left';
   }
   applyLineTextEffects(s);
+
+  const ltBgColor = s.ltBgColor || '#000000';
+  const ltBgOpacity = Math.max(0, Math.min(1, parseFloat(s.ltBgOpacity ?? 0.88)));
+  if (ltText) {
+    ltText.style.background = hexToRgba(ltBgColor, ltBgOpacity);
+  }
+  const ltWidth = Math.max(40, Math.min(100, parseInt(s.ltWidth || 100, 10)));
+  if (ltRoot) {
+    ltRoot.style.width = `${ltWidth}%`;
+    ltRoot.style.maxWidth = '100%';
+  }
+  if (ltLine2) {
+    const multiline = !!s.line2Multiline;
+    const maxLines = Math.max(1, Math.min(6, parseInt(s.line2MaxLines || 2, 10)));
+    ltLine2.style.whiteSpace = multiline ? 'normal' : 'nowrap';
+    ltLine2.style.overflow = 'hidden';
+    ltLine2.style.textOverflow = multiline ? 'clip' : 'ellipsis';
+    ltLine2.style.display = multiline && (ltLine2.textContent || '').trim() ? '-webkit-box' : '';
+    ltLine2.style.webkitBoxOrient = multiline ? 'vertical' : '';
+    ltLine2.style.webkitLineClamp = multiline ? String(maxLines) : '';
+    ltLine2.style.lineClamp = multiline ? String(maxLines) : '';
+  }
 
   // ── Lower third background image ──────────────────────────────────────────
   if (s.ltBgImage) {
