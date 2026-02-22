@@ -2764,6 +2764,13 @@ function onAtemExportPinToggle() {
   syncAtemExportPinConfig();
 }
 
+function onAtemTickerExportToggle() {
+  const settings = getSettings();
+  persistSettings(settings);
+  broadcast({ action: 'settings', settings });
+  onAtemExportRegenerate();
+}
+
 function copyAtemExportLink() {
   // Backward compatibility for existing bindings.
   copyAtemPremultipliedLink();
@@ -3094,6 +3101,7 @@ function getSettings() {
       css:     document.getElementById('template-css')?.value          || '',
     },
     showSessionWatermark: document.getElementById('show-session-watermark')?.checked || false,
+    includeTickerInAtemPng: !!document.getElementById('atem-include-ticker-png')?.checked,
   };
 }
 
@@ -3206,6 +3214,9 @@ function loadSettings() {
       const el = document.getElementById('show-session-watermark');
       if (el) el.checked = saved.showSessionWatermark;
     }
+
+    const atemTickerEl = document.getElementById('atem-include-ticker-png');
+    if (atemTickerEl) atemTickerEl.checked = !!saved.includeTickerInAtemPng;
 
     // Restore transparent note visibility after chroma is restored
     const restoredChroma = document.querySelector('input[name="chroma"]:checked')?.value;

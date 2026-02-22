@@ -720,10 +720,12 @@ async function applyStateToExportPage(page, state) {
     delete showPayload.settings;
   }
 
+  const includeTickerInAtemPng = !!(effectiveSettings && effectiveSettings.includeTickerInAtemPng);
+
   const replay = {
     settings: effectiveSettings,
     show: showPayload,
-    showTicker: state.tickerVisible && state.showTicker ? JSON.parse(state.showTicker) : null,
+    showTicker: includeTickerInAtemPng && state.tickerVisible && state.showTicker ? JSON.parse(state.showTicker) : null,
   };
 
   await page.evaluate(async payload => {

@@ -508,6 +508,12 @@
                   </label>
                   <span class="bsi-pin-state" id="atem-pin-state">Not included</span>
                 </div>
+                <div class="bsi-export-row">
+                  <label class="bsi-pin-toggle" title="By default, ticker is excluded from ATEM PNG exports for stable static graphics.">
+                    <input type="checkbox" id="atem-include-ticker-png" onchange="onAtemTickerExportToggle()" />
+                    <span>Include ticker in ATEM PNG export</span>
+                  </label>
+                </div>
                 <div class="bsi-row bsi-atem-url-row">
                   <span class="bsi-label">ATEM PNG URL (Premultiplied)</span>
                   <code class="bsi-url" id="atem-export-url">/atem-live/&lt;session&gt;.png?alpha=premultiplied</code>
@@ -1196,6 +1202,7 @@
         <ol>
           <li>Open <code>Settings → Output Setup → ATEM PNG Export</code>.</li>
           <li>Include/pin the current session for ATEM export.</li>
+          <li>`Include ticker in ATEM PNG export` is OFF by default for stable static lower-third PNGs.</li>
           <li>Use session PNG endpoints:
             <ul>
               <li><code>/atem-live/&lt;session&gt;.png?alpha=premultiplied</code> for ATEM production use.</li>

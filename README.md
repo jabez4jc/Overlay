@@ -138,6 +138,7 @@ Use this when feeding ATEM media workflow.
 
 - Include/pin current session for export.
 - Session-specific URLs are provided.
+- `Include ticker in ATEM PNG export` is OFF by default for stable static graphics.
 - Export endpoints support both alpha models:
   - Premultiplied (ATEM production use)
   - Straight (browser QA/comparison)
