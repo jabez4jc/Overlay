@@ -464,6 +464,16 @@ function isIndicLanguage(lang) {
   return INDIC_LANG_CODES.has(String(lang || '').toLowerCase());
 }
 
+function isIndicLanguagePairMismatch(referenceLang, translationLang) {
+  const ref = String(referenceLang || 'en').toLowerCase();
+  const tr = String(translationLang || 'en').toLowerCase();
+  const refIndic = isIndicLanguage(ref);
+  const trIndic = isIndicLanguage(tr);
+  if (!refIndic && !trIndic) return false;
+  if (refIndic !== trIndic) return true;
+  return refIndic && trIndic && ref !== tr;
+}
+
 function getSelectedTranslationMeta() {
   const transAbbr = document.getElementById('translation')?.value || 'NONE';
   return {
@@ -494,12 +504,12 @@ function enforceIndicReferenceSelectionGuardrail() {
   const { meta } = getSelectedTranslationMeta();
   const transLang = meta?.lang || 'en';
 
-  if (isIndicLanguage(transLang) && refLangEl.value === 'en') {
+  if (isIndicLanguage(transLang) && refLangEl.value !== transLang) {
     refLangEl.value = transLang;
     syncBookNameDisplayOption();
     updateBookOptionLabels();
     maybeApplyLanguageFont(transLang, false);
-    setLookupStatus('Reference language auto-set to match selected Indic translation.', '');
+    setLookupStatus('Reference language auto-set to match selected Indic translation language.', '');
   }
 }
 
@@ -922,7 +932,12 @@ function autoSyncReferenceLanguageFromTranslation() {
   if (!lang) return;
   const langSel = document.getElementById('reference-language');
   if (!langSel) return;
-  if (langSel.value === 'en') {
+  if (isIndicLanguage(lang) && langSel.value !== lang) {
+    langSel.value = lang;
+    syncBookNameDisplayOption();
+    updateBookOptionLabels();
+    maybeApplyLanguageFont(lang, false);
+  } else if (langSel.value === 'en') {
     langSel.value = lang;
     syncBookNameDisplayOption();
     updateBookOptionLabels();
@@ -941,7 +956,8 @@ function syncBibleLineOptions() {
   const translationMeta = TRANSLATIONS.find(t => t.abbr === translation);
   const translationLang = translationMeta?.lang || 'en';
   const isIndicRef = isIndicLanguage(refLang);
-  const isIndicTrans = isIndicLanguage(translationLang);
+  const translationSet = translation !== 'NONE';
+  const pairMismatch = isIndicLanguagePairMismatch(refLang, translationSet ? translationLang : 'en');
 
   const hideLine2 = !!hideLine2El?.checked;
   const includeVerse = !!includeVerseEl?.checked;
@@ -954,13 +970,17 @@ function syncBibleLineOptions() {
   }
   appendAbbrEl.disabled = !canAppend;
 
-  // Guardrail: Indic reference cannot use English verse text.
-  const blockVerseText = isIndicRef && !isIndicTrans;
+  // Guardrail: Indic reference+translation language must match exactly for line-2 verse text.
+  const blockVerseText = isIndicRef && (!translationSet || pairMismatch);
   if (includeVerseEl) {
     if (blockVerseText) {
       includeVerseEl.checked = false;
       includeVerseEl.disabled = true;
-      setBibleGuardrailMessage('For Indic reference language, select an Indic translation before using verse text on line 2.');
+      if (!translationSet) {
+        setBibleGuardrailMessage('Select a matching Indic translation to use verse text on line 2.');
+      } else {
+        setBibleGuardrailMessage('For Indic mode, translation language must match reference language (for example, Tamil + Tamil).');
+      }
     } else if (!referenceOnlyLookup) {
       includeVerseEl.disabled = false;
       setBibleGuardrailMessage('');
@@ -1375,9 +1395,9 @@ async function lookupVerse() {
   const requestedMeta = requestedAbbr ? TRANSLATIONS.find(t => t.abbr === requestedAbbr) : null;
   const requestedLang = requestedMeta?.lang || 'en';
 
-  if (isIndicLanguage(refLang) && !isIndicLanguage(requestedLang)) {
-    setLookupStatus('Select an Indic translation to fetch verse text for an Indic reference language.', 'error');
-    setBibleGuardrailMessage('Indic reference requires Indic verse text. Choose an Indic translation before lookup.');
+  if (isIndicLanguagePairMismatch(refLang, requestedLang)) {
+    setLookupStatus('Reference language and translation language must match for Indic verse lookup.', 'error');
+    setBibleGuardrailMessage('Choose a translation in the same Indic language as the selected reference language.');
     return;
   }
   const cacheTransKey = requestedAbbr || DEFAULT_FALLBACK_ABBR;
@@ -1479,13 +1499,19 @@ function setLookupStatus(msg, type) {
 }
 
 function displayVerseText(text, refOnly = false) {
+  const refLang = getReferenceLanguage();
   const transAbbr = document.getElementById('translation')?.value || 'NONE';
   const transMeta = TRANSLATIONS.find(t => t.abbr === transAbbr);
-  const expectedLang = transAbbr !== 'NONE' ? (transMeta?.lang || 'en') : getReferenceLanguage();
+  const translationLang = transAbbr !== 'NONE' ? (transMeta?.lang || 'en') : 'en';
+  const languageMismatch = isIndicLanguagePairMismatch(refLang, translationLang);
+  const expectedLang = transAbbr !== 'NONE' ? translationLang : refLang;
   const scriptMismatch = isIndicLanguage(expectedLang) && !hasExpectedScript(text, expectedLang);
-  const effectiveRefOnly = refOnly || scriptMismatch;
+  const effectiveRefOnly = refOnly || scriptMismatch || languageMismatch;
 
-  if (scriptMismatch) {
+  if (languageMismatch) {
+    setLookupStatus('Translation language does not match selected Indic reference language. Line 2 usage is disabled.', 'error');
+    setBibleGuardrailMessage('Use the same Indic language for reference and translation to enable verse text on line 2.');
+  } else if (scriptMismatch) {
     setLookupStatus('Verse text script does not match selected Indic language. Line 2 usage is disabled.', 'error');
     setBibleGuardrailMessage('Verse text script mismatch detected. Select a matching Indic translation and look up again.');
   }
