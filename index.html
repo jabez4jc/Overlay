@@ -193,6 +193,7 @@
             style="width:100%;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:.95rem;resize:vertical;"
             placeholder="e.g. ⚠ Emergency service cancelled — please check the foyer for updates"
             oninput="onTickerChange()">The Live Stream has been restored. Thank you for your patience, and our sincere apologies for the interruption.</textarea>
+          <div class="ticker-export-note">Note: Ticker is not included in ATEM PNG export.</div>
         </div>
 
         <div class="field-group ticker-badge">
@@ -507,12 +508,6 @@
                     <span>Include this session in ATEM export</span>
                   </label>
                   <span class="bsi-pin-state" id="atem-pin-state">Not included</span>
-                </div>
-                <div class="bsi-export-row">
-                  <label class="bsi-pin-toggle" title="By default, ticker is excluded from ATEM PNG exports for stable static graphics.">
-                    <input type="checkbox" id="atem-include-ticker-png" onchange="onAtemTickerExportToggle()" />
-                    <span>Include ticker in ATEM PNG export</span>
-                  </label>
                 </div>
                 <div class="bsi-row bsi-atem-url-row">
                   <span class="bsi-label">ATEM PNG URL (Premultiplied)</span>
@@ -1202,7 +1197,7 @@
         <ol>
           <li>Open <code>Settings → Output Setup → ATEM PNG Export</code>.</li>
           <li>Include/pin the current session for ATEM export.</li>
-          <li>`Include ticker in ATEM PNG export` is OFF by default for stable static lower-third PNGs.</li>
+          <li>Ticker is not included in ATEM PNG export.</li>
           <li>Use session PNG endpoints:
             <ul>
               <li><code>/atem-live/&lt;session&gt;.png?alpha=premultiplied</code> for ATEM production use.</li>

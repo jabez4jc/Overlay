@@ -2500,3 +2500,13 @@ kbd {
     padding: 12px;
   }
 }
+
+.ticker-export-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 193, 7, 0.08);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}

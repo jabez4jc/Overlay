@@ -648,7 +648,12 @@ function applyLineTextEffects(line1El, line2El, settings) {
 
 // ── Mode Toggle ───────────────────────────────────────────────────────────────
 function setMode(mode) {
-  if (currentMode === 'bible' || currentMode === 'speaker') {
+  const modeChanged = mode !== currentMode;
+
+  // Persist outgoing mode-specific style only when actually switching modes.
+  // If we store while mode is unchanged, transient UI reloads can overwrite
+  // speaker settings with bible settings (or vice versa).
+  if (modeChanged && (currentMode === 'bible' || currentMode === 'speaker')) {
     storeCurrentModeDependentSettings();
     activeOverlaySettingsMode = currentMode;
   }
@@ -2765,11 +2770,9 @@ function onAtemExportPinToggle() {
 }
 
 function onAtemTickerExportToggle() {
-  const settings = getSettings();
-  persistSettings(settings);
-  broadcast({ action: 'settings', settings });
-  onAtemExportRegenerate();
+  // Deprecated: ticker export is intentionally disabled for ATEM PNG output.
 }
+
 
 function copyAtemExportLink() {
   // Backward compatibility for existing bindings.
@@ -3101,7 +3104,7 @@ function getSettings() {
       css:     document.getElementById('template-css')?.value          || '',
     },
     showSessionWatermark: document.getElementById('show-session-watermark')?.checked || false,
-    includeTickerInAtemPng: !!document.getElementById('atem-include-ticker-png')?.checked,
+    includeTickerInAtemPng: false,
   };
 }
 
@@ -3214,10 +3217,6 @@ function loadSettings() {
       const el = document.getElementById('show-session-watermark');
       if (el) el.checked = saved.showSessionWatermark;
     }
-
-    const atemTickerEl = document.getElementById('atem-include-ticker-png');
-    if (atemTickerEl) atemTickerEl.checked = !!saved.includeTickerInAtemPng;
-
     // Restore transparent note visibility after chroma is restored
     const restoredChroma = document.querySelector('input[name="chroma"]:checked')?.value;
     const chromaNote = document.getElementById('chroma-transparent-note');

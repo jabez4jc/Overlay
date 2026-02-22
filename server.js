@@ -719,13 +719,10 @@ async function applyStateToExportPage(page, state) {
   if (showPayload && Object.prototype.hasOwnProperty.call(showPayload, 'settings')) {
     delete showPayload.settings;
   }
-
-  const includeTickerInAtemPng = !!(effectiveSettings && effectiveSettings.includeTickerInAtemPng);
-
   const replay = {
     settings: effectiveSettings,
     show: showPayload,
-    showTicker: includeTickerInAtemPng && state.tickerVisible && state.showTicker ? JSON.parse(state.showTicker) : null,
+    showTicker: null,
   };
 
   await page.evaluate(async payload => {
@@ -752,9 +749,7 @@ async function applyStateToExportPage(page, state) {
 
     if (payload.show) window.handleMessage(payload.show);
     else window.handleMessage({ action: 'clear' });
-
-    if (payload.showTicker) window.handleMessage(payload.showTicker);
-    else window.handleMessage({ action: 'clear-ticker' });
+    window.handleMessage({ action: 'clear-ticker' });
 
     // Ensure fonts and final paint settle before screenshot.
     if (document.fonts && document.fonts.ready) {
