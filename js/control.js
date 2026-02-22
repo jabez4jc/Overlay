@@ -154,6 +154,9 @@ function configureSessionKeys(sessionId) {
 
 // WebSocket client — only active when served via http:// (server.js mode)
 let ws      = null;
+let controlStatePollTimer = null;
+let lastControlStateUpdatedAt = 0;
+let lastRemoteSettingsSignature = '';
 const FONT_FALLBACK_STACK = "'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Malayalam', 'Noto Sans Kannada', sans-serif";
 const LANGUAGE_DEFAULT_FONT = {
   en: "'Cinzel', serif",
@@ -233,6 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updatePreview();
   bindKeyboard();
   initWebSocket();
+  startControlStatePolling();
 
   // Display short session ID in the header badge
   const sessionBadge = document.getElementById('session-id-text');
@@ -2878,7 +2882,8 @@ function initWebSocket() {
     ws.onopen    = () => {
       wsRetryDelay = 5000;
       setWsIndicator('online');
-      syncCurrentStateToOutputs();
+      // Pull authoritative session state instead of pushing local draft state on connect.
+      pollControlSessionState();
       syncAtemExportPinConfig();
       requestAtemExportStatus();
     };
@@ -2908,14 +2913,111 @@ function setWsIndicator(state) {
   el.title = labels[state] || '';
 }
 
+function applyRemoteSettingsToUi(settings) {
+  if (!settings || typeof settings !== 'object') return;
+  let signature = '';
+  try { signature = JSON.stringify(settings); } catch (_) { signature = ''; }
+  if (signature && signature === lastRemoteSettingsSignature) return;
+  if (signature) lastRemoteSettingsSignature = signature;
+
+  const preserveMode = currentMode;
+  applyProfileSettingsToSession(settings);
+  loadSettings();
+  setMode(preserveMode);
+  updatePreview();
+  scheduleMonitorRenderSync();
+}
+
+function applyRemoteLiveStateAction(msg) {
+  if (!msg || !msg.action) return;
+
+  if (msg.action === 'settings') {
+    applyRemoteSettingsToUi(msg.settings);
+    return;
+  }
+
+  if (msg.action === 'show') {
+    if (msg.settings) applyRemoteSettingsToUi(msg.settings);
+    programOverlayData = msg.data || programOverlayData || buildOverlayData();
+    programOverlaySettings = msg.settings || getSettings();
+    programOverlayLive = true;
+    setOverlayStatus(true);
+    updateProgramMonitor();
+    return;
+  }
+
+  if (msg.action === 'clear') {
+    programOverlayData = null;
+    programOverlaySettings = null;
+    programOverlayLive = false;
+    setOverlayStatus(false);
+    updateProgramMonitor();
+    return;
+  }
+
+  if (msg.action === 'show-ticker') {
+    programTickerData = msg.data || programTickerData || buildTickerData();
+    programTickerLive = true;
+    setTickerStatus(true);
+    updateProgramMonitor();
+    return;
+  }
+
+  if (msg.action === 'clear-ticker') {
+    programTickerData = null;
+    programTickerLive = false;
+    setTickerStatus(false);
+    updateProgramMonitor();
+  }
+}
+
 function handleRemoteCommand(msg) {
   if (!msg || !msg.action) return;
-  if (msg.action === 'show')  sendShow();
-  if (msg.action === 'clear') sendClear();
+
   if (msg.action === 'atem-export-config-ack') {
     const sessions = Array.isArray(msg.pinnedSessions) ? msg.pinnedSessions : [];
     updateAtemExportUiState(sessions.includes(SESSION_ID));
+    return;
   }
+
+  applyRemoteLiveStateAction(msg);
+}
+
+async function pollControlSessionState() {
+  if (location.protocol === 'file:') return;
+  try {
+    const response = await fetch('/api/state?session=' + encodeURIComponent(SESSION_ID), {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) return;
+    const state = await response.json();
+    const updatedAt = Number(state.updatedAt || 0);
+    if (!Number.isFinite(updatedAt) || updatedAt <= lastControlStateUpdatedAt) return;
+
+    if (state.settings) {
+      applyRemoteLiveStateAction({ action: 'settings', settings: state.settings });
+    }
+    if (state.overlayVisible && state.show) {
+      applyRemoteLiveStateAction({ action: 'show', data: state.show, settings: state.settings || getSettings() });
+    } else {
+      applyRemoteLiveStateAction({ action: 'clear' });
+    }
+
+    if (state.tickerVisible && state.showTicker) {
+      applyRemoteLiveStateAction({ action: 'show-ticker', data: state.showTicker });
+    } else {
+      applyRemoteLiveStateAction({ action: 'clear-ticker' });
+    }
+
+    lastControlStateUpdatedAt = updatedAt;
+  } catch (_) {}
+}
+
+function startControlStatePolling() {
+  if (controlStatePollTimer) return;
+  pollControlSessionState();
+  controlStatePollTimer = setInterval(pollControlSessionState, 900);
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
