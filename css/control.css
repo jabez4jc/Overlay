@@ -290,7 +290,7 @@ h1 {
 .bible-grid .bible-ref-lang { grid-column: 3; }
 .bible-grid .bible-line-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px 14px;
   margin-top: -2px;
 }
@@ -2181,7 +2181,7 @@ kbd {
     grid-template-columns: minmax(170px, 1.1fr) minmax(110px, 0.7fr) minmax(170px, 1fr);
   }
   .bible-grid .bible-line-options {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .ticker-grid {

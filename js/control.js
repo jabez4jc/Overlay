@@ -221,6 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateReferenceLanguages();
   populateFonts();
   loadSettings();
+  syncBookNameDisplayOption();
   loadPresets();
   loadSettingsProfiles();
   updatePreview();
@@ -453,15 +454,29 @@ function getLocalizedBookName(bookName, langCode) {
   return BOOK_NAME_I18N?.[langCode]?.[bookName] || bookName;
 }
 
-function formatReferenceBookName(bookName, langCode) {
+function shouldHideEnglishBookName() {
+  return !!document.getElementById('hide-english-book-name')?.checked;
+}
+
+function syncBookNameDisplayOption() {
+  const hideEnglishEl = document.getElementById('hide-english-book-name');
+  if (!hideEnglishEl) return;
+  const isIndicReference = getReferenceLanguage() !== 'en';
+  hideEnglishEl.disabled = !isIndicReference;
+  if (!isIndicReference) hideEnglishEl.checked = false;
+}
+
+function formatReferenceBookName(bookName, langCode, hideEnglishName = false) {
   if (!bookName) return '';
   if (!langCode || langCode === 'en') return bookName;
   const local = getLocalizedBookName(bookName, langCode);
-  return local && local !== bookName ? `${local} (${bookName})` : bookName;
+  if (!local || local === bookName) return bookName;
+  return hideEnglishName ? local : `${local} (${bookName})`;
 }
 
 function updateBookOptionLabels() {
   const lang = getReferenceLanguage();
+  const hideEnglish = shouldHideEnglishBookName();
   const sel = document.getElementById('book');
   if (!sel) return;
   Array.from(sel.options).forEach(opt => {
@@ -471,7 +486,11 @@ function updateBookOptionLabels() {
       return;
     }
     const local = getLocalizedBookName(enName, lang);
-    opt.textContent = local && local !== enName ? `${local} (${enName})` : enName;
+    if (!local || local === enName) {
+      opt.textContent = enName;
+      return;
+    }
+    opt.textContent = hideEnglish ? local : `${local} (${enName})`;
   });
 }
 
@@ -658,10 +677,12 @@ function onBibleChange() {
 }
 function onBibleLineOptionsChange() {
   syncBibleLineOptions();
+  updateBookOptionLabels();
   updatePreview();
 }
 function onReferenceLanguageChange() {
   const lang = getReferenceLanguage();
+  syncBookNameDisplayOption();
   updateBookOptionLabels();
   if (lang !== 'en') maybeApplyLanguageFont(lang, false);
   updatePreview();
@@ -743,6 +764,7 @@ function autoSyncReferenceLanguageFromTranslation() {
   if (!langSel) return;
   if (langSel.value === 'en') {
     langSel.value = lang;
+    syncBookNameDisplayOption();
     updateBookOptionLabels();
     maybeApplyLanguageFont(lang, false);
   }
@@ -1338,7 +1360,8 @@ function buildOverlayData() {
     const chapIdx  = parseInt(chapter, 10) - 1;
     const maxVerse = bookObj && bookObj.verses ? bookObj.verses[chapIdx] : 999;
 
-    let ref = formatReferenceBookName(book, refLang);
+    const hideEnglishBookName = !!document.getElementById('hide-english-book-name')?.checked;
+    let ref = formatReferenceBookName(book, refLang, hideEnglishBookName);
     if (chapter) {
       ref += ' ' + chapter;
       if (verseRaw) {
@@ -1772,7 +1795,8 @@ function saveCurrentPreset() {
           translation: document.getElementById('translation').value,
           refLanguage: document.getElementById('reference-language')?.value || 'en',
           hideLine2:   !!document.getElementById('hide-translation-line2')?.checked,
-          appendAbbrLine1: !!document.getElementById('append-translation-abbr-line1')?.checked }
+          appendAbbrLine1: !!document.getElementById('append-translation-abbr-line1')?.checked,
+          hideEnglishBookName: !!document.getElementById('hide-english-book-name')?.checked }
       : currentMode === 'speaker'
       ? { name:  document.getElementById('speaker-name').value,
           title: document.getElementById('speaker-title').value }
@@ -1818,6 +1842,9 @@ function loadPreset(id) {
       if (hideLine2El) hideLine2El.checked = !!p.data.hideLine2;
       const appendAbbrEl = document.getElementById('append-translation-abbr-line1');
       if (appendAbbrEl) appendAbbrEl.checked = !!p.data.appendAbbrLine1;
+      const hideEnglishEl = document.getElementById('hide-english-book-name');
+      if (hideEnglishEl) hideEnglishEl.checked = !!p.data.hideEnglishBookName;
+      syncBookNameDisplayOption();
       updateBookOptionLabels();
       if (refLangEl && refLangEl.value !== 'en') maybeApplyLanguageFont(refLangEl.value, false);
       validateVerseInput();
@@ -1933,6 +1960,7 @@ function buildSessionControlState() {
       hideTranslationLine2: !!document.getElementById('hide-translation-line2')?.checked,
       includeVerseText: !!document.getElementById('include-verse-text')?.checked,
       appendTranslationAbbrLine1: !!document.getElementById('append-translation-abbr-line1')?.checked,
+      hideEnglishBookName: !!document.getElementById('hide-english-book-name')?.checked,
     },
     speaker: {
       name: document.getElementById('speaker-name')?.value || '',
@@ -2057,6 +2085,7 @@ function applyProfileControlState(controlState) {
   const hideLine2El = document.getElementById('hide-translation-line2');
   const includeVerseTextEl = document.getElementById('include-verse-text');
   const appendAbbrLine1El = document.getElementById('append-translation-abbr-line1');
+  const hideEnglishBookNameEl = document.getElementById('hide-english-book-name');
 
   if (bookEl && bible.book) {
     bookEl.value = bible.book;
@@ -2069,6 +2098,8 @@ function applyProfileControlState(controlState) {
   if (hideLine2El) hideLine2El.checked = !!bible.hideTranslationLine2;
   if (includeVerseTextEl) includeVerseTextEl.checked = !!bible.includeVerseText;
   if (appendAbbrLine1El) appendAbbrLine1El.checked = !!bible.appendTranslationAbbrLine1;
+  if (hideEnglishBookNameEl) hideEnglishBookNameEl.checked = !!bible.hideEnglishBookName;
+  syncBookNameDisplayOption();
   updateBookOptionLabels();
   validateVerseInput();
 
