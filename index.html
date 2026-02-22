@@ -132,7 +132,19 @@
             <input type="checkbox" id="hide-english-book-name" onchange="onBibleLineOptionsChange()" />
             Hide English Book Name for Indic Reference
           </label>
+          <label class="verse-text-include">
+            <input type="checkbox" id="reorder-verses" onchange="onBibleLineOptionsChange()" />
+            Reorder Verses Ascending
+          </label>
+          <div class="verse-format-inline">
+            <label for="verse-format-style">Reference Format</label>
+            <select id="verse-format-style" onchange="onBibleLineOptionsChange()">
+              <option value="compact" selected>Compact (3:12, 16–18)</option>
+              <option value="spaced">Spaced (3 : 12, 16 - 18)</option>
+            </select>
+          </div>
         </div>
+        <div id="bible-guardrail" class="verse-validation warning" style="display:none"></div>
 
         <!-- ── Verse Text Lookup ─────────────────────────────────────────── -->
         <div class="field-group span-full">
