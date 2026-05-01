@@ -133,8 +133,9 @@ body.chroma-transparent { background: transparent !important; }
   /* Subtle white outline so the overlay reads on very dark video backgrounds */
   border: 1px solid rgba(255,255,255,.10);
 
-  /* Operator-controlled minimum height for one-line lower thirds. */
-  min-height: var(--lt-min-h, 0px);
+  /* Operator-controlled height. Auto preserves the selected style's default. */
+  height: var(--lt-h, auto);
+  min-height: 0;
 
   /* Animation states */
   opacity: 0;

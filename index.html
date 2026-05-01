@@ -687,6 +687,17 @@
             </div>
           </div>
           <div class="setting-group">
+            <label class="setting-label" for="lt-min-height">
+              Lower Third Background Height
+              <span class="label-hint" id="lt-min-height-val">auto</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="lt-min-height" min="0" max="320" step="4" value="0"
+                     oninput="onLtMinHeightInput()" onchange="onSettingsChange()" />
+              <span class="slider-value" id="lt-min-height-display">auto</span>
+            </div>
+          </div>
+          <div class="setting-group">
             <label class="setting-label" for="lt-text-left-padding">
               Text Left Padding
               <span class="label-hint" id="lt-text-left-padding-val">28px</span>

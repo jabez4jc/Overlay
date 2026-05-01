@@ -463,9 +463,9 @@ function applySettings(s) {
   const watermark = document.getElementById('session-watermark');
   if (watermark) watermark.style.display = s.showSessionWatermark ? '' : 'none';
 
-  // ── Min bar height ────────────────────────────────────────────────────────
+  // ── Bar height ────────────────────────────────────────────────────────────
   const configuredMinHeight = parseInt(s.ltMinHeight || 0, 10);
-  document.documentElement.style.setProperty('--lt-min-h', configuredMinHeight + 'px');
+  document.documentElement.style.setProperty('--lt-h', configuredMinHeight ? configuredMinHeight + 'px' : 'auto');
 
   // ── Logo ──────────────────────────────────────────────────────────────────
   // Logo max-height is controlled by the operator slider; --logo-max-h CSS var

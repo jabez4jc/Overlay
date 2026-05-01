@@ -570,6 +570,7 @@ input::placeholder { color: var(--text-dim); }
 .lt-text {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   padding: 8px 14px 8px var(--lt-text-pad-left-preview, 14px);
   gap: 2px;
   background: rgba(0,0,0,.82);
@@ -625,18 +626,23 @@ input::placeholder { color: var(--text-dim); }
 /* ── Action Buttons ───────────────────────────────────────────────────────── */
 .actions {
   display: grid;
-  grid-template-columns: 1fr minmax(130px, .55fr) 1fr;
+  grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr);
   gap: 14px;
+  align-items: end;
 }
 
 .transition-control {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  justify-self: center;
+  width: 100%;
+  max-width: 128px;
+  text-align: center;
 }
 
 .transition-control label {
-  font-size: .68rem;
+  font-size: .64rem;
   color: var(--text-dim);
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -644,8 +650,10 @@ input::placeholder { color: var(--text-dim); }
 }
 
 .transition-control select {
-  height: 100%;
-  min-height: 54px;
+  min-height: 44px;
+  height: 44px;
+  padding: 8px 12px;
+  font-size: .95rem;
 }
 
 .btn-show, .btn-clear {
@@ -660,6 +668,7 @@ input::placeholder { color: var(--text-dim); }
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
   transition: background .15s, transform .1s, box-shadow .15s;
 }
@@ -1535,9 +1544,8 @@ input[type="color"] {
   padding: 14px 24px;
   gap: 8px;
 }
-.style-scripture .lt-line1 { font-size: clamp(20px, 2vw, 30px); letter-spacing: .02em; }
+.style-scripture .lt-line1 { letter-spacing: .02em; }
 .style-scripture .lt-line2 {
-  font-size: clamp(16px, 1.55vw, 24px);
   line-height: 1.3;
   white-space: normal;
   overflow: visible;
@@ -1554,12 +1562,10 @@ input[type="color"] {
   gap: 10px;
 }
 .style-scripture-panel .lt-line1 {
-  font-size: clamp(18px, 1.8vw, 26px);
   color: #f8e7b5;
   letter-spacing: .06em;
 }
 .style-scripture-panel .lt-line2 {
-  font-size: clamp(15px, 1.45vw, 22px);
   line-height: 1.35;
   white-space: normal;
   overflow: visible;
@@ -2174,8 +2180,24 @@ kbd {
     grid-template-columns: 1fr;
   }
 
-  .actions { grid-template-columns: 1fr; }
-  .transition-control select { min-height: 44px; }
+  .actions {
+    grid-template-columns: minmax(0, 1fr) 106px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .transition-control {
+    max-width: 106px;
+    gap: 4px;
+  }
+  .transition-control label {
+    font-size: .58rem;
+    letter-spacing: .07em;
+  }
+  .transition-control select {
+    min-height: 40px;
+    height: 40px;
+    padding: 6px 10px;
+    font-size: .9rem;
+  }
 
   .align-options {
     flex-wrap: wrap;
@@ -2235,6 +2257,21 @@ kbd {
 }
 
 @media (max-width: 420px) {
+  .actions {
+    grid-template-columns: minmax(0, 1fr) 94px minmax(0, 1fr);
+    gap: 6px;
+  }
+  .transition-control {
+    max-width: 94px;
+  }
+  .transition-control label {
+    font-size: .54rem;
+  }
+  .btn-show, .btn-clear {
+    font-size: .76rem;
+    letter-spacing: .05em;
+    gap: 8px;
+  }
   .ticker-grid {
     grid-template-columns: 1fr;
     gap: 10px;

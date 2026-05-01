@@ -888,6 +888,7 @@ function updateLowerThirdDirectionState() {
 
 const MODE_DEPENDENT_SETTING_KEYS = [
   'style', 'accentColor', 'ltBgColor', 'ltBgOpacity', 'ltWidth', 'ltOffsetX', 'ltOffsetY',
+  'ltMinHeight',
   'lowerThirdDirection',
   'ltTextLeftPadding', 'line2Multiline', 'line2MaxLines', 'position', 'font', 'line1Font',
   'line2Font', 'textAlign', 'textEffects'
@@ -949,6 +950,10 @@ function applyModeDependentSettingsToUi(mode) {
   if (saved.ltOffsetY !== undefined) {
     const el = document.getElementById('lt-offset-y');
     if (el) el.value = String(saved.ltOffsetY);
+  }
+  if (saved.ltMinHeight !== undefined) {
+    const el = document.getElementById('lt-min-height');
+    if (el) el.value = String(saved.ltMinHeight);
   }
   if (saved.lowerThirdDirection) {
     const el = document.getElementById('lt-bg-direction');
@@ -1796,10 +1801,24 @@ function substitutePreviewVars(str, s, data) {
     .replace(/\{\{logoUrl\}\}/g,     s.logoDataUrl  || '');
 }
 
-function applyMonitorTextFit(ltEl, viewportEl, style, line2Text) {
+function getOutputSize(settings) {
+  const [w, h] = String(settings?.outputRes || '1920x1080').split('x').map(v => parseInt(v, 10));
+  return {
+    width: Number.isFinite(w) && w > 0 ? w : 1920,
+    height: Number.isFinite(h) && h > 0 ? h : 1080,
+  };
+}
+
+function getMonitorScale(viewportEl, settings) {
+  const vpWidth = viewportEl?.offsetWidth || 320;
+  const { width } = getOutputSize(settings);
+  return Math.max(0.1, Math.min(1, vpWidth / width));
+}
+
+function applyMonitorTextFit(ltEl, viewportEl, settings, line2Text) {
   if (!ltEl || !viewportEl) return;
-  const vpWidth = viewportEl.offsetWidth || 320;
-  const scale = Math.max(0.2, Math.min(1, vpWidth / 1280));
+  const style = settings?.style || 'gradient';
+  const scale = getMonitorScale(viewportEl, settings);
   const len = (line2Text || '').trim().length;
 
   // Base sizes at output reference width (1920px), then scaled into monitor.
@@ -1831,10 +1850,9 @@ function applyMonitorTextFit(ltEl, viewportEl, style, line2Text) {
   ltEl.style.setProperty('--monitor-line2-lh', String(baseLine2Lh));
 }
 
-function applyMonitorTickerStyle(barEl, badgeEl, textEl, viewportEl, td) {
+function applyMonitorTickerStyle(barEl, badgeEl, textEl, viewportEl, td, settings = getSettings()) {
   if (!barEl || !badgeEl || !textEl || !td) return;
-  const vpWidth = viewportEl?.offsetWidth || 320;
-  const scale = Math.max(0.15, Math.min(1, vpWidth / 1920));
+  const scale = getMonitorScale(viewportEl, settings);
   const barH = Math.max(8, Math.round((td.barHeight || 68) * scale));
   const textSize = Math.max(6, Math.round((td.textSize || 28) * scale * 10) / 10);
   const badgeSize = Math.max(5, Math.round((td.badgeSize || 22) * scale * 10) / 10);
@@ -1879,10 +1897,11 @@ function applyLowerThirdVisualSettings(ltEl, ltTextEl, line2El, settings) {
   ltEl.classList.toggle('dir-ltr', supportsDirection && settings.lowerThirdDirection !== 'rtl');
 
   const textPad = Math.max(0, Math.min(240, parseInt(settings.ltTextLeftPadding ?? 28, 10)));
-  const viewportW = ltEl.closest('.monitor-viewport, .preview-viewport')?.offsetWidth || 320;
-  const scale = Math.max(0.15, Math.min(1, viewportW / 1920));
+  const viewportEl = ltEl.closest('.monitor-viewport, .preview-viewport');
+  const scale = getMonitorScale(viewportEl, settings);
   ltEl.style.setProperty('--lt-text-pad-left-preview', `${Math.round(textPad * scale)}px`);
   const configuredMinHeight = parseInt(settings.ltMinHeight || 0, 10);
+  ltEl.style.height = '';
   ltEl.style.minHeight = configuredMinHeight
     ? Math.round(configuredMinHeight * scale) + 'px'
     : '';
@@ -1927,8 +1946,7 @@ function applyMonitorOutputLogo(imgEl, viewportEl, settings) {
   }
   imgEl.src = settings.logoDataUrl;
   imgEl.classList.add('pos-' + (settings.outputLogoPosition || 'top-right'));
-  const vpWidth = viewportEl?.offsetWidth || 320;
-  const scale = Math.max(0.15, Math.min(1, vpWidth / 1920));
+  const scale = getMonitorScale(viewportEl, settings);
   imgEl.style.setProperty('--monitor-output-logo-size', `${Math.max(8, Math.round((settings.outputLogoSize || 140) * scale))}px`);
 }
 
@@ -1987,10 +2005,11 @@ function toggleTextFxSection(lineKey, sectionKey) {
   sectionCardEl.classList.toggle('collapsed');
 }
 
-function applyMonitorCustomStageScale(stageEl, viewportEl) {
+function applyMonitorCustomStageScale(stageEl, viewportEl, settings = getSettings()) {
   if (!stageEl || !viewportEl) return;
   const wrapEl = stageEl.parentElement;
   const vw = viewportEl.clientWidth || 320;
+  const { width: outputW } = getOutputSize(settings);
   let padX = 0;
   if (wrapEl) {
     const cs = getComputedStyle(wrapEl);
@@ -1999,8 +2018,8 @@ function applyMonitorCustomStageScale(stageEl, viewportEl) {
     padX = pl + pr;
   }
   const availableW = Math.max(1, vw - padX);
-  const scale = Math.max(0.1, Math.min(1, availableW / 1920));
-  stageEl.style.width = '1920px';
+  const scale = Math.max(0.1, Math.min(1, availableW / outputW));
+  stageEl.style.width = `${outputW}px`;
   stageEl.style.transform = `scale(${scale})`;
   if (wrapEl) {
     const layoutHeight = Math.max(1, stageEl.offsetHeight || stageEl.scrollHeight || 1);
@@ -2063,7 +2082,7 @@ function updatePreview() {
     if (bar)   { bar.style.background = td.bgColor; bar.style.color = td.textColor; }
     if (badge) badge.textContent = td.label;
     if (text)  text.textContent  = td.message || '(ticker message preview)';
-    applyMonitorTickerStyle(bar, badge, text, previewViewport, td);
+    applyMonitorTickerStyle(bar, badge, text, previewViewport, td, settings);
     if (tickerPreview) {
       tickerPreview.classList.toggle('pos-top', td.position === 'top');
     }
@@ -2093,7 +2112,7 @@ function updatePreview() {
       document.head.appendChild(styleEl);
     }
     styleEl.textContent = substitutePreviewVars(settings.customTemplate.css || '', settings, data);
-    applyMonitorCustomStageScale(customStage, previewViewport);
+    applyMonitorCustomStageScale(customStage, previewViewport, settings);
     return;
   }
 
@@ -2117,11 +2136,7 @@ function updatePreview() {
   lt.className = 'lower-third';
   lt.classList.add('style-' + settings.style);
   lt.classList.toggle('type-custom', data.type === 'custom');
-  applyMonitorTextFit(lt, previewViewport, settings.style, data.type === 'custom' ? data.line1 : (data.line2 || ''));
-
-  // Min-height scaled to the preview viewport (output ref = 1920px wide)
-  const previewVpWidth = document.querySelector('.preview-viewport')?.offsetWidth || 320;
-  const previewScale   = previewVpWidth / 1920;
+  applyMonitorTextFit(lt, previewViewport, settings, data.type === 'custom' ? data.line1 : (data.line2 || ''));
 
   const accent = lt.querySelector('.lt-accent');
   if (accent) accent.style.background = settings.accentColor;
@@ -2137,7 +2152,7 @@ function updatePreview() {
     logoImg.classList.toggle('logo-right', settings.logoPosition === 'right');
     logoImg.classList.toggle('logo-left',  settings.logoPosition !== 'right');
     // Scale logo max-height to the preview viewport
-    const logoH = Math.round((settings.logoSize || 110) * previewScale);
+    const logoH = Math.round((settings.logoSize || 110) * getMonitorScale(previewViewport, settings));
     logoImg.style.maxHeight = logoH + 'px';
     logoImg.style.height    = 'auto';
     lt.style.setProperty('--lt-logo-space-preview', `${logoH + 14}px`);
@@ -2935,7 +2950,7 @@ function updateProgramMonitor() {
         document.head.appendChild(styleEl);
       }
       styleEl.textContent = substitutePreviewVars(s.customTemplate.css || '', s, programOverlayData);
-      applyMonitorCustomStageScale(pgmCustomStage, pgmViewport);
+      applyMonitorCustomStageScale(pgmCustomStage, pgmViewport, s || {});
     } else {
       if (pgmCustomWrap) pgmCustomWrap.style.display = 'none';
       const staleProgramStyle = document.getElementById('program-custom-style');
@@ -2960,7 +2975,7 @@ function updateProgramMonitor() {
         pgmLt.classList.toggle('logo-pos-right', s?.logoPosition === 'right');
         pgmLt.classList.toggle('logo-pos-left', s?.logoPosition !== 'right');
       }
-      applyMonitorTextFit(pgmLt, pgmViewport, s?.style || 'gradient', programOverlayData.type === 'custom' ? programOverlayData.line1 : (programOverlayData.line2 || ''));
+      applyMonitorTextFit(pgmLt, pgmViewport, s || {}, programOverlayData.type === 'custom' ? programOverlayData.line1 : (programOverlayData.line2 || ''));
       if (pgmAccent) pgmAccent.style.background  = s?.accentColor || '#C8A951';
       if (pgmLtText) {
         pgmLtText.style.fontFamily = resolvedFontFamily(s?.line1Font || s?.font);
@@ -2972,7 +2987,7 @@ function updateProgramMonitor() {
       applyLowerThirdVisualSettings(pgmLt, pgmLtText, pgmLine2, s || {});
       if (pgmLogo) {
         if (s?.logoDataUrl && s.lowerThirdLogoEnabled !== false) {
-          const scale = Math.max(0.15, Math.min(1, (pgmViewport?.offsetWidth || 320) / 1920));
+          const scale = getMonitorScale(pgmViewport, s || {});
           const logoH = Math.round((s.logoSize || 110) * scale);
           pgmLogo.src = s.logoDataUrl;
           pgmLogo.classList.remove('hidden');
@@ -3003,7 +3018,7 @@ function updateProgramMonitor() {
     }
     if (pgmTickerBadge) pgmTickerBadge.textContent = td.label   || 'INFO';
     if (pgmTickerText)  pgmTickerText.textContent  = td.message || '';
-    applyMonitorTickerStyle(pgmTickerBar, pgmTickerBadge, pgmTickerText, pgmViewport, td);
+    applyMonitorTickerStyle(pgmTickerBar, pgmTickerBadge, pgmTickerText, pgmViewport, td, monitorSettings);
     if (pgmTickerWrap)  pgmTickerWrap.classList.toggle('pos-top', td.position === 'top');
   } else {
     if (pgmTickerWrap) pgmTickerWrap.style.display = 'none';
@@ -3663,7 +3678,7 @@ function loadSettings() {
     }
     if (saved.ltMinHeight !== undefined) {
       const el = document.getElementById('lt-min-height');
-      if (el) { el.value = saved.ltMinHeight; document.getElementById('lt-min-height-val').textContent = saved.ltMinHeight > 0 ? saved.ltMinHeight + 'px' : 'auto'; }
+      if (el) el.value = saved.ltMinHeight;
     }
 
     // Restore custom template
@@ -3713,6 +3728,7 @@ function loadSettings() {
   onLtBgOpacityInput();
   onLtWidthInput();
   onLtOffsetInput();
+  onLtMinHeightInput();
   onLtTextLeftPaddingInput();
   onLine2MaxLinesInput();
   onTickerSizeInput();
@@ -3739,7 +3755,10 @@ function onOutputLogoSizeInput() {
 function onLtMinHeightInput() {
   const v = parseInt(document.getElementById('lt-min-height')?.value || '0');
   const label = document.getElementById('lt-min-height-val');
-  if (label) label.textContent = v > 0 ? v + 'px' : 'auto';
+  const display = document.getElementById('lt-min-height-display');
+  const text = v > 0 ? v + 'px' : 'auto';
+  if (label) label.textContent = text;
+  if (display) display.textContent = text;
 }
 
 function setTextEffectsUI(textEffects) {
