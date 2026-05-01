@@ -73,6 +73,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Speaker
     </button>
+    <button id="tab-custom" class="mode-tab" onclick="setMode('custom')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16"/><path d="M4 12h12"/><path d="M4 18h16"/></svg>
+      Custom
+    </button>
     <button id="tab-ticker" class="mode-tab" onclick="setMode('ticker')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="15 6 21 12 15 18"/></svg>
       Ticker
@@ -192,6 +196,36 @@
       </div>
     </section>
 
+    <!-- ── Custom Panel ───────────────────────────────────────────────────── -->
+    <section id="panel-custom" class="panel hidden">
+      <div class="field-grid custom-grid">
+
+        <div class="field-group span-full">
+          <label for="custom-text">
+            Custom Text
+            <span class="label-hint">shown as a lower-third overlay</span>
+          </label>
+          <textarea id="custom-text" rows="4"
+            style="width:100%;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:.95rem;resize:vertical;"
+            placeholder="Enter any text to show on air"
+            oninput="onCustomChange()" onchange="onCustomChange()"></textarea>
+        </div>
+
+        <div class="field-group">
+          <label for="custom-lines">Display Lines</label>
+          <select id="custom-lines" onchange="onCustomChange()">
+            <option value="1">1 line</option>
+            <option value="2" selected>2 lines</option>
+            <option value="3">3 lines</option>
+            <option value="4">4 lines</option>
+            <option value="5">5 lines</option>
+            <option value="6">6 lines</option>
+          </select>
+        </div>
+
+      </div>
+    </section>
+
     <!-- ── Ticker Panel ───────────────────────────────────────────────────── -->
     <section id="panel-ticker" class="panel hidden">
       <div class="ticker-panel-grid ticker-grid">
@@ -301,6 +335,7 @@
         </div>
         <div class="monitor-viewport">
           <div class="preview-bg"></div>
+          <img class="output-logo-preview hidden" id="program-output-logo" alt="Output logo" />
           <!-- Lower-third content when overlay is live -->
           <div class="lower-third-wrap" id="program-wrap" style="display:none">
             <div class="lower-third" id="program-lower-third">
@@ -335,6 +370,7 @@
         <div class="monitor-label monitor-label-pvw">PVW</div>
         <div class="monitor-viewport preview-viewport">
           <div class="preview-bg"></div>
+          <img class="output-logo-preview hidden" id="preview-output-logo" alt="Output logo" />
           <!-- Standard lower-third preview (hidden when custom template is active) -->
           <div class="lower-third-wrap" id="preview-wrap">
             <div class="lower-third" id="preview-lower-third">
@@ -411,8 +447,17 @@
     <section class="actions">
       <button class="btn-show" id="btn-show" onclick="sendShow()">
         <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        CUT TO AIR
+        <span id="btn-show-label">FADE TO AIR</span>
       </button>
+      <div class="transition-control">
+        <label for="transition-select">Transition</label>
+        <select id="transition-select" onchange="onTransitionChange()">
+          <option value="none">Cut</option>
+          <option value="swipe">Swipe</option>
+          <option value="fade" selected>Fade</option>
+          <option value="slide">Slide Up</option>
+        </select>
+      </div>
       <button class="btn-clear" id="btn-clear" onclick="sendClear()">
         <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
         CLEAR
@@ -421,7 +466,7 @@
 
     <!-- ── Keyboard Shortcut Hint ─────────────────────────────────────────── -->
     <div class="kbd-hint">
-      <kbd>Enter</kbd> Cut to Air &nbsp;·&nbsp; <kbd>Esc</kbd> Clear &nbsp;·&nbsp; <kbd>B</kbd> Bible &nbsp;·&nbsp; <kbd>S</kbd> Speaker &nbsp;·&nbsp; <kbd>T</kbd> Ticker
+      <kbd>Enter</kbd> Take to Air &nbsp;·&nbsp; <kbd>Esc</kbd> Clear &nbsp;·&nbsp; <kbd>B</kbd> Bible &nbsp;·&nbsp; <kbd>S</kbd> Speaker &nbsp;·&nbsp; <kbd>C</kbd> Custom &nbsp;·&nbsp; <kbd>T</kbd> Ticker
     </div>
     <div class="app-attribution">
       Copyright © 2026
@@ -543,18 +588,9 @@
           </div>
         </div>
 
-        <!-- Animation + Style -->
+        <!-- Lower Third Style -->
         <div class="setting-row">
-          <div class="setting-group">
-            <label class="setting-label" for="anim-select">Animation</label>
-            <select id="anim-select" onchange="onSettingsChange()">
-              <option value="fade">Fade</option>
-              <option value="slide">Slide Up</option>
-              <option value="none">None (Instant)</option>
-            </select>
-          </div>
-
-          <div class="setting-group">
+          <div class="setting-group span-full">
             <label class="setting-label" for="style-select">Lower Third Style</label>
             <select id="style-select" onchange="onSettingsChange()">
               <option value="classic">Classic — Dark bar</option>
@@ -589,6 +625,13 @@
               <option value="center">Centered</option>
             </select>
           </div>
+          <div class="setting-group">
+            <label class="setting-label" for="lt-bg-direction">Background Direction</label>
+            <select id="lt-bg-direction" onchange="onSettingsChange()">
+              <option value="ltr">Left to right</option>
+              <option value="rtl">Right to left</option>
+            </select>
+          </div>
         </div>
 
         <div class="setting-row">
@@ -621,6 +664,42 @@
               <span class="slider-value" id="lt-width-display">100%</span>
             </div>
           </div>
+          <div class="setting-group">
+            <label class="setting-label" for="lt-offset-x">
+              Horizontal Position
+              <span class="label-hint" id="lt-offset-x-val">0%</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="lt-offset-x" min="-40" max="40" step="0.5" value="0"
+                     oninput="onLtOffsetInput()" onchange="onSettingsChange()" />
+              <span class="slider-value" id="lt-offset-x-display">0%</span>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" for="lt-offset-y">
+              Vertical Position
+              <span class="label-hint" id="lt-offset-y-val">0%</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="lt-offset-y" min="-30" max="30" step="0.5" value="0"
+                     oninput="onLtOffsetInput()" onchange="onSettingsChange()" />
+              <span class="slider-value" id="lt-offset-y-display">0%</span>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label" for="lt-text-left-padding">
+              Text Left Padding
+              <span class="label-hint" id="lt-text-left-padding-val">28px</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="lt-text-left-padding" min="0" max="240" step="4" value="28"
+                     oninput="onLtTextLeftPaddingInput()" onchange="onSettingsChange()" />
+              <span class="slider-value" id="lt-text-left-padding-display">28px</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
           <div class="setting-group">
             <label class="template-toggle-label">
               <input type="checkbox" id="line2-multiline" onchange="onSettingsChange()" />
@@ -930,65 +1009,15 @@
             </details>
           </div>
         </div>
-        <!-- Custom Image & Logo -->
+        <!-- Logo -->
         <div class="setting-row">
           <div class="setting-group span-full">
             <details class="settings-subsection">
               <summary>
-                <span>Custom Image &amp; Logo</span>
+                <span>Logo</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </summary>
               <div class="settings-subsection-body">
-                <div class="setting-row">
-                  <div class="setting-group span-full">
-                    <label class="setting-label">Lower Third Background Image</label>
-                    <div class="file-row">
-                      <label class="file-btn" for="lt-bg-file">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                        Choose Image
-                        <input type="file" id="lt-bg-file" accept="image/*" onchange="onLtBgChange()" />
-                      </label>
-                      <button class="file-clear-btn" id="lt-bg-clear" onclick="clearLtBg()" style="display:none">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        Clear
-                      </button>
-                      <span class="file-name" id="lt-bg-name">No image selected</span>
-                    </div>
-                    <div class="file-preview-wrap" id="lt-bg-preview-wrap" style="display:none">
-                      <img id="lt-bg-preview" class="file-preview-img" alt="Lower third background preview" />
-                    </div>
-                    <div class="bg-fit-controls" id="bg-fit-controls" style="display:none">
-                      <div class="setting-group">
-                        <label class="setting-label" for="lt-bg-size">Image Fit</label>
-                        <select id="lt-bg-size" onchange="onSettingsChange()">
-                          <option value="cover">Cover (fill, may crop)</option>
-                          <option value="contain">Contain (full image, no crop)</option>
-                          <option value="stretch">Stretch (exact fill)</option>
-                        </select>
-                      </div>
-                      <div class="setting-group">
-                        <label class="setting-label" for="lt-bg-position">Vertical Focus</label>
-                        <select id="lt-bg-position" onchange="onSettingsChange()">
-                          <option value="center center">Center</option>
-                          <option value="top center">Top</option>
-                          <option value="bottom center">Bottom</option>
-                        </select>
-                      </div>
-                      <div class="setting-group span-full">
-                        <label class="setting-label" for="lt-min-height">
-                          Min Bar Height
-                          <span class="label-hint">keeps bar consistent when only 1 line shows</span>
-                        </label>
-                        <div class="slider-row">
-                          <input type="range" id="lt-min-height" min="0" max="240" step="10" value="0"
-                                 oninput="onLtMinHeightInput()" onchange="onSettingsChange()" />
-                          <span class="slider-value" id="lt-min-height-val">auto</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <div class="setting-row">
                   <div class="setting-group span-full">
                     <label class="setting-label">Logo (PNG with transparency)</label>
@@ -1008,6 +1037,12 @@
                       <div class="logo-preview-wrap">
                         <img id="logo-preview" class="logo-preview-img" alt="Logo preview" />
                       </div>
+                      <div class="setting-group span-full">
+                        <label class="template-toggle-label">
+                          <input type="checkbox" id="lower-third-logo-enabled" checked onchange="onSettingsChange()" />
+                          Show logo in lower third
+                        </label>
+                      </div>
                       <div class="setting-group">
                         <label class="setting-label" for="logo-position">Logo Position</label>
                         <select id="logo-position" onchange="onSettingsChange()">
@@ -1017,13 +1052,40 @@
                       </div>
                       <div class="setting-group span-full">
                         <label class="setting-label" for="logo-size">
-                          Logo Size
-                          <span class="label-hint">max height in output</span>
+                          Lower-Third Logo Size
+                          <span class="label-hint">max height inside lower third</span>
                         </label>
                         <div class="slider-row">
                           <input type="range" id="logo-size" min="40" max="240" step="10" value="110"
                                  oninput="onLogoSizeInput()" onchange="onSettingsChange()" />
                           <span class="slider-value" id="logo-size-val">110px</span>
+                        </div>
+                      </div>
+                      <div class="setting-group span-full">
+                        <label class="template-toggle-label">
+                          <input type="checkbox" id="output-logo-enabled" onchange="onSettingsChange()" />
+                          Show logo on output
+                        </label>
+                      </div>
+                      <div class="setting-group">
+                        <label class="setting-label" for="output-logo-position">Output Logo Position</label>
+                        <select id="output-logo-position" onchange="onSettingsChange()">
+                          <option value="top-left">Top left</option>
+                          <option value="top-right" selected>Top right</option>
+                          <option value="bottom-left">Bottom left</option>
+                          <option value="bottom-right">Bottom right</option>
+                          <option value="center">Center</option>
+                        </select>
+                      </div>
+                      <div class="setting-group">
+                        <label class="setting-label" for="output-logo-size">
+                          Output Logo Size
+                          <span class="label-hint" id="output-logo-size-val">140px</span>
+                        </label>
+                        <div class="slider-row">
+                          <input type="range" id="output-logo-size" min="40" max="360" step="10" value="140"
+                                 oninput="onOutputLogoSizeInput()" onchange="onSettingsChange()" />
+                          <span class="slider-value" id="output-logo-size-display">140px</span>
                         </div>
                       </div>
                     </div>
@@ -1054,7 +1116,6 @@
                   <div class="template-example-row">
                     <select id="template-example-select">
                       <option value="classic">Classic Dark</option>
-                      <option value="bg-image">Background Image</option>
                       <option value="logo-bar">Logo + Dark Bar</option>
                       <option value="light">Minimal Light</option>
                       <option value="scroll">Scripture Scroll</option>
@@ -1068,7 +1129,7 @@
                 <div class="template-fields">
                   <div class="template-field-group">
                     <label class="setting-label">HTML
-                      <span class="label-hint">Variables: &#123;&#123;line1&#125;&#125; &#123;&#123;line2&#125;&#125; &#123;&#123;accentColor&#125;&#125; &#123;&#123;font&#125;&#125; &#123;&#123;line1Font&#125;&#125; &#123;&#123;line2Font&#125;&#125; &#123;&#123;logoUrl&#125;&#125; &#123;&#123;bgUrl&#125;&#125;</span>
+                      <span class="label-hint">Variables: &#123;&#123;line1&#125;&#125; &#123;&#123;line2&#125;&#125; &#123;&#123;accentColor&#125;&#125; &#123;&#123;font&#125;&#125; &#123;&#123;line1Font&#125;&#125; &#123;&#123;line2Font&#125;&#125; &#123;&#123;logoUrl&#125;&#125;</span>
                     </label>
                     <textarea id="template-html" class="template-textarea" rows="6"
                       onchange="onSettingsChange()" oninput="onSettingsChange()"
@@ -1139,9 +1200,9 @@
       <section class="guide-section">
         <h3>2. Live Operation Runbook</h3>
         <ol>
-          <li>Select mode: <code>Bible</code>, <code>Speaker</code>, or <code>Ticker</code>.</li>
+          <li>Select mode: <code>Bible</code>, <code>Speaker</code>, <code>Custom</code>, or <code>Ticker</code>.</li>
           <li>Build content and verify in <code>PVW</code>.</li>
-          <li>Press <code>CUT TO AIR</code> to push to <code>PGM</code> and Output.</li>
+          <li>Choose a transition, then press the on-air button to push to <code>PGM</code> and Output.</li>
           <li>Press <code>CLEAR</code> to remove active lower-third/ticker output.</li>
         </ol>
         <p>Always treat PVW as final QA before every cut.</p>
@@ -1165,9 +1226,10 @@
       </section>
 
       <section class="guide-section">
-        <h3>4. Speaker and Ticker</h3>
+        <h3>4. Speaker, Custom, and Ticker</h3>
         <ul>
           <li>Speaker: speaker name is primary; role/title is optional.</li>
+          <li>Custom: enter free text and choose the number of displayed lines.</li>
           <li>Ticker: configure message, badge, style, speed, position, and colors.</li>
           <li>Ticker can be run independently from lower-thirds.</li>
         </ul>
@@ -1180,14 +1242,14 @@
           <li><code>Text Effects (Per Line)</code> controls line-specific font, weight, size, color, stroke, and drop shadow.</li>
           <li>Use Line 2 multiline for long scripture passages.</li>
           <li><code>Custom HTML Template</code> overrides built-in styles completely.</li>
-          <li>Template variables: <code>{{line1}}</code>, <code>{{line2}}</code>, <code>{{accentColor}}</code>, <code>{{line1Font}}</code>, <code>{{line2Font}}</code>, <code>{{logoUrl}}</code>, <code>{{bgUrl}}</code>.</li>
+          <li>Template variables: <code>{{line1}}</code>, <code>{{line2}}</code>, <code>{{accentColor}}</code>, <code>{{line1Font}}</code>, <code>{{line2Font}}</code>, <code>{{logoUrl}}</code>.</li>
         </ul>
       </section>
 
       <section class="guide-section">
         <h3>6. Presets and Settings Profiles</h3>
         <ul>
-          <li>Presets speed up content recall (Reference/Speaker/Ticker/Template).</li>
+          <li>Presets speed up content recall (Reference/Speaker/Custom/Ticker/Template).</li>
           <li>Settings Profiles store full operational state and presets together.</li>
           <li>Use Export/Import for transfer between machines/servers.</li>
         </ul>
@@ -1232,7 +1294,7 @@
 
       <section class="guide-section">
         <h3>10. Keyboard and Fast Operations</h3>
-        <p><code>Enter</code> Cut, <code>Esc</code> Clear, <code>B</code> Bible, <code>S</code> Speaker, <code>T</code> Ticker, <code>O</code> Output Window, <code>H</code> User Guide.</p>
+        <p><code>Enter</code> Take to air, <code>Esc</code> Clear, <code>B</code> Bible, <code>S</code> Speaker, <code>C</code> Custom, <code>T</code> Ticker, <code>O</code> Output Window, <code>H</code> User Guide.</p>
       </section>
 
       <section class="guide-section">

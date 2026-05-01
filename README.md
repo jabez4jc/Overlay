@@ -22,16 +22,17 @@ Use the **same session ID** in both windows.
 
 ## Core Live Workflow
 
-1. Select mode: `Bible Reference`, `Speaker`, or `Ticker`.
+1. Select mode: `Bible Reference`, `Speaker`, `Custom`, or `Ticker`.
 2. Build and validate content in `PVW`.
-3. Click `CUT TO AIR` to move PVW to `PGM` and Output.
+3. Choose `Cut`, `Swipe`, or `Fade`, then take PVW to `PGM` and Output.
 4. Click `CLEAR` to remove active lower-third/ticker output.
 
 Keyboard shortcuts:
-- `Enter`: Cut to Air
+- `Enter`: Take to Air
 - `Esc`: Clear
 - `B`: Bible mode
 - `S`: Speaker mode
+- `C`: Custom mode
 - `T`: Ticker mode
 - `O`: Open Output Window
 - `H`: Open User Guide
@@ -67,6 +68,12 @@ Recommended runbook:
 - Role/title is optional.
 - Preview first, then cut.
 
+### Custom
+
+- Enter any text to show as a lower-third.
+- Choose how many lines the custom text can use.
+- Preview first, then take to air.
+
 ### Ticker
 
 - Set message, badge, speed, style, position, colors, and size.
@@ -94,10 +101,8 @@ Each line (Line 1 / Line 2) supports:
 ### Custom Template and Assets
 
 - `Custom HTML Template` can fully override built-in styles.
-- Supported variables: `{{line1}}`, `{{line2}}`, `{{accentColor}}`, `{{font}}`, `{{line1Font}}`, `{{line2Font}}`, `{{logoUrl}}`, `{{bgUrl}}`.
-- `Custom Image & Logo` supports:
-  - Lower-third background image
-  - PNG logo with transparency
+- Supported variables: `{{line1}}`, `{{line2}}`, `{{accentColor}}`, `{{font}}`, `{{line1Font}}`, `{{line2Font}}`, `{{logoUrl}}`.
+- `Logo` supports PNG logos with transparency for lower thirds and the standalone output logo.
 
 ## Presets and Settings Profiles
 

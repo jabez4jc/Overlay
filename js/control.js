@@ -101,7 +101,7 @@ async function getOrCreateSessionId() {
 let SESSION_ID = '';
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let currentMode    = 'bible';   // 'bible' | 'speaker' | 'ticker'
+let currentMode    = 'bible';   // 'bible' | 'speaker' | 'custom' | 'ticker'
 let overlayVisible = false;
 let tickerActive   = false;
 let outputWindows  = [];        // ← array for multiple simultaneous targets
@@ -113,8 +113,7 @@ let programOverlayLive     = false;
 let programTickerData      = null;
 let programTickerLive      = false;
 
-// In-memory image stores (large files may not fit in localStorage)
-let ltBgDataUrl  = null;
+// In-memory logo store (large files may not fit in localStorage)
 let logoDataUrl  = null;
 
 // Verse text lookup state
@@ -122,12 +121,12 @@ let verseTextCurrent    = null;   // last successfully fetched verse text
 let verseTextCache      = {};     // { cacheKey: { text, refOnly } }
 let referenceOnlyLookup = false;  // true when text is ASV reference, not for output
 
-// Presets — separate stores for overlay (bible/speaker) vs ticker
+// Presets — separate stores for overlay (bible/speaker/custom) vs ticker
 let overlayPresets = [];
 let tickerPresets  = [];
 let templatePresets = [];
 let settingsProfiles = [];
-let overlayModeSettings = { bible: null, speaker: null };
+let overlayModeSettings = { bible: null, speaker: null, custom: null };
 let defaultOverlayModeSettings = null;
 let activeOverlaySettingsMode = 'bible';
 
@@ -230,6 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   defaultOverlayModeSettings = pickModeDependentSettings(getSettings());
   overlayModeSettings.bible = JSON.parse(JSON.stringify(defaultOverlayModeSettings));
   overlayModeSettings.speaker = JSON.parse(JSON.stringify(defaultOverlayModeSettings));
+  overlayModeSettings.custom = JSON.parse(JSON.stringify(defaultOverlayModeSettings));
   loadSettings();
   syncBookNameDisplayOption();
   loadPresets();
@@ -602,6 +602,17 @@ function hexToRgba(hex, alpha) {
 
 
 const INLINE_LOWER_THIRD_STYLES = new Set(['inline-duo', 'inline-chip', 'inline-glass']);
+const DIRECTIONAL_LOWER_THIRD_STYLES = new Set([
+  'classic',
+  'gradient',
+  'scripture',
+  'scripture-panel',
+  'solid',
+  'frosted',
+  'inline-duo',
+  'inline-chip',
+  'inline-glass',
+]);
 const LOWER_THIRD_BACKGROUND_MODE = Object.freeze({
   classic: 'custom-solid',
   accent: 'transparent',
@@ -644,7 +655,8 @@ function applyStyleAwareLowerThirdBackground(ltTextEl, settings) {
     const start = hexToRgba(bgColor, Math.max(0, Math.min(1, bgOpacity * 1.05)));
     const mid = hexToRgba(bgColor, Math.max(0, Math.min(1, bgOpacity * 0.72)));
     const end = hexToRgba(bgColor, 0);
-    ltTextEl.style.background = `linear-gradient(90deg, ${start} 0%, ${mid} 62%, ${end} 100%)`;
+    const direction = settings.lowerThirdDirection === 'rtl' ? '270deg' : '90deg';
+    ltTextEl.style.background = `linear-gradient(${direction}, ${start} 0%, ${mid} 62%, ${end} 100%)`;
     return;
   }
 
@@ -707,23 +719,25 @@ function setMode(mode) {
   // Persist outgoing mode-specific style only when actually switching modes.
   // If we store while mode is unchanged, transient UI reloads can overwrite
   // speaker settings with bible settings (or vice versa).
-  if (modeChanged && (currentMode === 'bible' || currentMode === 'speaker')) {
+  if (modeChanged && isOverlayMode(currentMode)) {
     storeCurrentModeDependentSettings();
     activeOverlaySettingsMode = currentMode;
   }
 
   currentMode = mode;
 
-  if (mode === 'bible' || mode === 'speaker') {
+  if (isOverlayMode(mode)) {
     activeOverlaySettingsMode = mode;
     applyModeDependentSettingsToUi(mode);
   }
 
   document.getElementById('tab-bible').classList.toggle('active', mode === 'bible');
   document.getElementById('tab-speaker').classList.toggle('active', mode === 'speaker');
+  document.getElementById('tab-custom')?.classList.toggle('active', mode === 'custom');
   document.getElementById('tab-ticker').classList.toggle('active', mode === 'ticker');
   document.getElementById('panel-bible').classList.toggle('hidden', mode !== 'bible');
   document.getElementById('panel-speaker').classList.toggle('hidden', mode !== 'speaker');
+  document.getElementById('panel-custom')?.classList.toggle('hidden', mode !== 'custom');
   document.getElementById('panel-ticker').classList.toggle('hidden', mode !== 'ticker');
 
   if (mode === 'bible') {
@@ -776,7 +790,19 @@ function onSpeakerChange() {
   updatePreview();
 }
 
+function onCustomChange() {
+  const customTextEl = document.getElementById('custom-text');
+  if (customTextEl) customTextEl.setCustomValidity('');
+  updateCutToAirButtonState();
+  updatePreview();
+}
+
 function onTickerChange() { updatePreview(); }
+
+function onTransitionChange() {
+  updateTransitionButtonLabel();
+  onSettingsChange();
+}
 
 function onTickerSizeInput() {
   const h = parseInt(document.getElementById('ticker-bar-height')?.value || '68', 10);
@@ -806,6 +832,34 @@ function onLtWidthInput() {
   if (b) b.textContent = `${v}%`;
 }
 
+function formatSignedPercent(v) {
+  const n = Math.round((parseFloat(v) || 0) * 10) / 10;
+  return `${n > 0 ? '+' : ''}${n}%`;
+}
+
+function onLtOffsetInput() {
+  const x = document.getElementById('lt-offset-x')?.value || '0';
+  const y = document.getElementById('lt-offset-y')?.value || '0';
+  const xText = formatSignedPercent(x);
+  const yText = formatSignedPercent(y);
+  const xLabel = document.getElementById('lt-offset-x-val');
+  const yLabel = document.getElementById('lt-offset-y-val');
+  const xDisplay = document.getElementById('lt-offset-x-display');
+  const yDisplay = document.getElementById('lt-offset-y-display');
+  if (xLabel) xLabel.textContent = xText;
+  if (xDisplay) xDisplay.textContent = xText;
+  if (yLabel) yLabel.textContent = yText;
+  if (yDisplay) yDisplay.textContent = yText;
+}
+
+function onLtTextLeftPaddingInput() {
+  const v = parseInt(document.getElementById('lt-text-left-padding')?.value || '28', 10);
+  const a = document.getElementById('lt-text-left-padding-val');
+  const b = document.getElementById('lt-text-left-padding-display');
+  if (a) a.textContent = `${v}px`;
+  if (b) b.textContent = `${v}px`;
+}
+
 function onLine2MaxLinesInput() {
   const v = parseInt(document.getElementById('line2-max-lines')?.value || '2', 10);
   const a = document.getElementById('line2-max-lines-val');
@@ -821,15 +875,31 @@ function onTickerStyleChange() {
   updatePreview();
 }
 
+function updateLowerThirdDirectionState() {
+  const style = document.getElementById('style-select')?.value || 'gradient';
+  const select = document.getElementById('lt-bg-direction');
+  if (!select) return;
+  const supported = DIRECTIONAL_LOWER_THIRD_STYLES.has(style);
+  select.disabled = !supported;
+  select.title = supported
+    ? 'Mirror side-biased backgrounds and accent strips.'
+    : 'This lower-third style has no side-biased background to mirror.';
+}
+
 const MODE_DEPENDENT_SETTING_KEYS = [
-  'style', 'accentColor', 'ltBgColor', 'ltBgOpacity', 'ltWidth',
-  'line2Multiline', 'line2MaxLines', 'position', 'font', 'line1Font',
+  'style', 'accentColor', 'ltBgColor', 'ltBgOpacity', 'ltWidth', 'ltOffsetX', 'ltOffsetY',
+  'lowerThirdDirection',
+  'ltTextLeftPadding', 'line2Multiline', 'line2MaxLines', 'position', 'font', 'line1Font',
   'line2Font', 'textAlign', 'textEffects'
 ];
 
 function getOverlayStyleModeForEditing() {
-  if (currentMode === 'bible' || currentMode === 'speaker') return currentMode;
+  if (isOverlayMode(currentMode)) return currentMode;
   return activeOverlaySettingsMode || 'bible';
+}
+
+function isOverlayMode(mode) {
+  return mode === 'bible' || mode === 'speaker' || mode === 'custom';
 }
 
 function pickModeDependentSettings(settings) {
@@ -844,7 +914,7 @@ function pickModeDependentSettings(settings) {
 
 function storeCurrentModeDependentSettings() {
   const mode = getOverlayStyleModeForEditing();
-  if (mode !== 'bible' && mode !== 'speaker') return;
+  if (!isOverlayMode(mode)) return;
   overlayModeSettings[mode] = pickModeDependentSettings(getSettings());
 }
 
@@ -871,6 +941,22 @@ function applyModeDependentSettingsToUi(mode) {
   if (saved.ltWidth !== undefined) {
     const el = document.getElementById('lt-width');
     if (el) el.value = String(saved.ltWidth);
+  }
+  if (saved.ltOffsetX !== undefined) {
+    const el = document.getElementById('lt-offset-x');
+    if (el) el.value = String(saved.ltOffsetX);
+  }
+  if (saved.ltOffsetY !== undefined) {
+    const el = document.getElementById('lt-offset-y');
+    if (el) el.value = String(saved.ltOffsetY);
+  }
+  if (saved.lowerThirdDirection) {
+    const el = document.getElementById('lt-bg-direction');
+    if (el) el.value = saved.lowerThirdDirection;
+  }
+  if (saved.ltTextLeftPadding !== undefined) {
+    const el = document.getElementById('lt-text-left-padding');
+    if (el) el.value = String(saved.ltTextLeftPadding);
   }
   if (saved.line2Multiline !== undefined) {
     const el = document.getElementById('line2-multiline');
@@ -905,7 +991,10 @@ function applyModeDependentSettingsToUi(mode) {
 
   onLtBgOpacityInput();
   onLtWidthInput();
+  onLtOffsetInput();
+  onLtTextLeftPaddingInput();
   onLine2MaxLinesInput();
+  updateLowerThirdDirectionState();
   updateTextEffectLabels();
 }
 
@@ -913,15 +1002,33 @@ function updateCutToAirButtonState() {
   const btn = document.getElementById('btn-show');
   if (!btn) return;
   if (!btn.dataset.defaultTitle) {
-    btn.dataset.defaultTitle = btn.title || 'Cut to Air';
+    btn.dataset.defaultTitle = btn.title || 'Take to Air';
   }
   const speakerName = document.getElementById('speaker-name')?.value.trim() || '';
-  const mustDisable = currentMode === 'speaker' && !speakerName;
+  const customText = document.getElementById('custom-text')?.value.trim() || '';
+  const mustDisable = (currentMode === 'speaker' && !speakerName)
+    || (currentMode === 'custom' && !customText);
   btn.disabled = mustDisable;
   btn.setAttribute('aria-disabled', mustDisable ? 'true' : 'false');
-  btn.title = mustDisable
-    ? 'Enter Speaker Name before Cut to Air.'
+  btn.title = currentMode === 'speaker' && !speakerName
+    ? 'Enter Speaker Name before taking to air.'
+    : currentMode === 'custom' && !customText
+    ? 'Enter Custom Text before taking to air.'
     : btn.dataset.defaultTitle;
+  updateTransitionButtonLabel();
+}
+
+function updateTransitionButtonLabel() {
+  const label = document.getElementById('btn-show-label');
+  const select = document.getElementById('transition-select');
+  if (!label || !select) return;
+  const text = {
+    none: 'CUT TO AIR',
+    fade: 'FADE TO AIR',
+    swipe: 'SWIPE TO AIR',
+    slide: 'SLIDE TO AIR',
+  }[select.value] || 'TAKE TO AIR';
+  label.textContent = text;
 }
 
 function autoSyncReferenceLanguageFromTranslation() {
@@ -1653,11 +1760,20 @@ function buildOverlayData() {
     }
 
     return { type: 'bible', line1, line2 };
-  } else {
+  } else if (currentMode === 'speaker') {
     const name  = document.getElementById('speaker-name').value.trim();
     const title = document.getElementById('speaker-title').value.trim();
     return { type: 'speaker', line1: name || '', line2: title || '' };
   }
+
+  const text = document.getElementById('custom-text')?.value.trim() || '';
+  const lines = parseInt(document.getElementById('custom-lines')?.value || '2', 10);
+  return {
+    type: 'custom',
+    line1: text,
+    line2: '',
+    customLines: Math.max(1, Math.min(6, lines || 2)),
+  };
 }
 
 // ── Preview helpers ───────────────────────────────────────────────────────────
@@ -1677,8 +1793,7 @@ function substitutePreviewVars(str, s, data) {
     .replace(/\{\{font\}\}/g,        line1Font)
     .replace(/\{\{line1Font\}\}/g,   line1Font)
     .replace(/\{\{line2Font\}\}/g,   line2Font)
-    .replace(/\{\{logoUrl\}\}/g,     s.logoDataUrl  || '')
-    .replace(/\{\{bgUrl\}\}/g,       s.ltBgImage    || '');
+    .replace(/\{\{logoUrl\}\}/g,     s.logoDataUrl  || '');
 }
 
 function applyMonitorTextFit(ltEl, viewportEl, style, line2Text) {
@@ -1728,13 +1843,49 @@ function applyMonitorTickerStyle(barEl, badgeEl, textEl, viewportEl, td) {
   badgeEl.style.fontSize = `${badgeSize}px`;
 }
 
+function clampNumber(value, min, max, fallback = 0) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+function applyMonitorWrapPosition(wrapEl, settings) {
+  if (!wrapEl || !settings) return;
+  const viewport = wrapEl.closest('.monitor-viewport, .preview-viewport');
+  const viewportW = viewport?.offsetWidth || 320;
+  const viewportH = viewport?.offsetHeight || Math.round(viewportW * 9 / 16);
+  const x = clampNumber(settings.ltOffsetX, -40, 40, 0);
+  const y = clampNumber(settings.ltOffsetY, -30, 30, 0);
+  wrapEl.style.setProperty('--lt-offset-x-preview', `${Math.round((x / 100) * viewportW)}px`);
+  wrapEl.style.setProperty('--lt-offset-y-preview', `${Math.round((y / 100) * viewportH)}px`);
+}
+
 function applyLowerThirdVisualSettings(ltEl, ltTextEl, line2El, settings) {
   if (!ltEl || !ltTextEl || !settings) return;
   applyStyleAwareLowerThirdBackground(ltTextEl, settings);
+  const textAlign = settings.textAlign || 'left';
+  ltTextEl.classList.remove('align-left', 'align-center', 'align-right');
+  ltTextEl.classList.add('align-' + textAlign);
+  ltTextEl.style.textAlign = textAlign;
+  ltTextEl.querySelectorAll('.lt-line1, .lt-line2').forEach(el => {
+    el.style.textAlign = textAlign;
+  });
 
   const widthPct = Math.max(40, Math.min(100, parseInt(settings.ltWidth || 100, 10)));
   ltEl.style.width = `${widthPct}%`;
   ltEl.style.maxWidth = '100%';
+  const supportsDirection = DIRECTIONAL_LOWER_THIRD_STYLES.has(settings.style || 'gradient');
+  ltEl.classList.toggle('dir-rtl', supportsDirection && settings.lowerThirdDirection === 'rtl');
+  ltEl.classList.toggle('dir-ltr', supportsDirection && settings.lowerThirdDirection !== 'rtl');
+
+  const textPad = Math.max(0, Math.min(240, parseInt(settings.ltTextLeftPadding ?? 28, 10)));
+  const viewportW = ltEl.closest('.monitor-viewport, .preview-viewport')?.offsetWidth || 320;
+  const scale = Math.max(0.15, Math.min(1, viewportW / 1920));
+  ltEl.style.setProperty('--lt-text-pad-left-preview', `${Math.round(textPad * scale)}px`);
+  const configuredMinHeight = parseInt(settings.ltMinHeight || 0, 10);
+  ltEl.style.minHeight = configuredMinHeight
+    ? Math.round(configuredMinHeight * scale) + 'px'
+    : '';
 
   if (line2El) {
     const inlineStyle = isInlineLowerThirdStyle(settings.style || 'gradient');
@@ -1750,6 +1901,35 @@ function applyLowerThirdVisualSettings(ltEl, ltTextEl, line2El, settings) {
     line2El.style.webkitLineClamp = multiline ? String(maxLines) : '';
     line2El.style.lineClamp = multiline ? String(maxLines) : '';
   }
+}
+
+function applyCustomTextLineClamp(line1El, data) {
+  if (!line1El) return;
+  const isCustom = data?.type === 'custom';
+  const lines = Math.max(1, Math.min(6, parseInt(data?.customLines || 2, 10)));
+  line1El.style.whiteSpace = isCustom ? 'pre-line' : '';
+  line1El.style.overflow = isCustom ? 'hidden' : '';
+  line1El.style.textOverflow = isCustom ? 'clip' : '';
+  line1El.style.display = isCustom ? '-webkit-box' : '';
+  line1El.style.webkitBoxOrient = isCustom ? 'vertical' : '';
+  line1El.style.webkitLineClamp = isCustom ? String(lines) : '';
+  line1El.style.lineClamp = isCustom ? String(lines) : '';
+}
+
+function applyMonitorOutputLogo(imgEl, viewportEl, settings) {
+  if (!imgEl || !settings) return;
+  const enabled = !!(settings.outputLogoEnabled && settings.logoDataUrl);
+  imgEl.classList.toggle('hidden', !enabled);
+  imgEl.classList.remove('pos-top-left', 'pos-top-right', 'pos-bottom-left', 'pos-bottom-right', 'pos-center');
+  if (!enabled) {
+    imgEl.removeAttribute('src');
+    return;
+  }
+  imgEl.src = settings.logoDataUrl;
+  imgEl.classList.add('pos-' + (settings.outputLogoPosition || 'top-right'));
+  const vpWidth = viewportEl?.offsetWidth || 320;
+  const scale = Math.max(0.15, Math.min(1, vpWidth / 1920));
+  imgEl.style.setProperty('--monitor-output-logo-size', `${Math.max(8, Math.round((settings.outputLogoSize || 140) * scale))}px`);
 }
 
 function updateSettingsCompactState() {
@@ -1869,6 +2049,7 @@ function updatePreview() {
   const customEl      = document.getElementById('preview-custom');
   const tickerPreview = document.getElementById('preview-ticker-wrap');
   const previewViewport = document.querySelector('.preview-viewport');
+  applyMonitorOutputLogo(document.getElementById('preview-output-logo'), previewViewport, settings);
 
   // ── Ticker mode preview ─────────────────────────────────────────────────────
   if (currentMode === 'ticker') {
@@ -1899,6 +2080,7 @@ function updatePreview() {
     if (customWrap) {
       customWrap.classList.remove('pos-lower', 'pos-upper', 'pos-center');
       customWrap.classList.add('pos-' + (settings.position || 'lower'));
+      applyMonitorWrapPosition(customWrap, settings);
     }
     if (customEl) {
       customEl.innerHTML = substitutePreviewVars(settings.customTemplate.html, settings, data);
@@ -1921,6 +2103,7 @@ function updatePreview() {
   if (previewWrap) {
     previewWrap.classList.remove('pos-lower', 'pos-upper', 'pos-center');
     previewWrap.classList.add('pos-' + (settings.position || 'lower'));
+    applyMonitorWrapPosition(previewWrap, settings);
   }
   // Clear injected custom CSS when template is disabled
   const staleStyle = document.getElementById('preview-custom-style');
@@ -1933,55 +2116,46 @@ function updatePreview() {
   const lt = document.getElementById('preview-lower-third');
   lt.className = 'lower-third';
   lt.classList.add('style-' + settings.style);
-  applyMonitorTextFit(lt, previewViewport, settings.style, data.line2 || '');
-
-  if (settings.ltBgImage) {
-    const bgSizeMap = { stretch: '100% 100%', contain: 'contain', cover: 'cover' };
-    lt.style.backgroundImage    = `url('${settings.ltBgImage}')`;
-    lt.style.backgroundSize     = bgSizeMap[settings.ltBgSize] || 'cover';
-    lt.style.backgroundPosition = settings.ltBgPosition || 'center center';
-  } else {
-    lt.style.backgroundImage = '';
-  }
+  lt.classList.toggle('type-custom', data.type === 'custom');
+  applyMonitorTextFit(lt, previewViewport, settings.style, data.type === 'custom' ? data.line1 : (data.line2 || ''));
 
   // Min-height scaled to the preview viewport (output ref = 1920px wide)
   const previewVpWidth = document.querySelector('.preview-viewport')?.offsetWidth || 320;
   const previewScale   = previewVpWidth / 1920;
-  lt.style.minHeight = settings.ltMinHeight
-    ? Math.round(settings.ltMinHeight * previewScale) + 'px'
-    : '';
 
   const accent = lt.querySelector('.lt-accent');
   if (accent) accent.style.background = settings.accentColor;
 
   const logoImg = document.getElementById('preview-logo');
-  if (settings.logoDataUrl) {
+  const showLowerThirdLogo = !!settings.logoDataUrl && settings.lowerThirdLogoEnabled !== false;
+  lt.classList.toggle('has-logo', showLowerThirdLogo);
+  lt.classList.toggle('logo-pos-right', settings.logoPosition === 'right');
+  lt.classList.toggle('logo-pos-left', settings.logoPosition !== 'right');
+  if (showLowerThirdLogo) {
     logoImg.src = settings.logoDataUrl;
     logoImg.classList.remove('hidden');
     logoImg.classList.toggle('logo-right', settings.logoPosition === 'right');
     logoImg.classList.toggle('logo-left',  settings.logoPosition !== 'right');
     // Scale logo max-height to the preview viewport
-    logoImg.style.maxHeight = Math.round((settings.logoSize || 110) * previewScale) + 'px';
+    const logoH = Math.round((settings.logoSize || 110) * previewScale);
+    logoImg.style.maxHeight = logoH + 'px';
     logoImg.style.height    = 'auto';
-    if (settings.logoPosition === 'right') {
-      lt.appendChild(logoImg);
-    } else {
-      const ltAccent = lt.querySelector('.lt-accent');
-      lt.insertBefore(logoImg, ltAccent ? ltAccent.nextSibling : lt.firstChild);
-    }
+    lt.style.setProperty('--lt-logo-space-preview', `${logoH + 14}px`);
   } else {
     logoImg.classList.add('hidden');
+    logoImg.removeAttribute('src');
+    lt.style.removeProperty('--lt-logo-space-preview');
   }
 
   const ltText = lt.querySelector('.lt-text');
   if (ltText) {
     ltText.style.fontFamily = resolvedFontFamily(settings.line1Font || settings.font);
-    ltText.style.textAlign  = settings.textAlign || 'left';
   }
   const previewLine1 = document.getElementById('preview-line1');
   const previewLine2 = document.getElementById('preview-line2');
   if (previewLine1) previewLine1.style.fontFamily = resolvedFontFamily(settings.line1Font || settings.font);
   if (previewLine2) previewLine2.style.fontFamily = resolvedFontFamily(settings.line2Font || settings.line1Font || settings.font);
+  applyCustomTextLineClamp(previewLine1, data);
   applyLineTextEffects(
     previewLine1,
     previewLine2,
@@ -2033,10 +2207,13 @@ function saveCurrentPreset() {
     const name  = document.getElementById('speaker-name').value.trim();
     const title = document.getElementById('speaker-title').value.trim();
     defaultLabel = title ? `${name} — ${title}` : name;
+  } else if (currentMode === 'custom') {
+    const text = document.getElementById('custom-text')?.value.trim() || '';
+    defaultLabel = text.slice(0, 40) + (text.length > 40 ? '...' : '');
   } else {
     // ticker
     const msg = document.getElementById('ticker-message')?.value.trim() || '';
-    defaultLabel = msg.slice(0, 40) + (msg.length > 40 ? '…' : '');
+    defaultLabel = msg.slice(0, 40) + (msg.length > 40 ? '...' : '');
   }
 
   const label = prompt('Preset name:', defaultLabel);
@@ -2060,6 +2237,9 @@ function saveCurrentPreset() {
       : currentMode === 'speaker'
       ? { name:  document.getElementById('speaker-name').value,
           title: document.getElementById('speaker-title').value }
+      : currentMode === 'custom'
+      ? { text:  document.getElementById('custom-text')?.value || '',
+          lines: document.getElementById('custom-lines')?.value || '2' }
       : { message:  document.getElementById('ticker-message')?.value || '',
           label:    document.getElementById('ticker-label')?.value   || 'INFO',
           speed:    document.getElementById('ticker-speed')?.value   || '140',
@@ -2115,8 +2295,13 @@ function loadPreset(id) {
       validateVerseInput();
       syncBibleLineOptions();
     } else {
-      document.getElementById('speaker-name').value  = p.data.name;
-      document.getElementById('speaker-title').value = p.data.title;
+      if (p.mode === 'speaker') {
+        document.getElementById('speaker-name').value  = p.data.name;
+        document.getElementById('speaker-title').value = p.data.title;
+      } else if (p.mode === 'custom') {
+        if (document.getElementById('custom-text')) document.getElementById('custom-text').value = p.data.text || '';
+        if (document.getElementById('custom-lines')) document.getElementById('custom-lines').value = p.data.lines || '2';
+      }
     }
   } else {
     if (document.getElementById('ticker-message'))
@@ -2234,6 +2419,10 @@ function buildSessionControlState() {
       name: document.getElementById('speaker-name')?.value || '',
       title: document.getElementById('speaker-title')?.value || '',
     },
+    custom: {
+      text: document.getElementById('custom-text')?.value || '',
+      lines: document.getElementById('custom-lines')?.value || '2',
+    },
     ticker: {
       message: document.getElementById('ticker-message')?.value || DEFAULT_TICKER_MESSAGE,
       label: document.getElementById('ticker-label')?.value || 'INFO',
@@ -2324,11 +2513,8 @@ function saveSettingsProfile() {
 function applyProfileSettingsToSession(profileSettings) {
   if (!profileSettings || typeof profileSettings !== 'object') return;
   try {
-    const small = { ...profileSettings, ltBgImage: null, logoDataUrl: null };
+    const small = { ...profileSettings, logoDataUrl: null };
     localStorage.setItem('overlaySettings-' + SESSION_ID, JSON.stringify(small));
-
-    if (profileSettings.ltBgImage) localStorage.setItem('overlayLtBg-' + SESSION_ID, profileSettings.ltBgImage);
-    else localStorage.removeItem('overlayLtBg-' + SESSION_ID);
 
     if (profileSettings.logoDataUrl) localStorage.setItem('overlayLogo-' + SESSION_ID, profileSettings.logoDataUrl);
     else localStorage.removeItem('overlayLogo-' + SESSION_ID);
@@ -2339,11 +2525,36 @@ function applyProfileSettingsToSession(profileSettings) {
   } catch (_) {}
 }
 
+function hydrateMediaSettings(settings) {
+  if (!settings || typeof settings !== 'object') return settings;
+  const hydrated = { ...settings };
+  if (!hydrated.logoDataUrl) {
+    if (logoDataUrl) {
+      hydrated.logoDataUrl = logoDataUrl;
+    } else {
+      try {
+        const stored = localStorage.getItem('overlayLogo-' + SESSION_ID);
+        if (stored) hydrated.logoDataUrl = stored;
+      } catch (_) {}
+    }
+  }
+  return hydrated;
+}
+
+function getStoredMediaData(key) {
+  try { return localStorage.getItem(key) || null; } catch (_) { return null; }
+}
+
+function getCurrentLogoDataUrl() {
+  return logoDataUrl || getStoredMediaData('overlayLogo-' + SESSION_ID);
+}
+
 function applyProfileControlState(controlState) {
   if (!controlState || typeof controlState !== 'object') return;
 
   const bible = controlState.bible || {};
   const speaker = controlState.speaker || {};
+  const custom = controlState.custom || {};
   const ticker = controlState.ticker || {};
 
   const bookEl = document.getElementById('book');
@@ -2382,6 +2593,11 @@ function applyProfileControlState(controlState) {
   const speakerTitleEl = document.getElementById('speaker-title');
   if (speakerNameEl) speakerNameEl.value = speaker.name || '';
   if (speakerTitleEl) speakerTitleEl.value = speaker.title || '';
+
+  const customTextEl = document.getElementById('custom-text');
+  const customLinesEl = document.getElementById('custom-lines');
+  if (customTextEl) customTextEl.value = custom.text || '';
+  if (customLinesEl) customLinesEl.value = custom.lines || '2';
 
   const tickerMessageEl = document.getElementById('ticker-message');
   const tickerLabelEl = document.getElementById('ticker-label');
@@ -2424,6 +2640,7 @@ function loadSelectedSettingsProfile() {
     overlayModeSettings = {
       bible: payload.overlayModeSettings.bible ? cloneJson(payload.overlayModeSettings.bible) : cloneJson(defaultOverlayModeSettings),
       speaker: payload.overlayModeSettings.speaker ? cloneJson(payload.overlayModeSettings.speaker) : cloneJson(defaultOverlayModeSettings),
+      custom: payload.overlayModeSettings.custom ? cloneJson(payload.overlayModeSettings.custom) : cloneJson(defaultOverlayModeSettings),
     };
     try {
       localStorage.setItem(OVERLAY_MODE_SETTINGS_KEY_PREFIX + SESSION_ID, JSON.stringify(overlayModeSettings));
@@ -2499,6 +2716,7 @@ function renderPresets() {
   const isTicker  = currentMode === 'ticker';
   const isSpeaker = currentMode === 'speaker';
   const isBible   = currentMode === 'bible';
+  const isCustom  = currentMode === 'custom';
 
   // Update section label
   const labelEl = document.getElementById('presets-label');
@@ -2507,6 +2725,8 @@ function renderPresets() {
       ? 'Ticker Presets'
       : isSpeaker
       ? 'Speaker Presets'
+      : isCustom
+      ? 'Custom Presets'
       : 'Reference Presets';
   }
 
@@ -2520,7 +2740,7 @@ function renderPresets() {
   const empty = document.getElementById(isTicker ? 'presets-empty-ticker' : 'presets-empty-overlay');
   const store = isTicker
     ? tickerPresets
-    : overlayPresets.filter(p => isBible ? p.mode === 'bible' : p.mode === 'speaker');
+    : overlayPresets.filter(p => isBible ? p.mode === 'bible' : isSpeaker ? p.mode === 'speaker' : p.mode === 'custom');
   if (!list) return;
 
   list.querySelectorAll('.preset-chip').forEach(el => el.remove());
@@ -2529,6 +2749,8 @@ function renderPresets() {
     if (empty && !isTicker) {
       empty.textContent = isBible
         ? 'No reference presets saved — click Save Current to add one'
+        : isCustom
+        ? 'No custom presets saved — click Save Current to add one'
         : 'No speaker presets saved — click Save Current to add one';
     }
     if (empty) empty.style.display = '';
@@ -2549,6 +2771,8 @@ function renderPresets() {
       loadBtn.title = `${p.data.book} ${p.data.chapter}:${p.data.verse} (${p.data.translation}${langTag})`;
     } else if (p.mode === 'speaker') {
       loadBtn.title = `${p.data.name}${p.data.title ? ' — ' + p.data.title : ''}`;
+    } else if (p.mode === 'custom') {
+      loadBtn.title = p.data.text?.slice(0, 80) || '';
     } else {
       loadBtn.title = p.data.message?.slice(0, 60) || '';
     }
@@ -2589,9 +2813,22 @@ function sendShow() {
     const speakerName = speakerNameEl?.value.trim() || '';
     if (!speakerName) {
       if (speakerNameEl) {
-        speakerNameEl.setCustomValidity('Speaker name is required before Cut to Air.');
+        speakerNameEl.setCustomValidity('Speaker name is required before taking to air.');
         speakerNameEl.reportValidity();
         speakerNameEl.focus();
+      }
+      return;
+    }
+  }
+
+  if (currentMode === 'custom') {
+    const customTextEl = document.getElementById('custom-text');
+    const customText = customTextEl?.value.trim() || '';
+    if (!customText) {
+      if (customTextEl) {
+        customTextEl.setCustomValidity('Custom text is required before taking to air.');
+        customTextEl.reportValidity();
+        customTextEl.focus();
       }
       return;
     }
@@ -2666,11 +2903,15 @@ function updateProgramMonitor() {
   const pgmTickerBar   = document.getElementById('program-ticker-bar');
   const pgmTickerBadge = document.getElementById('program-ticker-badge');
   const pgmTickerText  = document.getElementById('program-ticker-text');
+  const pgmOutputLogo  = document.getElementById('program-output-logo');
   const offAir         = document.getElementById('program-off-air');
   const pgmViewport    = document.querySelector('#monitor-program-block .monitor-viewport');
 
-  const anythingLive = programOverlayLive || programTickerLive;
+  const monitorSettings = programOverlaySettings || getSettings();
+  const outputLogoLive = !!(monitorSettings.outputLogoEnabled && monitorSettings.logoDataUrl);
+  const anythingLive = programOverlayLive || programTickerLive || outputLogoLive;
   if (offAir) offAir.style.display = anythingLive ? 'none' : '';
+  applyMonitorOutputLogo(pgmOutputLogo, pgmViewport, monitorSettings);
 
   // ── Overlay (lower-third or speaker) ───────────────────────────────────────
   if (programOverlayLive && programOverlayData) {
@@ -2682,6 +2923,7 @@ function updateProgramMonitor() {
         pgmCustomWrap.style.display = '';
         pgmCustomWrap.classList.remove('pos-lower', 'pos-upper', 'pos-center');
         pgmCustomWrap.classList.add('pos-' + (s.position || 'lower'));
+        applyMonitorWrapPosition(pgmCustomWrap, s || {});
       }
       if (pgmCustom) {
         pgmCustom.innerHTML = substitutePreviewVars(s.customTemplate.html, s, programOverlayData);
@@ -2703,6 +2945,7 @@ function updateProgramMonitor() {
         pgmWrap.style.display = '';
         pgmWrap.classList.remove('pos-lower', 'pos-upper', 'pos-center');
         pgmWrap.classList.add('pos-' + (s?.position || 'lower'));
+        applyMonitorWrapPosition(pgmWrap, s || {});
       }
 
       if (pgmLine1) pgmLine1.textContent = programOverlayData.line1 || '';
@@ -2711,20 +2954,38 @@ function updateProgramMonitor() {
         pgmLine2.style.display = programOverlayData.line2 ? '' : 'none';
       }
 
-      if (pgmLt)     pgmLt.className            = 'lower-third style-' + (s?.style || 'gradient');
-      applyMonitorTextFit(pgmLt, pgmViewport, s?.style || 'gradient', programOverlayData.line2 || '');
+      if (pgmLt) {
+        pgmLt.className = 'lower-third style-' + (s?.style || 'gradient') + (programOverlayData.type === 'custom' ? ' type-custom' : '');
+        pgmLt.classList.toggle('has-logo', !!s?.logoDataUrl && s.lowerThirdLogoEnabled !== false);
+        pgmLt.classList.toggle('logo-pos-right', s?.logoPosition === 'right');
+        pgmLt.classList.toggle('logo-pos-left', s?.logoPosition !== 'right');
+      }
+      applyMonitorTextFit(pgmLt, pgmViewport, s?.style || 'gradient', programOverlayData.type === 'custom' ? programOverlayData.line1 : (programOverlayData.line2 || ''));
       if (pgmAccent) pgmAccent.style.background  = s?.accentColor || '#C8A951';
       if (pgmLtText) {
         pgmLtText.style.fontFamily = resolvedFontFamily(s?.line1Font || s?.font);
-        pgmLtText.style.textAlign  = s?.textAlign || 'left';
       }
       if (pgmLine1) pgmLine1.style.fontFamily = resolvedFontFamily(s?.line1Font || s?.font);
       if (pgmLine2) pgmLine2.style.fontFamily = resolvedFontFamily(s?.line2Font || s?.line1Font || s?.font);
+      applyCustomTextLineClamp(pgmLine1, programOverlayData);
       applyLineTextEffects(pgmLine1, pgmLine2, s || {});
       applyLowerThirdVisualSettings(pgmLt, pgmLtText, pgmLine2, s || {});
       if (pgmLogo) {
-        if (s?.logoDataUrl) { pgmLogo.src = s.logoDataUrl; pgmLogo.classList.remove('hidden'); }
-        else                               pgmLogo.classList.add('hidden');
+        if (s?.logoDataUrl && s.lowerThirdLogoEnabled !== false) {
+          const scale = Math.max(0.15, Math.min(1, (pgmViewport?.offsetWidth || 320) / 1920));
+          const logoH = Math.round((s.logoSize || 110) * scale);
+          pgmLogo.src = s.logoDataUrl;
+          pgmLogo.classList.remove('hidden');
+          pgmLogo.classList.toggle('logo-right', s.logoPosition === 'right');
+          pgmLogo.classList.toggle('logo-left', s.logoPosition !== 'right');
+          pgmLogo.style.maxHeight = logoH + 'px';
+          if (pgmLt) pgmLt.style.setProperty('--lt-logo-space-preview', `${logoH + 14}px`);
+        }
+        else {
+          pgmLogo.classList.add('hidden');
+          pgmLogo.removeAttribute('src');
+          if (pgmLt) pgmLt.style.removeProperty('--lt-logo-space-preview');
+        }
       }
     }
   } else {
@@ -2765,16 +3026,14 @@ function broadcast(msg) {
   // 3. localStorage fallback
   try {
     const lsMsg = { ...msg };
-    if (lsMsg.settings) lsMsg.settings = { ...lsMsg.settings, ltBgImage: null, logoDataUrl: null };
+    if (lsMsg.settings) lsMsg.settings = { ...lsMsg.settings, logoDataUrl: null };
     localStorage.setItem(LS_KEY, JSON.stringify({ ...lsMsg, _ts: Date.now() }));
   } catch (_) {}
 
   // 4. WebSocket (server mode)
   if (ws && ws.readyState === WebSocket.OPEN) {
     try {
-      const wsMsg = { ...msg };
-      if (wsMsg.settings) wsMsg.settings = { ...wsMsg.settings, ltBgImage: null, logoDataUrl: null };
-      ws.send(JSON.stringify(wsMsg));
+      ws.send(JSON.stringify(msg));
     } catch (_) {}
   }
 }
@@ -3086,6 +3345,7 @@ function setWsIndicator(state) {
 
 function applyRemoteSettingsToUi(settings) {
   if (!settings || typeof settings !== 'object') return;
+  settings = hydrateMediaSettings(settings);
   let signature = '';
   try { signature = JSON.stringify(settings); } catch (_) { signature = ''; }
   if (signature && signature === lastRemoteSettingsSignature) return;
@@ -3108,7 +3368,10 @@ function applyRemoteLiveStateAction(msg) {
   }
 
   if (msg.action === 'show') {
-    if (msg.settings) applyRemoteSettingsToUi(msg.settings);
+    if (msg.settings) {
+      msg.settings = hydrateMediaSettings(msg.settings);
+      applyRemoteSettingsToUi(msg.settings);
+    }
     programOverlayData = msg.data || programOverlayData || buildOverlayData();
     programOverlaySettings = msg.settings || getSettings();
     programOverlayLive = true;
@@ -3237,12 +3500,16 @@ function getSettings() {
 
   return {
     chroma:        chromaValue,
-    animation:     document.getElementById('anim-select')?.value      || 'fade',
+    animation:     document.getElementById('transition-select')?.value || 'fade',
     style:         document.getElementById('style-select')?.value     || 'gradient',
     accentColor:   document.getElementById('accent-color')?.value     || '#C8A951',
     ltBgColor:     document.getElementById('lt-bg-color')?.value      || '#000000',
     ltBgOpacity:   parseFloat(document.getElementById('lt-bg-opacity')?.value || '0.88'),
     ltWidth:       parseInt(document.getElementById('lt-width')?.value || '100', 10),
+    ltOffsetX:     parseFloat(document.getElementById('lt-offset-x')?.value || '0'),
+    ltOffsetY:     parseFloat(document.getElementById('lt-offset-y')?.value || '0'),
+    lowerThirdDirection: document.getElementById('lt-bg-direction')?.value || 'ltr',
+    ltTextLeftPadding: parseInt(document.getElementById('lt-text-left-padding')?.value || '28', 10),
     line2Multiline: !!document.getElementById('line2-multiline')?.checked,
     line2MaxLines: parseInt(document.getElementById('line2-max-lines')?.value || '2', 10),
     position:      document.getElementById('position-select')?.value  || 'lower',
@@ -3251,13 +3518,14 @@ function getSettings() {
     line2Font,
     outputRes:     document.getElementById('output-res')?.value       || '1920x1080',
     textAlign:     alignRadio ? alignRadio.value                      : 'left',
-    ltBgImage:     ltBgDataUrl,
-    ltBgSize:      document.getElementById('lt-bg-size')?.value       || 'cover',
-    ltBgPosition:  document.getElementById('lt-bg-position')?.value   || 'center center',
     ltMinHeight:   parseInt(document.getElementById('lt-min-height')?.value || '0'),
-    logoDataUrl:   logoDataUrl,
+    logoDataUrl:   getCurrentLogoDataUrl(),
+    lowerThirdLogoEnabled: document.getElementById('lower-third-logo-enabled')?.checked !== false,
     logoPosition:  document.getElementById('logo-position')?.value    || 'left',
     logoSize:      parseInt(document.getElementById('logo-size')?.value || '110'),
+    outputLogoEnabled: !!document.getElementById('output-logo-enabled')?.checked,
+    outputLogoPosition: document.getElementById('output-logo-position')?.value || 'top-right',
+    outputLogoSize: parseInt(document.getElementById('output-logo-size')?.value || '140', 10),
     textEffects:   { line1: line1Fx, line2: line2Fx },
     customTemplate: {
       enabled: document.getElementById('use-custom-template')?.checked || false,
@@ -3270,10 +3538,14 @@ function getSettings() {
 }
 
 function onSettingsChange() {
+  updateLowerThirdDirectionState();
   updatePreview();
   const settings = getSettings();
-  // Do not mutate live output styling mid-air; apply on next CUT.
   if (!overlayVisible && !tickerActive) {
+    broadcast({ action: 'settings', settings });
+  } else if (overlayVisible && programOverlayData && programOverlayData.type === currentMode) {
+    programOverlaySettings = settings;
+    updateProgramMonitor();
     broadcast({ action: 'settings', settings });
   }
   persistSettings(settings);
@@ -3310,7 +3582,7 @@ function onCustomChromaChange() {
 function persistSettings(settings) {
   try {
     const mode = getOverlayStyleModeForEditing();
-    if (mode === 'bible' || mode === 'speaker') {
+    if (isOverlayMode(mode)) {
       overlayModeSettings[mode] = pickModeDependentSettings(settings);
       activeOverlaySettingsMode = mode;
       localStorage.setItem(
@@ -3319,7 +3591,7 @@ function persistSettings(settings) {
       );
     }
 
-    const small = { ...settings, ltBgImage: null, logoDataUrl: null };
+    const small = { ...settings, logoDataUrl: null };
     MODE_DEPENDENT_SETTING_KEYS.forEach((k) => { delete small[k]; });
     localStorage.setItem('overlaySettings-' + SESSION_ID, JSON.stringify(small));
 
@@ -3327,7 +3599,6 @@ function persistSettings(settings) {
     if (settings.customTemplate && (settings.customTemplate.html || settings.customTemplate.css)) {
       localStorage.setItem(GLOBAL_TEMPLATE_KEY, JSON.stringify(settings.customTemplate));
     }
-    if (settings.ltBgImage)   localStorage.setItem('overlayLtBg-'  + SESSION_ID, settings.ltBgImage);
     if (settings.logoDataUrl) localStorage.setItem('overlayLogo-'  + SESSION_ID, settings.logoDataUrl);
   } catch (_) {}
 }
@@ -3347,16 +3618,49 @@ function loadSettings() {
       }
     }
 
-    if (saved.animation)    document.getElementById('anim-select').value     = saved.animation;
+    if (saved.animation) {
+      const el = document.getElementById('transition-select');
+      if (el) el.value = saved.animation;
+    }
     if (saved.outputRes)    document.getElementById('output-res').value      = saved.outputRes;
     if (saved.logoPosition) document.getElementById('logo-position').value   = saved.logoPosition;
+    if (saved.lowerThirdLogoEnabled !== undefined) {
+      const el = document.getElementById('lower-third-logo-enabled');
+      if (el) el.checked = saved.lowerThirdLogoEnabled !== false;
+    }
+    if (saved.outputLogoPosition) {
+      const el = document.getElementById('output-logo-position');
+      if (el) el.value = saved.outputLogoPosition;
+    }
+    if (saved.outputLogoEnabled !== undefined) {
+      const el = document.getElementById('output-logo-enabled');
+      if (el) el.checked = !!saved.outputLogoEnabled;
+    }
 
     if (saved.logoSize !== undefined) {
       const el = document.getElementById('logo-size');
       if (el) { el.value = saved.logoSize; document.getElementById('logo-size-val').textContent = saved.logoSize + 'px'; }
     }
-    if (saved.ltBgSize)     { const el = document.getElementById('lt-bg-size');     if (el) el.value = saved.ltBgSize; }
-    if (saved.ltBgPosition) { const el = document.getElementById('lt-bg-position'); if (el) el.value = saved.ltBgPosition; }
+    if (saved.ltOffsetX !== undefined) {
+      const el = document.getElementById('lt-offset-x');
+      if (el) el.value = saved.ltOffsetX;
+    }
+    if (saved.ltOffsetY !== undefined) {
+      const el = document.getElementById('lt-offset-y');
+      if (el) el.value = saved.ltOffsetY;
+    }
+    if (saved.lowerThirdDirection) {
+      const el = document.getElementById('lt-bg-direction');
+      if (el) el.value = saved.lowerThirdDirection;
+    }
+    if (saved.ltTextLeftPadding !== undefined) {
+      const el = document.getElementById('lt-text-left-padding');
+      if (el) el.value = saved.ltTextLeftPadding;
+    }
+    if (saved.outputLogoSize !== undefined) {
+      const el = document.getElementById('output-logo-size');
+      if (el) { el.value = saved.outputLogoSize; onOutputLogoSizeInput(); }
+    }
     if (saved.ltMinHeight !== undefined) {
       const el = document.getElementById('lt-min-height');
       if (el) { el.value = saved.ltMinHeight; document.getElementById('lt-min-height-val').textContent = saved.ltMinHeight > 0 ? saved.ltMinHeight + 'px' : 'auto'; }
@@ -3383,10 +3687,6 @@ function loadSettings() {
     const chromaNote = document.getElementById('chroma-transparent-note');
     if (chromaNote) chromaNote.style.display = (restoredChroma === 'transparent') ? '' : 'none';
 
-    // Restore images
-    const savedLtBg = localStorage.getItem('overlayLtBg-' + SESSION_ID);
-    if (savedLtBg) { ltBgDataUrl = savedLtBg; restoreLtBgUI(savedLtBg); }
-
     const savedLogo = localStorage.getItem('overlayLogo-' + SESSION_ID);
     if (savedLogo) { logoDataUrl = savedLogo; restoreLogoUI(savedLogo); }
 
@@ -3400,6 +3700,9 @@ function loadSettings() {
       speaker: storedModeSettings?.speaker
         ? { ...defaultOverlayModeSettings, ...storedModeSettings.speaker }
         : { ...defaultOverlayModeSettings, ...fallbackModeSettings },
+      custom: storedModeSettings?.custom
+        ? { ...defaultOverlayModeSettings, ...storedModeSettings.custom }
+        : { ...defaultOverlayModeSettings, ...fallbackModeSettings },
     };
 
     activeOverlaySettingsMode = 'bible';
@@ -3409,8 +3712,13 @@ function loadSettings() {
   updateTextEffectLabels();
   onLtBgOpacityInput();
   onLtWidthInput();
+  onLtOffsetInput();
+  onLtTextLeftPaddingInput();
   onLine2MaxLinesInput();
   onTickerSizeInput();
+  onOutputLogoSizeInput();
+  updateLowerThirdDirectionState();
+  updateTransitionButtonLabel();
 }
 
 // ── Slider label helpers ──────────────────────────────────────────────────────
@@ -3418,6 +3726,14 @@ function onLogoSizeInput() {
   const v = document.getElementById('logo-size')?.value;
   const label = document.getElementById('logo-size-val');
   if (label && v !== undefined) label.textContent = v + 'px';
+}
+
+function onOutputLogoSizeInput() {
+  const v = document.getElementById('output-logo-size')?.value;
+  const a = document.getElementById('output-logo-size-val');
+  const b = document.getElementById('output-logo-size-display');
+  if (a && v !== undefined) a.textContent = v + 'px';
+  if (b && v !== undefined) b.textContent = v + 'px';
 }
 
 function onLtMinHeightInput() {
@@ -3512,7 +3828,7 @@ function onTextFxRangeInput(inputId, labelId, suffix = '') {
 
 // ── Custom Template Examples ──────────────────────────────────────────────────
 // Template variables: {{line1}} {{line2}} {{accentColor}} {{font}} {{line1Font}} {{line2Font}}
-//                     {{logoUrl}} (logo data-URL)  {{bgUrl}} (bg image data-URL)
+//                     {{logoUrl}} (logo data-URL)
 
 const TEMPLATE_EXAMPLES = {
 
@@ -3540,39 +3856,7 @@ const TEMPLATE_EXAMPLES = {
 .t-classic-line2 { font-size: 34px; font-weight: 400; color: rgba(255,255,255,.75); }`,
   },
 
-  // ── 2. Background Image ──────────────────────────────────────────────────────
-  // Requires a lower-third background image to be loaded (uses {{bgUrl}}).
-  'bg-image': {
-    html: `<div class="t-bgimg" style="background-image:url('{{bgUrl}}')">
-  <div class="t-bgimg-inner">
-    <div class="t-bgimg-line1">{{line1}}</div>
-    <div class="t-bgimg-line2">{{line2}}</div>
-  </div>
-</div>`,
-    css: `.t-bgimg {
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  min-height: 130px;
-  display: flex;
-  align-items: flex-end;
-  border-radius: 3px;
-  overflow: hidden;
-  position: relative;
-  font-family: {{font}};
-}
-.t-bgimg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.05) 100%);
-}
-.t-bgimg-inner { position: relative; padding: 18px 28px; }
-.t-bgimg-line1 { font-size: 52px; font-weight: 700; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,.8); line-height: 1.15; }
-.t-bgimg-line2 { font-size: 34px; font-weight: 400; color: rgba(255,255,255,.88); text-shadow: 0 2px 8px rgba(0,0,0,.7); }`,
-  },
-
-  // ── 3. Logo + Dark Bar ───────────────────────────────────────────────────────
+  // ── 2. Logo + Dark Bar ───────────────────────────────────────────────────────
   // Requires a logo to be loaded (uses {{logoUrl}}).
   'logo-bar': {
     html: `<div class="t-lb">
@@ -3609,7 +3893,7 @@ const TEMPLATE_EXAMPLES = {
 .t-lb-line2 { font-size: 34px; font-weight: 400; color: rgba(255,255,255,.75); }`,
   },
 
-  // ── 4. Minimal Light ─────────────────────────────────────────────────────────
+  // ── 3. Minimal Light ─────────────────────────────────────────────────────────
   'light': {
     html: `<div class="t-light">
   <div class="t-light-rule" style="background:{{accentColor}}"></div>
@@ -3634,7 +3918,7 @@ const TEMPLATE_EXAMPLES = {
 .t-light-line2 { font-size: 34px; font-weight: 400; color: rgba(0,0,0,.6); }`,
   },
 
-  // ── 5. Scripture Scroll ──────────────────────────────────────────────────────
+  // ── 4. Scripture Scroll ──────────────────────────────────────────────────────
   'scroll': {
     html: `<div class="t-scroll">
   <div class="t-scroll-rule" style="background:{{accentColor}}"></div>
@@ -3747,39 +4031,6 @@ function deleteSelectedTemplatePreset() {
   renderTemplatePresets();
 }
 
-// ── Lower Third Background Image ──────────────────────────────────────────────
-function onLtBgChange() {
-  const file = document.getElementById('lt-bg-file').files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    ltBgDataUrl = e.target.result;
-    restoreLtBgUI(ltBgDataUrl, file.name);
-    onSettingsChange();
-  };
-  reader.readAsDataURL(file);
-}
-
-function restoreLtBgUI(dataUrl, fileName) {
-  document.getElementById('lt-bg-name').textContent           = fileName || 'Custom background loaded';
-  document.getElementById('lt-bg-clear').style.display        = '';
-  document.getElementById('lt-bg-preview-wrap').style.display = '';
-  document.getElementById('lt-bg-preview').src                = dataUrl;
-  document.getElementById('bg-fit-controls').style.display    = '';
-}
-
-function clearLtBg() {
-  ltBgDataUrl = null;
-  document.getElementById('lt-bg-file').value                 = '';
-  document.getElementById('lt-bg-name').textContent           = 'No image selected';
-  document.getElementById('lt-bg-clear').style.display        = 'none';
-  document.getElementById('lt-bg-preview-wrap').style.display = 'none';
-  document.getElementById('lt-bg-preview').src                = '';
-  document.getElementById('bg-fit-controls').style.display    = 'none';
-  try { localStorage.removeItem('overlayLtBg-' + SESSION_ID); } catch (_) {}
-  onSettingsChange();
-}
-
 // ── Logo ──────────────────────────────────────────────────────────────────────
 function onLogoChange() {
   const file = document.getElementById('logo-file').files[0];
@@ -3787,6 +4038,7 @@ function onLogoChange() {
   const reader = new FileReader();
   reader.onload = e => {
     logoDataUrl = e.target.result;
+    try { localStorage.setItem('overlayLogo-' + SESSION_ID, logoDataUrl); } catch (_) {}
     restoreLogoUI(logoDataUrl, file.name);
     onSettingsChange();
   };
@@ -3824,7 +4076,7 @@ function bindKeyboard() {
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
       if (e.key === 'Enter' && document.activeElement.type === 'text') {
         const id = document.activeElement.id;
-        if (id === 'verse-ref' || id === 'speaker-name' || id === 'speaker-title') {
+        if (id === 'verse-ref' || id === 'speaker-name' || id === 'speaker-title' || id === 'custom-text') {
           e.preventDefault();
           sendShow();
         }
@@ -3837,6 +4089,7 @@ function bindKeyboard() {
       case 'Escape':  e.preventDefault(); sendClear();               break;
       case 'b': case 'B': setMode('bible');                          break;
       case 's': case 'S': setMode('speaker');                        break;
+      case 'c': case 'C': setMode('custom');                         break;
       case 't': case 'T': setMode('ticker');                         break;
       case 'o': case 'O': openOutputWindow();                        break;
       case 'h': case 'H': openUserGuide();                           break;

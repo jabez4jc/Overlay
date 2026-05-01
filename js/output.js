@@ -19,6 +19,7 @@ const ltLogo   = document.getElementById('lt-logo');
 const ltText   = document.getElementById('lt-text');
 const ltLine1  = document.getElementById('lt-line1');
 const ltLine2  = document.getElementById('lt-line2');
+const outputLogo = document.getElementById('output-logo');
 
 // DOM refs — custom template container
 const ltCustomWrap = document.getElementById('lt-custom-wrap');
@@ -62,6 +63,17 @@ function hexToRgba(hex, alpha) {
 
 
 const INLINE_LOWER_THIRD_STYLES = new Set(['inline-duo', 'inline-chip', 'inline-glass']);
+const DIRECTIONAL_LOWER_THIRD_STYLES = new Set([
+  'classic',
+  'gradient',
+  'scripture',
+  'scripture-panel',
+  'solid',
+  'frosted',
+  'inline-duo',
+  'inline-chip',
+  'inline-glass',
+]);
 const LOWER_THIRD_STYLE_CLASSNAMES = [
   'style-classic', 'style-accent', 'style-minimal', 'style-outline',
   'style-gradient', 'style-scripture', 'style-scripture-panel',
@@ -110,7 +122,8 @@ function applyStyleAwareLowerThirdBackground(ltTextEl, settings) {
     const start = hexToRgba(bgColor, Math.max(0, Math.min(1, bgOpacity * 1.05)));
     const mid = hexToRgba(bgColor, Math.max(0, Math.min(1, bgOpacity * 0.72)));
     const end = hexToRgba(bgColor, 0);
-    ltTextEl.style.background = `linear-gradient(90deg, ${start} 0%, ${mid} 62%, ${end} 100%)`;
+    const direction = settings.lowerThirdDirection === 'rtl' ? '270deg' : '90deg';
+    ltTextEl.style.background = `linear-gradient(${direction}, ${start} 0%, ${mid} 62%, ${end} 100%)`;
     return;
   }
 
@@ -245,6 +258,7 @@ function showOverlay(data) {
   } else {
     ltLine1.textContent   = data.line1 || '';
     ltLine2.textContent   = data.line2 || '';
+    applyCustomTextLineClamp(data);
     if (!data.line2) {
       ltLine2.style.display = 'none';
     } else {
@@ -252,6 +266,7 @@ function showOverlay(data) {
       const multiline = !!currentSettings?.line2Multiline && !inlineStyle;
       ltLine2.style.display = multiline ? '-webkit-box' : 'block';
     }
+    ltRoot.classList.toggle('type-custom', data.type === 'custom');
     ltRoot.classList.remove('visible');
     void ltRoot.offsetWidth;
     ltRoot.classList.add('visible');
@@ -260,6 +275,19 @@ function showOverlay(data) {
   try {
     sessionStorage.setItem('overlayLive', JSON.stringify({ data, ts: Date.now() }));
   } catch (_) {}
+}
+
+function applyCustomTextLineClamp(data) {
+  if (!ltLine1) return;
+  const isCustom = data?.type === 'custom';
+  const lines = Math.max(1, Math.min(6, parseInt(data?.customLines || 2, 10)));
+  ltLine1.style.whiteSpace = isCustom ? 'pre-line' : '';
+  ltLine1.style.overflow = isCustom ? 'hidden' : '';
+  ltLine1.style.textOverflow = isCustom ? 'clip' : '';
+  ltLine1.style.display = isCustom ? '-webkit-box' : '';
+  ltLine1.style.webkitBoxOrient = isCustom ? 'vertical' : '';
+  ltLine1.style.webkitLineClamp = isCustom ? String(lines) : '';
+  ltLine1.style.lineClamp = isCustom ? String(lines) : '';
 }
 
 function hideOverlay() {
@@ -324,9 +352,24 @@ function hideTicker() {
   try { sessionStorage.removeItem('tickerLive'); } catch (_) {}
 }
 
+function clampNumber(value, min, max, fallback = 0) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+function applyWrapPosition(wrapEl, s) {
+  if (!wrapEl || !s) return;
+  const x = clampNumber(s.ltOffsetX, -40, 40, 0);
+  const y = clampNumber(s.ltOffsetY, -30, 30, 0);
+  wrapEl.style.setProperty('--lt-offset-x', `${x}vw`);
+  wrapEl.style.setProperty('--lt-offset-y', `${y}vh`);
+}
+
 // ── Apply Settings ────────────────────────────────────────────────────────────
 function applySettings(s) {
   if (!s) return;
+  s = hydrateMediaSettings(s);
   currentSettings = s;
 
   // ── Chroma key / transparent background ───────────────────────────────────
@@ -346,12 +389,15 @@ function applySettings(s) {
   }
 
   // ── Animation ─────────────────────────────────────────────────────────────
-  ltWrap.classList.remove('anim-fade', 'anim-slide', 'anim-none');
+  ltWrap.classList.remove('anim-fade', 'anim-slide', 'anim-swipe', 'anim-none');
   ltWrap.classList.add('anim-' + (s.animation || 'fade'));
 
   // ── Lower third style ──────────────────────────────────────────────────────
   ltRoot.classList.remove(...LOWER_THIRD_STYLE_CLASSNAMES);
   ltRoot.classList.add('style-' + (s.style || 'gradient'));
+  const supportsDirection = DIRECTIONAL_LOWER_THIRD_STYLES.has(s.style || 'gradient');
+  ltRoot.classList.toggle('dir-rtl', supportsDirection && s.lowerThirdDirection === 'rtl');
+  ltRoot.classList.toggle('dir-ltr', supportsDirection && s.lowerThirdDirection !== 'rtl');
 
   // ── Accent colour ─────────────────────────────────────────────────────────
   if (s.accentColor && ltAccent) {
@@ -362,9 +408,11 @@ function applySettings(s) {
   // ── Position ──────────────────────────────────────────────────────────────
   ltWrap.classList.remove('pos-lower', 'pos-upper', 'pos-center');
   ltWrap.classList.add('pos-' + (s.position || 'lower'));
+  applyWrapPosition(ltWrap, s);
   if (ltCustomWrap) {
     ltCustomWrap.classList.remove('pos-lower', 'pos-upper', 'pos-center');
     ltCustomWrap.classList.add('pos-' + (s.position || 'lower'));
+    applyWrapPosition(ltCustomWrap, s);
   }
 
   // ── Fonts ─────────────────────────────────────────────────────────────────
@@ -381,6 +429,9 @@ function applySettings(s) {
     ltText.classList.remove('align-left', 'align-center', 'align-right');
     ltText.classList.add('align-' + (s.textAlign || 'left'));
     ltText.style.textAlign = s.textAlign || 'left';
+    ltText.querySelectorAll('.lt-line1, .lt-line2').forEach(el => {
+      el.style.textAlign = s.textAlign || 'left';
+    });
   }
   applyLineTextEffects(s);
 
@@ -391,6 +442,8 @@ function applySettings(s) {
   if (ltRoot) {
     ltRoot.style.width = `${ltWidth}%`;
     ltRoot.style.maxWidth = '100%';
+    const textPad = Math.max(0, Math.min(240, parseInt(s.ltTextLeftPadding ?? 28, 10)));
+    ltRoot.style.setProperty('--lt-text-pad-left', `${textPad}px`);
   }
   if (ltLine2) {
     const inlineStyle = isInlineLowerThirdStyle(s.style || 'gradient');
@@ -406,42 +459,35 @@ function applySettings(s) {
     ltLine2.style.lineClamp = multiline ? String(maxLines) : '';
   }
 
-  // ── Lower third background image ──────────────────────────────────────────
-  if (s.ltBgImage) {
-    const bgSizeMap = { stretch: '100% 100%', contain: 'contain', cover: 'cover' };
-    ltRoot.style.backgroundImage    = `url('${s.ltBgImage}')`;
-    ltRoot.style.backgroundSize     = bgSizeMap[s.ltBgSize] || 'cover';
-    ltRoot.style.backgroundPosition = s.ltBgPosition || 'center center';
-    ltRoot.style.backgroundRepeat   = 'no-repeat';
-  } else {
-    ltRoot.style.backgroundImage = '';
-  }
-
   // ── Session watermark (operator reference — toggled via Settings) ─────────
   const watermark = document.getElementById('session-watermark');
   if (watermark) watermark.style.display = s.showSessionWatermark ? '' : 'none';
 
-  // ── Min bar height (keeps bg image consistent on 1-line display) ──────────
-  document.documentElement.style.setProperty('--lt-min-h', (s.ltMinHeight || 0) + 'px');
+  // ── Min bar height ────────────────────────────────────────────────────────
+  const configuredMinHeight = parseInt(s.ltMinHeight || 0, 10);
+  document.documentElement.style.setProperty('--lt-min-h', configuredMinHeight + 'px');
 
   // ── Logo ──────────────────────────────────────────────────────────────────
   // Logo max-height is controlled by the operator slider; --logo-max-h CSS var
   document.documentElement.style.setProperty('--logo-max-h', (s.logoSize || 110) + 'px');
+  document.documentElement.style.setProperty('--lt-logo-space', (Math.max(40, parseInt(s.logoSize || 110, 10)) + 48) + 'px');
 
-  if (s.logoDataUrl) {
+  if (s.logoDataUrl && s.lowerThirdLogoEnabled !== false) {
     ltLogo.src           = s.logoDataUrl;
     ltLogo.style.display = '';
+    ltLogo.classList.remove('hidden');
     ltLogo.classList.remove('logo-left', 'logo-right');
     ltLogo.classList.add(s.logoPosition === 'right' ? 'logo-right' : 'logo-left');
-    if (s.logoPosition === 'right') {
-      ltRoot.appendChild(ltLogo);
-    } else {
-      ltRoot.insertBefore(ltLogo, ltText);
-    }
+    ltRoot.classList.add('has-logo');
+    ltRoot.classList.toggle('logo-pos-right', s.logoPosition === 'right');
+    ltRoot.classList.toggle('logo-pos-left', s.logoPosition !== 'right');
   } else {
     ltLogo.style.display = 'none';
     ltLogo.src           = '';
+    ltRoot.classList.remove('has-logo', 'logo-pos-left', 'logo-pos-right');
   }
+
+  applyOutputLogo(s);
 
   // ── Custom template ────────────────────────────────────────────────────────
   const tmpl = s.customTemplate;
@@ -467,6 +513,32 @@ function applySettings(s) {
   }
 }
 
+function hydrateMediaSettings(settings) {
+  const hydrated = { ...settings };
+  try {
+    if (!hydrated.logoDataUrl) {
+      const logo = localStorage.getItem('overlayLogo-' + SESSION_ID);
+      if (logo) hydrated.logoDataUrl = logo;
+    }
+  } catch (_) {}
+  return hydrated;
+}
+
+function applyOutputLogo(s) {
+  if (!outputLogo) return;
+  const enabled = !!(s.outputLogoEnabled && s.logoDataUrl);
+  outputLogo.classList.remove('pos-top-left', 'pos-top-right', 'pos-bottom-left', 'pos-bottom-right', 'pos-center');
+  if (!enabled) {
+    outputLogo.style.display = 'none';
+    outputLogo.removeAttribute('src');
+    return;
+  }
+  outputLogo.src = s.logoDataUrl;
+  outputLogo.style.display = '';
+  outputLogo.classList.add('pos-' + (s.outputLogoPosition || 'top-right'));
+  document.documentElement.style.setProperty('--output-logo-size', `${Math.max(20, parseInt(s.outputLogoSize || 140, 10))}px`);
+}
+
 // ── Custom Template Rendering ─────────────────────────────────────────────────
 function substituteVars(str, s, data) {
   const line1Font = resolvedFontFamily(s.line1Font || s.font);
@@ -478,8 +550,7 @@ function substituteVars(str, s, data) {
     .replace(/\{\{font\}\}/g,        line1Font)
     .replace(/\{\{line1Font\}\}/g,   line1Font)
     .replace(/\{\{line2Font\}\}/g,   line2Font)
-    .replace(/\{\{logoUrl\}\}/g,     s.logoDataUrl   || '')
-    .replace(/\{\{bgUrl\}\}/g,       s.ltBgImage     || '');
+    .replace(/\{\{logoUrl\}\}/g,     s.logoDataUrl   || '');
 }
 
 function escapeHtml(str) {
@@ -500,8 +571,6 @@ function renderCustomTemplate(s, data) {
 function applyInitialSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem('overlaySettings-' + SESSION_ID) || '{}');
-    const ltBg  = localStorage.getItem('overlayLtBg-' + SESSION_ID);
-    if (ltBg)  saved.ltBgImage   = ltBg;
     const logo  = localStorage.getItem('overlayLogo-' + SESSION_ID);
     if (logo)  saved.logoDataUrl = logo;
     if (Object.keys(saved).length) applySettings(saved);

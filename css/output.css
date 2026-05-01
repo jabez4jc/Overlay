@@ -71,15 +71,34 @@ body.chroma-transparent { background: transparent !important; }
   overflow: hidden;
 }
 
+.output-logo {
+  position: absolute;
+  z-index: 80;
+  max-width: var(--output-logo-size, 140px);
+  max-height: var(--output-logo-size, 140px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+}
+.output-logo.pos-top-left     { top: 4%; left: 4%; }
+.output-logo.pos-top-right    { top: 4%; right: 4%; }
+.output-logo.pos-bottom-left  { bottom: 4%; left: 4%; }
+.output-logo.pos-bottom-right { bottom: 4%; right: 4%; }
+.output-logo.pos-center       { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
 /* ── Lower-Third Wrapper ──────────────────────────────────────────────────── */
 .lower-third-wrap {
   position: absolute;
   left: 0;
   right: 0;
+  --lt-offset-x: 0vw;
+  --lt-offset-y: 0vh;
 
   /* Default: lower third */
   bottom: 10%;
   padding: 0 4%;
+  transform: translate(var(--lt-offset-x), var(--lt-offset-y));
 
   /* Transitions driven by CSS classes toggled by JS */
   transition: bottom .4s ease;
@@ -87,10 +106,15 @@ body.chroma-transparent { background: transparent !important; }
 
 /* Position overrides */
 .lower-third-wrap.pos-upper  { bottom: auto; top: 8%; }
-.lower-third-wrap.pos-center { bottom: auto; top: 50%; transform: translateY(-50%); }
+.lower-third-wrap.pos-center {
+  bottom: auto;
+  top: 50%;
+  transform: translate(var(--lt-offset-x), calc(-50% + var(--lt-offset-y)));
+}
 
 /* ── Lower-Third Root ─────────────────────────────────────────────────────── */
 .lower-third {
+  position: relative;
   display: flex;
   align-items: stretch;
   overflow: hidden;
@@ -109,8 +133,7 @@ body.chroma-transparent { background: transparent !important; }
   /* Subtle white outline so the overlay reads on very dark video backgrounds */
   border: 1px solid rgba(255,255,255,.10);
 
-  /* Operator-controlled minimum height — keeps bg image consistent
-     when only one line is shown.  Default 0 (auto). */
+  /* Operator-controlled minimum height for one-line lower thirds. */
   min-height: var(--lt-min-h, 0px);
 
   /* Animation states */
@@ -119,6 +142,7 @@ body.chroma-transparent { background: transparent !important; }
   transition: opacity .45s ease, transform .45s ease;
   pointer-events: none;
 }
+.lower-third.dir-rtl { flex-direction: row-reverse; }
 
 /* Visible state – added by JS */
 .lower-third.visible { opacity: 1; transform: translateY(0); }
@@ -128,6 +152,10 @@ body.chroma-transparent { background: transparent !important; }
 /* slide: enter from below */
 .anim-slide .lower-third               { transform: translateY(60px); }
 .anim-slide .lower-third.visible       { transform: translateY(0); }
+
+/* swipe: enter from the left */
+.anim-swipe .lower-third               { transform: translateX(-110%); }
+.anim-swipe .lower-third.visible       { transform: translateX(0); }
 
 /* fade: just opacity */
 .anim-fade .lower-third                { transform: none; }
@@ -146,6 +174,10 @@ body.chroma-transparent { background: transparent !important; }
 /* ── Logo ─────────────────────────────────────────────────────────────────── */
 .lt-logo {
   display: block;
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  transform: translateY(-50%);
   /* Height is controlled by the operator via --logo-max-h (set by output.js).
      Using auto + max-height prevents an oversized logo from bloating the bar. */
   height: auto;
@@ -154,20 +186,16 @@ body.chroma-transparent { background: transparent !important; }
   max-width: 22%;          /* never wider than 22% of the bar */
   object-fit: contain;
   object-position: center;
-  flex-shrink: 0;
-  align-self: center;      /* center vertically; don't stretch to full bar height */
   padding: 6px 8px;
   background: transparent; /* preserve PNG transparency */
 }
 
-/* Logo on the right side: JS appends it after lt-text */
 .lt-logo.logo-right {
-  order: 3;
+  right: 18px;
 }
 
-/* Logo on the left side: JS inserts it before lt-text */
 .lt-logo.logo-left {
-  order: 1;   /* after lt-accent (order 0) */
+  left: 18px;
 }
 
 /* ── Text Block ───────────────────────────────────────────────────────────── */
@@ -175,16 +203,25 @@ body.chroma-transparent { background: transparent !important; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 18px 28px;
+  padding: 18px 28px 18px var(--lt-text-pad-left, 28px);
   gap: 4px;
   background: rgba(0,0,0,.92);  /* raised from .82 — solid enough to survive chroma key */
   flex: 1;
   min-width: 0;
   font-family: var(--lt-font);
   order: 2; /* ensures logo-left (order:1) sits between accent (order:0) and text */
+  position: relative;
+  z-index: 1;
 
   /* Text alignment — overridden by applySettings() */
   text-align: left;
+}
+
+.lower-third.has-logo.logo-pos-left .lt-text {
+  padding-left: calc(var(--lt-text-pad-left, 28px) + var(--lt-logo-space, 150px));
+}
+.lower-third.has-logo.logo-pos-right .lt-text {
+  padding-right: var(--lt-logo-space, 150px);
 }
 
 /* Text alignment classes applied by JS */
@@ -196,16 +233,23 @@ body.chroma-transparent { background: transparent !important; }
   font-size: clamp(28px, 4vw, 52px);
   font-weight: 700;
   color: #ffffff;
+  text-align: inherit;
   line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.lower-third.type-custom .lt-line1 {
+  font-size: clamp(22px, 3.2vw, 46px);
+  line-height: 1.15;
+}
+
 .lt-line2 {
   font-size: clamp(18px, 2.6vw, 34px);
   font-weight: 400;
   color: rgba(255,255,255,.75);
+  text-align: inherit;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -264,6 +308,7 @@ body.chroma-transparent { background: transparent !important; }
   background: linear-gradient(to right, rgba(0,0,0,.94) 0%, rgba(0,0,0,.65) 60%, rgba(0,0,0,0) 100%); /* solid end raised for chroma key */
   padding-right: 48px;
 }
+.style-gradient.dir-rtl .lt-text { padding-left: 48px; padding-right: var(--lt-text-pad-left, 28px); }
 .style-gradient .lt-accent   { background: var(--accent-color); }
 .style-gradient .lt-line1    { color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
 .style-gradient .lt-line2    { color: rgba(255,255,255,.85); text-shadow: 0 2px 6px rgba(0,0,0,.7); }
@@ -343,6 +388,8 @@ body.chroma-transparent { background: transparent !important; }
 /* Slide animation carries over when wrap has anim class from JS */
 .anim-slide .lt-custom-wrap               { transform: translateY(60px); transition: opacity .45s ease, transform .45s ease; }
 .anim-slide .lt-custom-wrap.visible       { transform: translateY(0); }
+.anim-swipe .lt-custom-wrap               { transform: translateX(-110%); transition: opacity .45s ease, transform .45s ease; }
+.anim-swipe .lt-custom-wrap.visible       { transform: translateX(0); }
 .anim-none  .lt-custom-wrap               { transition: none; }
 .anim-none  .lt-custom-wrap.visible       { opacity: 1; }
 
@@ -495,6 +542,45 @@ body.chroma-transparent { background: transparent !important; }
   margin-right: 10px;
   color: var(--accent-color);
   opacity: .9;
+}
+
+.style-inline-duo.dir-rtl .lt-text,
+.style-inline-chip.dir-rtl .lt-text,
+.style-inline-glass.dir-rtl .lt-text {
+  flex-direction: row-reverse;
+}
+
+.style-inline-duo .lt-text.align-left,
+.style-inline-chip .lt-text.align-left,
+.style-inline-glass .lt-text.align-left {
+  justify-content: flex-start;
+}
+
+.style-inline-duo .lt-text.align-center,
+.style-inline-chip .lt-text.align-center,
+.style-inline-glass .lt-text.align-center {
+  justify-content: center;
+}
+
+.style-inline-duo .lt-text.align-right,
+.style-inline-chip .lt-text.align-right,
+.style-inline-glass .lt-text.align-right {
+  justify-content: flex-end;
+}
+
+.style-inline-duo .lt-text.align-center .lt-line1,
+.style-inline-duo .lt-text.align-center .lt-line2,
+.style-inline-duo .lt-text.align-right .lt-line1,
+.style-inline-duo .lt-text.align-right .lt-line2,
+.style-inline-chip .lt-text.align-center .lt-line1,
+.style-inline-chip .lt-text.align-center .lt-line2,
+.style-inline-chip .lt-text.align-right .lt-line1,
+.style-inline-chip .lt-text.align-right .lt-line2,
+.style-inline-glass .lt-text.align-center .lt-line1,
+.style-inline-glass .lt-text.align-center .lt-line2,
+.style-inline-glass .lt-text.align-right .lt-line1,
+.style-inline-glass .lt-text.align-right .lt-line2 {
+  flex: 0 1 auto;
 }
 .style-frosted .lt-text {
   background: rgba(245,245,250,.97);
