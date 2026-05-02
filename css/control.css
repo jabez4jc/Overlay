@@ -1188,9 +1188,8 @@ input[type="color"] {
 .logo-controls {
   margin-top: 10px;
   display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .logo-preview-wrap {
@@ -1272,6 +1271,38 @@ input[type="color"] {
   flex-direction: column;
   gap: 10px;
 }
+
+/* Settings layout utilities */
+.sg-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sg-divider {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border-light);
+  margin-top: 2px;
+}
+
+.sg-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sg-3col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.sg-align-end { align-items: end; }
 
 .settings-subsection .setting-row {
   margin: 0;

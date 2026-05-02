@@ -35,6 +35,7 @@ const tickerText  = document.getElementById('ticker-text');
 let usingCustomTemplate = false;
 // Tracks the most recently applied settings so showOverlay can access them
 let currentSettings = {};
+let currentOverlayData = null;
 let statePollTimer = null;
 let lastStateUpdatedAt = 0;
 
@@ -248,6 +249,7 @@ function handleMessage(msg) {
 // ── Show / Hide ───────────────────────────────────────────────────────────────
 function showOverlay(data) {
   if (!data) return;
+  currentOverlayData = data;
 
   if (usingCustomTemplate) {
     // Substitute template variables and inject into custom container
@@ -258,7 +260,7 @@ function showOverlay(data) {
   } else {
     ltLine1.textContent   = data.line1 || '';
     ltLine2.textContent   = data.line2 || '';
-    applyCustomTextLineClamp(data);
+    applyCustomTextLayout(data);
     if (!data.line2) {
       ltLine2.style.display = 'none';
     } else {
@@ -270,6 +272,7 @@ function showOverlay(data) {
     ltRoot.classList.remove('visible');
     void ltRoot.offsetWidth;
     ltRoot.classList.add('visible');
+    fitCustomTextToBox(data);
   }
 
   try {
@@ -277,20 +280,48 @@ function showOverlay(data) {
   } catch (_) {}
 }
 
-function applyCustomTextLineClamp(data) {
+function applyCustomTextLayout(data) {
   if (!ltLine1) return;
   const isCustom = data?.type === 'custom';
-  const lines = Math.max(1, Math.min(6, parseInt(data?.customLines || 2, 10)));
-  ltLine1.style.whiteSpace = isCustom ? 'pre-line' : '';
-  ltLine1.style.overflow = isCustom ? 'hidden' : '';
+  ltLine1.style.whiteSpace = isCustom ? 'pre-wrap' : '';
+  ltLine1.style.overflow = isCustom ? 'visible' : '';
   ltLine1.style.textOverflow = isCustom ? 'clip' : '';
-  ltLine1.style.display = isCustom ? '-webkit-box' : '';
-  ltLine1.style.webkitBoxOrient = isCustom ? 'vertical' : '';
-  ltLine1.style.webkitLineClamp = isCustom ? String(lines) : '';
-  ltLine1.style.lineClamp = isCustom ? String(lines) : '';
+  ltLine1.style.display = isCustom ? 'block' : '';
+  ltLine1.style.webkitBoxOrient = '';
+  ltLine1.style.webkitLineClamp = '';
+  ltLine1.style.lineClamp = '';
+  ltLine1.style.overflowWrap = isCustom ? 'anywhere' : '';
+  ltLine1.style.wordBreak = isCustom ? 'break-word' : '';
+}
+
+function fitCustomTextToBox(data) {
+  if (!ltLine1 || !ltText || data?.type !== 'custom') return;
+  const lineCount = Math.max(1, Math.min(6, parseInt(data?.customInputLineCount || data?.customLines || 1, 10)));
+  const currentSize = parseFloat(getComputedStyle(ltLine1).fontSize) || 28;
+  const availableWidth = Math.max(1, ltText.clientWidth);
+  const availableHeight = Math.max(1, ltText.clientHeight);
+  const maxSizeByHeight = availableHeight / Math.max(1, lineCount * 1.15);
+  let low = 10;
+  let high = Math.max(low, Math.min(availableHeight, currentSize * 2.8, maxSizeByHeight * 1.45));
+  let best = low;
+
+  for (let i = 0; i < 18; i += 1) {
+    const mid = (low + high) / 2;
+    ltLine1.style.fontSize = `${mid}px`;
+    ltLine1.style.lineHeight = '1.15';
+    if (ltLine1.scrollWidth <= availableWidth + 1 && ltLine1.scrollHeight <= availableHeight + 1) {
+      best = mid;
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  ltLine1.style.fontSize = `${best}px`;
 }
 
 function hideOverlay() {
+  currentOverlayData = null;
   ltRoot.classList.remove('visible');
   if (ltCustomWrap) ltCustomWrap.classList.remove('visible');
   try { sessionStorage.removeItem('overlayLive'); } catch (_) {}
@@ -457,6 +488,11 @@ function applySettings(s) {
     ltLine2.style.webkitBoxOrient = multiline ? 'vertical' : '';
     ltLine2.style.webkitLineClamp = multiline ? String(maxLines) : '';
     ltLine2.style.lineClamp = multiline ? String(maxLines) : '';
+  }
+
+  if (currentOverlayData?.type === 'custom') {
+    applyCustomTextLayout(currentOverlayData);
+    fitCustomTextToBox(currentOverlayData);
   }
 
   // ── Session watermark (operator reference — toggled via Settings) ─────────

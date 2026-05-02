@@ -1772,12 +1772,15 @@ function buildOverlayData() {
   }
 
   const text = document.getElementById('custom-text')?.value.trim() || '';
-  const lines = parseInt(document.getElementById('custom-lines')?.value || '2', 10);
+  const lines = Math.max(1, Math.min(6, parseInt(document.getElementById('custom-lines')?.value || '2', 10)));
+  const customInputLines = text ? text.replace(/\r\n?/g, '\n').split('\n') : [''];
+  const displayedLines = customInputLines.slice(0, lines);
   return {
     type: 'custom',
-    line1: text,
+    line1: displayedLines.join('\n'),
     line2: '',
-    customLines: Math.max(1, Math.min(6, lines || 2)),
+    customLines: lines,
+    customInputLineCount: displayedLines.length,
   };
 }
 
@@ -1922,17 +1925,44 @@ function applyLowerThirdVisualSettings(ltEl, ltTextEl, line2El, settings) {
   }
 }
 
-function applyCustomTextLineClamp(line1El, data) {
+function applyCustomTextLayout(line1El, data) {
   if (!line1El) return;
   const isCustom = data?.type === 'custom';
-  const lines = Math.max(1, Math.min(6, parseInt(data?.customLines || 2, 10)));
-  line1El.style.whiteSpace = isCustom ? 'pre-line' : '';
-  line1El.style.overflow = isCustom ? 'hidden' : '';
+  line1El.style.whiteSpace = isCustom ? 'pre-wrap' : '';
+  line1El.style.overflow = isCustom ? 'visible' : '';
   line1El.style.textOverflow = isCustom ? 'clip' : '';
-  line1El.style.display = isCustom ? '-webkit-box' : '';
-  line1El.style.webkitBoxOrient = isCustom ? 'vertical' : '';
-  line1El.style.webkitLineClamp = isCustom ? String(lines) : '';
-  line1El.style.lineClamp = isCustom ? String(lines) : '';
+  line1El.style.display = isCustom ? 'block' : '';
+  line1El.style.webkitBoxOrient = '';
+  line1El.style.webkitLineClamp = '';
+  line1El.style.lineClamp = '';
+  line1El.style.overflowWrap = isCustom ? 'anywhere' : '';
+  line1El.style.wordBreak = isCustom ? 'break-word' : '';
+}
+
+function fitCustomTextToBox(line1El, textContainerEl, data, settings) {
+  if (!line1El || !textContainerEl || data?.type !== 'custom') return;
+  const lineCount = Math.max(1, Math.min(6, parseInt(data?.customInputLineCount || data?.customLines || 1, 10)));
+  const currentSize = parseFloat(getComputedStyle(line1El).fontSize) || 20;
+  const availableWidth = Math.max(1, textContainerEl.clientWidth);
+  const availableHeight = Math.max(1, textContainerEl.clientHeight);
+  const maxSizeByHeight = availableHeight / Math.max(1, lineCount * 1.15);
+  let low = 8;
+  let high = Math.max(low, Math.min(availableHeight, currentSize * 2.4, maxSizeByHeight * 1.45));
+  let best = low;
+
+  for (let i = 0; i < 18; i += 1) {
+    const mid = (low + high) / 2;
+    line1El.style.fontSize = `${mid}px`;
+    line1El.style.lineHeight = '1.15';
+    if (line1El.scrollWidth <= availableWidth + 1 && line1El.scrollHeight <= availableHeight + 1) {
+      best = mid;
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  line1El.style.fontSize = `${best}px`;
 }
 
 function applyMonitorOutputLogo(imgEl, viewportEl, settings) {
@@ -2170,13 +2200,14 @@ function updatePreview() {
   const previewLine2 = document.getElementById('preview-line2');
   if (previewLine1) previewLine1.style.fontFamily = resolvedFontFamily(settings.line1Font || settings.font);
   if (previewLine2) previewLine2.style.fontFamily = resolvedFontFamily(settings.line2Font || settings.line1Font || settings.font);
-  applyCustomTextLineClamp(previewLine1, data);
+  applyCustomTextLayout(previewLine1, data);
   applyLineTextEffects(
     previewLine1,
     previewLine2,
     settings
   );
   applyLowerThirdVisualSettings(lt, ltText, previewLine2, settings);
+  fitCustomTextToBox(previewLine1, ltText, data, settings);
 }
 
 // ── Presets ───────────────────────────────────────────────────────────────────
@@ -2982,9 +3013,10 @@ function updateProgramMonitor() {
       }
       if (pgmLine1) pgmLine1.style.fontFamily = resolvedFontFamily(s?.line1Font || s?.font);
       if (pgmLine2) pgmLine2.style.fontFamily = resolvedFontFamily(s?.line2Font || s?.line1Font || s?.font);
-      applyCustomTextLineClamp(pgmLine1, programOverlayData);
+      applyCustomTextLayout(pgmLine1, programOverlayData);
       applyLineTextEffects(pgmLine1, pgmLine2, s || {});
       applyLowerThirdVisualSettings(pgmLt, pgmLtText, pgmLine2, s || {});
+      fitCustomTextToBox(pgmLine1, pgmLtText, programOverlayData, s || {});
       if (pgmLogo) {
         if (s?.logoDataUrl && s.lowerThirdLogoEnabled !== false) {
           const scale = getMonitorScale(pgmViewport, s || {});

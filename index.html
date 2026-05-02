@@ -531,238 +531,225 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </summary>
               <div class="settings-subsection-body">
-        <!-- Browser Source Connection -->
-        <div class="setting-row">
-          <div class="setting-group span-full">
-            <div class="browser-source-info">
-              <div class="bsi-tabs" role="tablist" aria-label="Output setup sections">
-                <button type="button" id="output-tab-browser" class="bsi-tab is-active" onclick="setOutputSetupTab('browser')" role="tab" aria-selected="true">Browser Source</button>
-                <button type="button" id="output-tab-atem" class="bsi-tab" onclick="setOutputSetupTab('atem')" role="tab" aria-selected="false">ATEM PNG Export</button>
-              </div>
 
-              <section id="output-panel-browser" class="bsi-panel is-active" role="tabpanel" aria-labelledby="output-tab-browser">
-                <div class="bsi-row">
-                  <span class="bsi-label">Output URL</span>
-                  <code class="bsi-url" id="bsi-url">—</code>
-                  <button class="bsi-copy" onclick="copyOutputLink()" title="Copy URL">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  </button>
-                  <details class="bsi-help">
-                    <summary class="bsi-help-btn" title="Setup guidance">i</summary>
-                    <div class="bsi-notes">
-                      <p><strong>1. Add Browser Source:</strong> In OBS/vMix, add a Browser Source and paste the Output URL above.</p>
-                      <p><strong>2. Match output size:</strong> Set width and height to your selected output resolution (for example 1920 × 1080).</p>
-                      <p><strong>3. Choose keying mode:</strong> Use <em>Allow transparency</em> with Transparent mode, or use Chroma Key when a color background is selected.</p>
+                <!-- Browser Source / ATEM tabs -->
+                <div class="setting-group">
+                  <div class="browser-source-info">
+                    <div class="bsi-tabs" role="tablist" aria-label="Output setup sections">
+                      <button type="button" id="output-tab-browser" class="bsi-tab is-active" onclick="setOutputSetupTab('browser')" role="tab" aria-selected="true">Browser Source</button>
+                      <button type="button" id="output-tab-atem" class="bsi-tab" onclick="setOutputSetupTab('atem')" role="tab" aria-selected="false">ATEM PNG Export</button>
                     </div>
-                  </details>
+
+                    <section id="output-panel-browser" class="bsi-panel is-active" role="tabpanel" aria-labelledby="output-tab-browser">
+                      <div class="bsi-row">
+                        <span class="bsi-label">Output URL</span>
+                        <code class="bsi-url" id="bsi-url">—</code>
+                        <button class="bsi-copy" onclick="copyOutputLink()" title="Copy URL">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                        <details class="bsi-help">
+                          <summary class="bsi-help-btn" title="Setup guidance">i</summary>
+                          <div class="bsi-notes">
+                            <p><strong>1. Add Browser Source:</strong> In OBS/vMix, add a Browser Source and paste the Output URL above.</p>
+                            <p><strong>2. Match output size:</strong> Set width and height to your selected output resolution (for example 1920 × 1080).</p>
+                            <p><strong>3. Choose keying mode:</strong> Use <em>Allow transparency</em> with Transparent mode, or use Chroma Key when a color background is selected.</p>
+                          </div>
+                        </details>
+                      </div>
+                    </section>
+
+                    <section id="output-panel-atem" class="bsi-panel" role="tabpanel" aria-labelledby="output-tab-atem" hidden>
+                      <div class="bsi-export-row">
+                        <label class="bsi-pin-toggle" title="Enable ATEM PNG export updates for this session.">
+                          <input type="checkbox" id="atem-pin-session" onchange="onAtemExportPinToggle()" />
+                          <span>Include this session in ATEM export</span>
+                        </label>
+                        <span class="bsi-pin-state" id="atem-pin-state">Not included</span>
+                      </div>
+                      <div class="bsi-row bsi-atem-url-row">
+                        <span class="bsi-label">ATEM PNG URL (Premultiplied)</span>
+                        <code class="bsi-url" id="atem-export-url">/atem-live/&lt;session&gt;.png?alpha=premultiplied</code>
+                        <button class="bsi-copy" onclick="copyAtemPremultipliedLink()" title="Copy ATEM Premultiplied PNG URL">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                        <button class="bsi-copy bsi-copy-text" id="atem-refresh-btn" onclick="onAtemExportRegenerate()" title="Regenerate ATEM PNG now">
+                          Regenerate
+                        </button>
+                      </div>
+                      <div class="bsi-row bsi-atem-url-row">
+                        <span class="bsi-label">Preview PNG URL (Straight)</span>
+                        <code class="bsi-url" id="atem-export-url-straight">/atem-live/&lt;session&gt;.png?alpha=straight</code>
+                        <button class="bsi-copy" onclick="copyAtemStraightLink()" title="Copy Straight Alpha PNG URL for browser preview">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        </button>
+                      </div>
+                    </section>
+                  </div>
                 </div>
-              </section>
 
-              <section id="output-panel-atem" class="bsi-panel" role="tabpanel" aria-labelledby="output-tab-atem" hidden>
-                <div class="bsi-export-row">
-                  <label class="bsi-pin-toggle" title="Enable ATEM PNG export updates for this session.">
-                    <input type="checkbox" id="atem-pin-session" onchange="onAtemExportPinToggle()" />
-                    <span>Include this session in ATEM export</span>
-                  </label>
-                  <span class="bsi-pin-state" id="atem-pin-state">Not included</span>
+                <!-- Style & Appearance -->
+                <div class="sg-section">
+                  <div class="sg-divider">Style &amp; Appearance</div>
+                  <div class="setting-group">
+                    <label class="setting-label" for="style-select">Lower Third Style</label>
+                    <select id="style-select" onchange="onSettingsChange()">
+                      <option value="classic">Classic — Dark bar</option>
+                      <option value="accent">Accent line</option>
+                      <option value="minimal">Minimal — text only</option>
+                      <option value="outline">Outlined text</option>
+                      <option value="gradient" selected>Gradient fade</option>
+                      <option value="scripture">Scripture Wrap — full passage</option>
+                      <option value="scripture-panel">Scripture Panel — high-capacity</option>
+                      <option value="solid">Solid — Accent fill</option>
+                      <option value="split">Split lines</option>
+                      <option value="frosted">Frosted glass</option>
+                      <option value="inline-duo">Inline Duo — one-line modern</option>
+                      <option value="inline-chip">Inline Chip — highlighted line 2</option>
+                      <option value="inline-glass">Inline Glass — soft gradient</option>
+                    </select>
+                  </div>
+                  <div class="sg-3col">
+                    <div class="setting-group">
+                      <label class="setting-label" for="accent-color">Accent Color</label>
+                      <input type="color" id="accent-color" value="#C8A951" onchange="onSettingsChange()" />
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label" for="position-select">Position</label>
+                      <select id="position-select" onchange="onSettingsChange()">
+                        <option value="lower">Lower Third</option>
+                        <option value="upper">Upper Third</option>
+                        <option value="center">Centered</option>
+                      </select>
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label" for="lt-bg-direction">Direction</label>
+                      <select id="lt-bg-direction" onchange="onSettingsChange()">
+                        <option value="ltr">Left to right</option>
+                        <option value="rtl">Right to left</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div class="bsi-row bsi-atem-url-row">
-                  <span class="bsi-label">ATEM PNG URL (Premultiplied)</span>
-                  <code class="bsi-url" id="atem-export-url">/atem-live/&lt;session&gt;.png?alpha=premultiplied</code>
-                  <button class="bsi-copy" onclick="copyAtemPremultipliedLink()" title="Copy ATEM Premultiplied PNG URL">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  </button>
-                  <button class="bsi-copy bsi-copy-text" id="atem-refresh-btn" onclick="onAtemExportRegenerate()" title="Regenerate ATEM PNG now">
-                    Regenerate
-                  </button>
+
+                <!-- Background -->
+                <div class="sg-section">
+                  <div class="sg-divider">Background</div>
+                  <div class="sg-2col sg-align-end">
+                    <div class="setting-group">
+                      <label class="setting-label" for="lt-bg-color">Color</label>
+                      <input type="color" id="lt-bg-color" value="#000000" onchange="onSettingsChange()" />
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label" for="lt-bg-opacity">Opacity <span class="label-hint" id="lt-bg-opacity-val">0.88</span></label>
+                      <div class="slider-row">
+                        <input type="range" id="lt-bg-opacity" min="0" max="1" step="0.01" value="0.88"
+                               oninput="onLtBgOpacityInput()" onchange="onSettingsChange()" />
+                        <span class="slider-value" id="lt-bg-opacity-display">0.88</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="bsi-row bsi-atem-url-row">
-                  <span class="bsi-label">Preview PNG URL (Straight)</span>
-                  <code class="bsi-url" id="atem-export-url-straight">/atem-live/&lt;session&gt;.png?alpha=straight</code>
-                  <button class="bsi-copy" onclick="copyAtemStraightLink()" title="Copy Straight Alpha PNG URL for browser preview">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  </button>
+
+                <!-- Layout -->
+                <div class="sg-section">
+                  <div class="sg-divider">Layout</div>
+                  <div class="sg-2col">
+                    <div class="setting-group">
+                      <label class="setting-label" for="lt-width">Width <span class="label-hint" id="lt-width-val">100%</span></label>
+                      <div class="slider-row">
+                        <input type="range" id="lt-width" min="40" max="100" step="1" value="100"
+                               oninput="onLtWidthInput()" onchange="onSettingsChange()" />
+                        <span class="slider-value" id="lt-width-display">100%</span>
+                      </div>
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label" for="lt-min-height">BG Height <span class="label-hint" id="lt-min-height-val">auto</span></label>
+                      <div class="slider-row">
+                        <input type="range" id="lt-min-height" min="0" max="320" step="4" value="0"
+                               oninput="onLtMinHeightInput()" onchange="onSettingsChange()" />
+                        <span class="slider-value" id="lt-min-height-display">auto</span>
+                      </div>
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label" for="lt-offset-x">H. Offset <span class="label-hint" id="lt-offset-x-val">0%</span></label>
+                      <div class="slider-row">
+                        <input type="range" id="lt-offset-x" min="-40" max="40" step="0.5" value="0"
+                               oninput="onLtOffsetInput()" onchange="onSettingsChange()" />
+                        <span class="slider-value" id="lt-offset-x-display">0%</span>
+                      </div>
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label" for="lt-offset-y">V. Offset <span class="label-hint" id="lt-offset-y-val">0%</span></label>
+                      <div class="slider-row">
+                        <input type="range" id="lt-offset-y" min="-30" max="30" step="0.5" value="0"
+                               oninput="onLtOffsetInput()" onchange="onSettingsChange()" />
+                        <span class="slider-value" id="lt-offset-y-display">0%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="setting-group">
+                    <label class="setting-label" for="lt-text-left-padding">Text Left Padding <span class="label-hint" id="lt-text-left-padding-val">28px</span></label>
+                    <div class="slider-row">
+                      <input type="range" id="lt-text-left-padding" min="0" max="240" step="4" value="28"
+                             oninput="onLtTextLeftPaddingInput()" onchange="onSettingsChange()" />
+                      <span class="slider-value" id="lt-text-left-padding-display">28px</span>
+                    </div>
+                  </div>
                 </div>
-              </section>
-            </div>
-          </div>
-        </div>
 
-        <!-- Lower Third Style -->
-        <div class="setting-row">
-          <div class="setting-group span-full">
-            <label class="setting-label" for="style-select">Lower Third Style</label>
-            <select id="style-select" onchange="onSettingsChange()">
-              <option value="classic">Classic — Dark bar</option>
-              <option value="accent">Accent line</option>
-              <option value="minimal">Minimal — text only</option>
-              <option value="outline">Outlined text</option>
-              <option value="gradient" selected>Gradient fade</option>
-              <option value="scripture">Scripture Wrap — full passage</option>
-              <option value="scripture-panel">Scripture Panel — high-capacity</option>
-              <option value="solid">Solid — Accent fill</option>
-              <option value="split">Split lines</option>
-              <option value="frosted">Frosted glass</option>
-              <option value="inline-duo">Inline Duo — one-line modern</option>
-              <option value="inline-chip">Inline Chip — highlighted line 2</option>
-              <option value="inline-glass">Inline Glass — soft gradient</option>
-            </select>
-          </div>
-        </div>
+                <!-- Text -->
+                <div class="sg-section">
+                  <div class="sg-divider">Text</div>
+                  <div class="sg-2col sg-align-end">
+                    <div class="setting-group">
+                      <label class="template-toggle-label">
+                        <input type="checkbox" id="line2-multiline" onchange="onSettingsChange()" />
+                        Line 2 Multiline
+                      </label>
+                    </div>
+                    <div class="setting-group">
+                      <label class="setting-label" for="line2-max-lines">Max Lines <span class="label-hint" id="line2-max-lines-val">2</span></label>
+                      <div class="slider-row">
+                        <input type="range" id="line2-max-lines" min="1" max="6" step="1" value="2"
+                               oninput="onLine2MaxLinesInput()" onchange="onSettingsChange()" />
+                        <span class="slider-value" id="line2-max-lines-display">2</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="setting-group">
+                    <label class="setting-label">Alignment</label>
+                    <div class="align-options">
+                      <label class="align-opt">
+                        <input type="radio" name="textAlign" value="left" checked onchange="onSettingsChange()" />
+                        <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="1" y1="7" x2="13" y2="7"/><line x1="1" y1="12" x2="16" y2="12"/></svg>
+                        Left
+                      </label>
+                      <label class="align-opt">
+                        <input type="radio" name="textAlign" value="center" onchange="onSettingsChange()" />
+                        <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="4" y1="7" x2="16" y2="7"/><line x1="2" y1="12" x2="18" y2="12"/></svg>
+                        Center
+                      </label>
+                      <label class="align-opt">
+                        <input type="radio" name="textAlign" value="right" onchange="onSettingsChange()" />
+                        <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="7" y1="7" x2="19" y2="7"/><line x1="4" y1="12" x2="19" y2="12"/></svg>
+                        Right
+                      </label>
+                    </div>
+                  </div>
+                </div>
 
-        <!-- Accent Color + Position -->
-        <div class="setting-row">
-          <div class="setting-group">
-            <label class="setting-label" for="accent-color">Accent Color</label>
-            <input type="color" id="accent-color" value="#C8A951" onchange="onSettingsChange()" />
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label" for="position-select">Position</label>
-            <select id="position-select" onchange="onSettingsChange()">
-              <option value="lower">Lower Third</option>
-              <option value="upper">Upper Third</option>
-              <option value="center">Centered</option>
-            </select>
-          </div>
-          <div class="setting-group">
-            <label class="setting-label" for="lt-bg-direction">Background Direction</label>
-            <select id="lt-bg-direction" onchange="onSettingsChange()">
-              <option value="ltr">Left to right</option>
-              <option value="rtl">Right to left</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-group">
-            <label class="setting-label" for="lt-bg-color">Lower Third Background</label>
-            <input type="color" id="lt-bg-color" value="#000000" onchange="onSettingsChange()" />
-          </div>
-          <div class="setting-group">
-            <label class="setting-label" for="lt-bg-opacity">
-              Background Opacity
-              <span class="label-hint" id="lt-bg-opacity-val">0.88</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="lt-bg-opacity" min="0" max="1" step="0.01" value="0.88"
-                     oninput="onLtBgOpacityInput()" onchange="onSettingsChange()" />
-              <span class="slider-value" id="lt-bg-opacity-display">0.88</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-group">
-            <label class="setting-label" for="lt-width">
-              Lower Third Width
-              <span class="label-hint" id="lt-width-val">100%</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="lt-width" min="40" max="100" step="1" value="100"
-                     oninput="onLtWidthInput()" onchange="onSettingsChange()" />
-              <span class="slider-value" id="lt-width-display">100%</span>
-            </div>
-          </div>
-          <div class="setting-group">
-            <label class="setting-label" for="lt-offset-x">
-              Horizontal Position
-              <span class="label-hint" id="lt-offset-x-val">0%</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="lt-offset-x" min="-40" max="40" step="0.5" value="0"
-                     oninput="onLtOffsetInput()" onchange="onSettingsChange()" />
-              <span class="slider-value" id="lt-offset-x-display">0%</span>
-            </div>
-          </div>
-          <div class="setting-group">
-            <label class="setting-label" for="lt-offset-y">
-              Vertical Position
-              <span class="label-hint" id="lt-offset-y-val">0%</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="lt-offset-y" min="-30" max="30" step="0.5" value="0"
-                     oninput="onLtOffsetInput()" onchange="onSettingsChange()" />
-              <span class="slider-value" id="lt-offset-y-display">0%</span>
-            </div>
-          </div>
-          <div class="setting-group">
-            <label class="setting-label" for="lt-min-height">
-              Lower Third Background Height
-              <span class="label-hint" id="lt-min-height-val">auto</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="lt-min-height" min="0" max="320" step="4" value="0"
-                     oninput="onLtMinHeightInput()" onchange="onSettingsChange()" />
-              <span class="slider-value" id="lt-min-height-display">auto</span>
-            </div>
-          </div>
-          <div class="setting-group">
-            <label class="setting-label" for="lt-text-left-padding">
-              Text Left Padding
-              <span class="label-hint" id="lt-text-left-padding-val">28px</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="lt-text-left-padding" min="0" max="240" step="4" value="28"
-                     oninput="onLtTextLeftPaddingInput()" onchange="onSettingsChange()" />
-              <span class="slider-value" id="lt-text-left-padding-display">28px</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-group">
-            <label class="template-toggle-label">
-              <input type="checkbox" id="line2-multiline" onchange="onSettingsChange()" />
-              Line 2 Multiline
-            </label>
-            <label class="setting-label" for="line2-max-lines">
-              Max Line 2 Lines
-              <span class="label-hint" id="line2-max-lines-val">2</span>
-            </label>
-            <div class="slider-row">
-              <input type="range" id="line2-max-lines" min="1" max="6" step="1" value="2"
-                     oninput="onLine2MaxLinesInput()" onchange="onSettingsChange()" />
-              <span class="slider-value" id="line2-max-lines-display">2</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Text Alignment -->
-        <div class="setting-row">
-          <div class="setting-group span-full">
-            <label class="setting-label">Text Alignment</label>
-            <div class="align-options">
-              <label class="align-opt">
-                <input type="radio" name="textAlign" value="left" checked onchange="onSettingsChange()" />
-                <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="1" y1="7" x2="13" y2="7"/><line x1="1" y1="12" x2="16" y2="12"/></svg>
-                Left
-              </label>
-              <label class="align-opt">
-                <input type="radio" name="textAlign" value="center" onchange="onSettingsChange()" />
-                <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="4" y1="7" x2="16" y2="7"/><line x1="2" y1="12" x2="18" y2="12"/></svg>
-                Center
-              </label>
-              <label class="align-opt">
-                <input type="radio" name="textAlign" value="right" onchange="onSettingsChange()" />
-                <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="2" x2="19" y2="2"/><line x1="7" y1="7" x2="19" y2="7"/><line x1="4" y1="12" x2="19" y2="12"/></svg>
-                Right
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Output Resolution -->
-        <div class="setting-row">
-          <div class="setting-group">
-            <label class="setting-label" for="output-res">Output Resolution</label>
-            <select id="output-res" onchange="onSettingsChange()">
-              <option value="1920x1080">1920 × 1080 (Full HD)</option>
-              <option value="1280x720">1280 × 720 (HD)</option>
-              <option value="3840x2160">3840 × 2160 (4K UHD)</option>
-            </select>
-          </div>
-        </div>
+                <!-- Output -->
+                <div class="sg-section">
+                  <div class="sg-divider">Output</div>
+                  <div class="setting-group">
+                    <label class="setting-label" for="output-res">Resolution</label>
+                    <select id="output-res" onchange="onSettingsChange()">
+                      <option value="1920x1080">1920 × 1080 (Full HD)</option>
+                      <option value="1280x720">1280 × 720 (HD)</option>
+                      <option value="3840x2160">3840 × 2160 (4K UHD)</option>
+                    </select>
+                  </div>
+                </div>
 
               </div>
             </details>
@@ -1048,55 +1035,63 @@
                       <div class="logo-preview-wrap">
                         <img id="logo-preview" class="logo-preview-img" alt="Logo preview" />
                       </div>
-                      <div class="setting-group span-full">
-                        <label class="template-toggle-label">
-                          <input type="checkbox" id="lower-third-logo-enabled" checked onchange="onSettingsChange()" />
-                          Show logo in lower third
-                        </label>
-                      </div>
-                      <div class="setting-group">
-                        <label class="setting-label" for="logo-position">Logo Position</label>
-                        <select id="logo-position" onchange="onSettingsChange()">
-                          <option value="left">Left side</option>
-                          <option value="right">Right side</option>
-                        </select>
-                      </div>
-                      <div class="setting-group span-full">
-                        <label class="setting-label" for="logo-size">
-                          Lower-Third Logo Size
-                          <span class="label-hint">max height inside lower third</span>
-                        </label>
-                        <div class="slider-row">
-                          <input type="range" id="logo-size" min="40" max="240" step="10" value="110"
-                                 oninput="onLogoSizeInput()" onchange="onSettingsChange()" />
-                          <span class="slider-value" id="logo-size-val">110px</span>
+
+                      <!-- Lower Third -->
+                      <div class="sg-section">
+                        <div class="sg-divider">Lower Third</div>
+                        <div class="sg-2col sg-align-end">
+                          <div class="setting-group">
+                            <label class="template-toggle-label">
+                              <input type="checkbox" id="lower-third-logo-enabled" checked onchange="onSettingsChange()" />
+                              Show in lower third
+                            </label>
+                          </div>
+                          <div class="setting-group">
+                            <label class="setting-label" for="logo-position">Position</label>
+                            <select id="logo-position" onchange="onSettingsChange()">
+                              <option value="left">Left side</option>
+                              <option value="right">Right side</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="setting-group">
+                          <label class="setting-label" for="logo-size">Size <span class="label-hint">max height</span></label>
+                          <div class="slider-row">
+                            <input type="range" id="logo-size" min="40" max="240" step="10" value="110"
+                                   oninput="onLogoSizeInput()" onchange="onSettingsChange()" />
+                            <span class="slider-value" id="logo-size-val">110px</span>
+                          </div>
                         </div>
                       </div>
-                      <div class="setting-group span-full">
-                        <label class="template-toggle-label">
-                          <input type="checkbox" id="output-logo-enabled" onchange="onSettingsChange()" />
-                          Show logo on output
-                        </label>
-                      </div>
-                      <div class="setting-group">
-                        <label class="setting-label" for="output-logo-position">Output Logo Position</label>
-                        <select id="output-logo-position" onchange="onSettingsChange()">
-                          <option value="top-left">Top left</option>
-                          <option value="top-right" selected>Top right</option>
-                          <option value="bottom-left">Bottom left</option>
-                          <option value="bottom-right">Bottom right</option>
-                          <option value="center">Center</option>
-                        </select>
-                      </div>
-                      <div class="setting-group">
-                        <label class="setting-label" for="output-logo-size">
-                          Output Logo Size
-                          <span class="label-hint" id="output-logo-size-val">140px</span>
-                        </label>
-                        <div class="slider-row">
-                          <input type="range" id="output-logo-size" min="40" max="360" step="10" value="140"
-                                 oninput="onOutputLogoSizeInput()" onchange="onSettingsChange()" />
-                          <span class="slider-value" id="output-logo-size-display">140px</span>
+
+                      <!-- Output Watermark -->
+                      <div class="sg-section">
+                        <div class="sg-divider">Output Watermark</div>
+                        <div class="sg-2col sg-align-end">
+                          <div class="setting-group">
+                            <label class="template-toggle-label">
+                              <input type="checkbox" id="output-logo-enabled" onchange="onSettingsChange()" />
+                              Show on output
+                            </label>
+                          </div>
+                          <div class="setting-group">
+                            <label class="setting-label" for="output-logo-position">Position</label>
+                            <select id="output-logo-position" onchange="onSettingsChange()">
+                              <option value="top-left">Top left</option>
+                              <option value="top-right" selected>Top right</option>
+                              <option value="bottom-left">Bottom left</option>
+                              <option value="bottom-right">Bottom right</option>
+                              <option value="center">Center</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="setting-group">
+                          <label class="setting-label" for="output-logo-size">Size <span class="label-hint" id="output-logo-size-val">140px</span></label>
+                          <div class="slider-row">
+                            <input type="range" id="output-logo-size" min="40" max="360" step="10" value="140"
+                                   oninput="onOutputLogoSizeInput()" onchange="onSettingsChange()" />
+                            <span class="slider-value" id="output-logo-size-display">140px</span>
+                          </div>
                         </div>
                       </div>
                     </div>
