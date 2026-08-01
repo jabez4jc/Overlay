@@ -14,12 +14,14 @@
   <link rel="stylesheet" href="css/control.css" />
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to controls</a>
 
-<div id="session-modal" class="session-modal" aria-hidden="true" role="dialog" aria-labelledby="session-modal-title">
+<div id="session-modal" class="session-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="session-modal-title">
   <div class="session-modal-backdrop"></div>
   <div class="session-modal-dialog" role="document">
     <h2 id="session-modal-title">Choose Session ID</h2>
     <p class="session-modal-help">Enter Session ID (letters, numbers, - or _)</p>
+    <label class="visually-hidden" for="session-modal-input">Session ID</label>
     <input id="session-modal-input" type="text" autocomplete="off" spellcheck="false" maxlength="40" />
     <div id="session-modal-error" class="session-modal-error" aria-live="polite"></div>
     <div class="session-modal-actions">
@@ -36,10 +38,17 @@
     <div class="header-left">
       <img class="logo-icon" src="assets/brand/reference-overlay-mark.svg" alt="Overlay logo" />
       <h1>Overlay</h1>
+      <span class="header-product-label">Control</span>
+    </div>
+    <div class="header-shortcuts" aria-label="Keyboard shortcuts">
+      <span><kbd>Enter</kbd> take</span>
+      <span><kbd>Esc</kbd> clear</span>
+      <span><kbd>B S C T</kbd> modes</span>
+      <span><kbd>O</kbd> output</span>
     </div>
     <div class="header-right">
-      <span id="status-pill" class="status-pill status-off">OFF AIR</span>
-      <span id="ws-indicator" class="ws-indicator" data-state="offline" title="WebSocket server not running"></span>
+      <span id="status-pill" class="status-pill status-off" role="status" aria-live="polite">OFF AIR</span>
+      <span id="ws-indicator" class="ws-indicator" data-state="offline" role="status" aria-label="WebSocket server not running" title="WebSocket server not running"></span>
       <button class="btn-session-id" id="btn-session-id" onclick="copyOutputLink()" title="Click to copy output window URL to clipboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         <span id="session-id-text">#…</span>
@@ -64,31 +73,32 @@
   </header>
 
   <!-- ── Mode Toggle ──────────────────────────────────────────────────────── -->
-  <div class="mode-toggle">
-    <button id="tab-bible" class="mode-tab active" onclick="setMode('bible')">
+  <div class="mode-toggle" role="tablist" aria-label="Overlay content mode">
+    <button id="tab-bible" class="mode-tab active" onclick="setMode('bible')" role="tab" aria-selected="true" aria-controls="panel-bible">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       Bible Reference
     </button>
-    <button id="tab-speaker" class="mode-tab" onclick="setMode('speaker')">
+    <button id="tab-speaker" class="mode-tab" onclick="setMode('speaker')" role="tab" aria-selected="false" aria-controls="panel-speaker" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Speaker
     </button>
-    <button id="tab-custom" class="mode-tab" onclick="setMode('custom')">
+    <button id="tab-custom" class="mode-tab" onclick="setMode('custom')" role="tab" aria-selected="false" aria-controls="panel-custom" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16"/><path d="M4 12h12"/><path d="M4 18h16"/></svg>
       Custom
     </button>
-    <button id="tab-ticker" class="mode-tab" onclick="setMode('ticker')">
+    <button id="tab-ticker" class="mode-tab" onclick="setMode('ticker')" role="tab" aria-selected="false" aria-controls="panel-ticker" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="15 6 21 12 15 18"/></svg>
       Ticker
     </button>
   </div>
 
   <!-- ── Main Content ─────────────────────────────────────────────────────── -->
-  <main class="app-main">
+  <main class="app-main" id="main-content">
     <div class="control-column">
 
     <!-- ── Bible Reference Panel ──────────────────────────────────────────── -->
-    <section id="panel-bible" class="panel">
+    <section id="panel-bible" class="panel" role="tabpanel" aria-labelledby="tab-bible">
+      <div class="panel-kicker"><span>Content</span><strong>Bible reference</strong></div>
       <div class="field-grid bible-grid">
 
         <div class="field-group bible-book">
@@ -173,7 +183,8 @@
     </section>
 
     <!-- ── Speaker Panel ──────────────────────────────────────────────────── -->
-    <section id="panel-speaker" class="panel hidden">
+    <section id="panel-speaker" class="panel hidden" role="tabpanel" aria-labelledby="tab-speaker" hidden>
+      <div class="panel-kicker"><span>Content</span><strong>Speaker identification</strong></div>
       <div class="field-grid speaker-grid">
 
         <div class="field-group speaker-name">
@@ -197,7 +208,8 @@
     </section>
 
     <!-- ── Custom Panel ───────────────────────────────────────────────────── -->
-    <section id="panel-custom" class="panel hidden">
+    <section id="panel-custom" class="panel hidden" role="tabpanel" aria-labelledby="tab-custom" hidden>
+      <div class="panel-kicker"><span>Content</span><strong>Custom lower third</strong></div>
       <div class="field-grid custom-grid">
 
         <div class="field-group span-full">
@@ -206,7 +218,6 @@
             <span class="label-hint">shown as a lower-third overlay</span>
           </label>
           <textarea id="custom-text" rows="4"
-            style="width:100%;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:.95rem;resize:vertical;"
             placeholder="Enter any text to show on air"
             oninput="onCustomChange()" onchange="onCustomChange()"></textarea>
         </div>
@@ -227,7 +238,8 @@
     </section>
 
     <!-- ── Ticker Panel ───────────────────────────────────────────────────── -->
-    <section id="panel-ticker" class="panel hidden">
+    <section id="panel-ticker" class="panel hidden" role="tabpanel" aria-labelledby="tab-ticker" hidden>
+      <div class="panel-kicker"><span>Content</span><strong>Ticker message</strong></div>
       <div class="ticker-panel-grid ticker-grid">
 
         <div class="field-group span-full">
@@ -236,7 +248,6 @@
             <span class="label-hint">scrolls right → left on the output</span>
           </label>
           <textarea id="ticker-message" rows="3"
-            style="width:100%;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:.95rem;resize:vertical;"
             placeholder="e.g. ⚠ Emergency service cancelled — please check the foyer for updates"
             oninput="onTickerChange()">The Live Stream has been restored. Thank you for your patience, and our sincere apologies for the interruption.</textarea>
           <div class="ticker-export-note">Note: Ticker is not included in ATEM PNG export.</div>
@@ -319,7 +330,7 @@
             <input type="checkbox" id="ticker-force-text-color" onchange="onTickerChange()" />
             Force Text Color
           </label>
-          <input type="color" id="ticker-text-color-override" value="#ffffff" onchange="onTickerChange()" />
+          <input type="color" id="ticker-text-color-override" value="#ffffff" aria-label="Ticker text color" onchange="onTickerChange()" />
         </div>
 
       </div>
@@ -331,7 +342,8 @@
       <!-- ── PGM (Program) — frozen snapshot of what is currently live ─── -->
       <div class="monitor-block" id="monitor-program-block">
         <div class="monitor-label monitor-label-pgm" id="monitor-pgm-label">
-          <span class="monitor-dot"></span> PGM
+          <span class="monitor-label-title"><span class="monitor-dot"></span> Program</span>
+          <span class="monitor-label-meta" id="monitor-pgm-state">PGM · OFF AIR</span>
         </div>
         <div class="monitor-viewport">
           <div class="preview-bg"></div>
@@ -367,7 +379,10 @@
 
       <!-- ── PVW (Preview) — live-updating, what will go next ─────────── -->
       <div class="monitor-block">
-        <div class="monitor-label monitor-label-pvw">PVW</div>
+        <div class="monitor-label monitor-label-pvw">
+          <span class="monitor-label-title">Preview</span>
+          <span class="monitor-label-meta">PVW · STAGED</span>
+        </div>
         <div class="monitor-viewport preview-viewport">
           <div class="preview-bg"></div>
           <img class="output-logo-preview hidden" id="preview-output-logo" alt="Output logo" />
@@ -431,6 +446,7 @@
       <div class="settings-profiles">
         <div class="settings-profiles-label">Settings Profiles</div>
         <div class="settings-profiles-row">
+          <label class="visually-hidden" for="settings-profile-select">Settings profile</label>
           <select id="settings-profile-select" class="settings-profiles-select">
             <option value="">No settings profiles yet</option>
           </select>
@@ -536,8 +552,8 @@
                 <div class="setting-group">
                   <div class="browser-source-info">
                     <div class="bsi-tabs" role="tablist" aria-label="Output setup sections">
-                      <button type="button" id="output-tab-browser" class="bsi-tab is-active" onclick="setOutputSetupTab('browser')" role="tab" aria-selected="true">Browser Source</button>
-                      <button type="button" id="output-tab-atem" class="bsi-tab" onclick="setOutputSetupTab('atem')" role="tab" aria-selected="false">ATEM PNG Export</button>
+                      <button type="button" id="output-tab-browser" class="bsi-tab is-active" onclick="setOutputSetupTab('browser')" role="tab" aria-selected="true" aria-controls="output-panel-browser">Browser Source</button>
+                      <button type="button" id="output-tab-atem" class="bsi-tab" onclick="setOutputSetupTab('atem')" role="tab" aria-selected="false" aria-controls="output-panel-atem" tabindex="-1">ATEM PNG Export</button>
                     </div>
 
                     <section id="output-panel-browser" class="bsi-panel is-active" role="tabpanel" aria-labelledby="output-tab-browser">
@@ -767,12 +783,12 @@
         <div class="setting-row">
           <div class="setting-group span-full">
             <div class="textfx-tabs" role="tablist" aria-label="Text effects line selector">
-              <button type="button" id="textfx-tab-line1" class="textfx-tab active" onclick="switchTextEffectsLine('line1')">Line 1</button>
-              <button type="button" id="textfx-tab-line2" class="textfx-tab" onclick="switchTextEffectsLine('line2')">Line 2</button>
+              <button type="button" id="textfx-tab-line1" class="textfx-tab active" onclick="switchTextEffectsLine('line1')" role="tab" aria-selected="true" aria-controls="textfx-card-line1">Line 1</button>
+              <button type="button" id="textfx-tab-line2" class="textfx-tab" onclick="switchTextEffectsLine('line2')" role="tab" aria-selected="false" aria-controls="textfx-card-line2" tabindex="-1">Line 2</button>
             </div>
 
             <div class="text-effects-grid">
-              <div class="text-effects-card" id="textfx-card-line1">
+              <div class="text-effects-card" id="textfx-card-line1" role="tabpanel" aria-labelledby="textfx-tab-line1">
                 <div class="text-effects-title">Line 1</div>
 
                 <div class="setting-group">
@@ -790,7 +806,7 @@
                     <div class="textfx-inline-check textfx-color-inline">
                       <input type="checkbox" id="line1-custom-color" onchange="onSettingsChange()" />
                       <label for="line1-custom-color">Custom Color</label>
-                      <input type="color" id="line1-font-color" class="textfx-inline-color" value="#ffffff" onchange="onSettingsChange()" />
+                      <input type="color" id="line1-font-color" class="textfx-inline-color" value="#ffffff" aria-label="Line 1 font color" onchange="onSettingsChange()" />
                     </div>
                   </div>
                 </div>
@@ -819,7 +835,7 @@
                       <input type="checkbox" id="line1-stroke-enabled" onchange="onTextFxSectionToggle('line1','stroke')" />
                       <span>Stroke</span>
                     </label>
-                    <button type="button" class="textfx-collapse-btn" id="line1-stroke-collapse" onclick="toggleTextFxSection('line1','stroke')">▾</button>
+                    <button type="button" class="textfx-collapse-btn" id="line1-stroke-collapse" onclick="toggleTextFxSection('line1','stroke')" aria-label="Toggle line 1 stroke settings" aria-expanded="false" aria-controls="line1-stroke-section">▾</button>
                   </div>
                   <div class="textfx-section-body" id="line1-stroke-section">
                     <div class="setting-group">
@@ -843,7 +859,7 @@
                       <input type="checkbox" id="line1-shadow-enabled" onchange="onTextFxSectionToggle('line1','shadow')" />
                       <span>Drop Shadow</span>
                     </label>
-                    <button type="button" class="textfx-collapse-btn" id="line1-shadow-collapse" onclick="toggleTextFxSection('line1','shadow')">▾</button>
+                    <button type="button" class="textfx-collapse-btn" id="line1-shadow-collapse" onclick="toggleTextFxSection('line1','shadow')" aria-label="Toggle line 1 shadow settings" aria-expanded="false" aria-controls="line1-shadow-section">▾</button>
                   </div>
                   <div class="textfx-section-body" id="line1-shadow-section">
                     <div class="setting-group">
@@ -886,7 +902,7 @@
                 </div>
               </div>
 
-              <div class="text-effects-card" id="textfx-card-line2" style="display:none">
+              <div class="text-effects-card" id="textfx-card-line2" role="tabpanel" aria-labelledby="textfx-tab-line2" style="display:none" hidden>
                 <div class="text-effects-title">Line 2</div>
 
                 <div class="setting-group">
@@ -904,7 +920,7 @@
                     <div class="textfx-inline-check textfx-color-inline">
                       <input type="checkbox" id="line2-custom-color" onchange="onSettingsChange()" />
                       <label for="line2-custom-color">Custom Color</label>
-                      <input type="color" id="line2-font-color" class="textfx-inline-color" value="#ffffff" onchange="onSettingsChange()" />
+                      <input type="color" id="line2-font-color" class="textfx-inline-color" value="#ffffff" aria-label="Line 2 font color" onchange="onSettingsChange()" />
                     </div>
                   </div>
                 </div>
@@ -933,7 +949,7 @@
                       <input type="checkbox" id="line2-stroke-enabled" onchange="onTextFxSectionToggle('line2','stroke')" />
                       <span>Stroke</span>
                     </label>
-                    <button type="button" class="textfx-collapse-btn" id="line2-stroke-collapse" onclick="toggleTextFxSection('line2','stroke')">▾</button>
+                    <button type="button" class="textfx-collapse-btn" id="line2-stroke-collapse" onclick="toggleTextFxSection('line2','stroke')" aria-label="Toggle line 2 stroke settings" aria-expanded="false" aria-controls="line2-stroke-section">▾</button>
                   </div>
                   <div class="textfx-section-body" id="line2-stroke-section">
                     <div class="setting-group">
@@ -957,7 +973,7 @@
                       <input type="checkbox" id="line2-shadow-enabled" onchange="onTextFxSectionToggle('line2','shadow')" />
                       <span>Drop Shadow</span>
                     </label>
-                    <button type="button" class="textfx-collapse-btn" id="line2-shadow-collapse" onclick="toggleTextFxSection('line2','shadow')">▾</button>
+                    <button type="button" class="textfx-collapse-btn" id="line2-shadow-collapse" onclick="toggleTextFxSection('line2','shadow')" aria-label="Toggle line 2 shadow settings" aria-expanded="false" aria-controls="line2-shadow-section">▾</button>
                   </div>
                   <div class="textfx-section-body" id="line2-shadow-section">
                     <div class="setting-group">
@@ -1120,6 +1136,7 @@
                     Enable custom template (overrides all style settings)
                   </label>
                   <div class="template-example-row">
+                    <label class="visually-hidden" for="template-example-select">Template example</label>
                     <select id="template-example-select">
                       <option value="classic">Classic Dark</option>
                       <option value="logo-bar">Logo + Dark Bar</option>
@@ -1134,7 +1151,7 @@
                 </div>
                 <div class="template-fields">
                   <div class="template-field-group">
-                    <label class="setting-label">HTML
+                    <label class="setting-label" for="template-html">HTML
                       <span class="label-hint">Variables: &#123;&#123;line1&#125;&#125; &#123;&#123;line2&#125;&#125; &#123;&#123;accentColor&#125;&#125; &#123;&#123;font&#125;&#125; &#123;&#123;line1Font&#125;&#125; &#123;&#123;line2Font&#125;&#125; &#123;&#123;logoUrl&#125;&#125;</span>
                     </label>
                     <textarea id="template-html" class="template-textarea" rows="6"
@@ -1142,13 +1159,14 @@
                       placeholder="<div class=&quot;my-lt&quot;>&#10;  <div class=&quot;line1&quot;>{{line1}}</div>&#10;</div>"></textarea>
                   </div>
                   <div class="template-field-group">
-                    <label class="setting-label">CSS</label>
+                    <label class="setting-label" for="template-css">CSS</label>
                     <textarea id="template-css" class="template-textarea" rows="8"
                       onchange="onSettingsChange()" oninput="onSettingsChange()"
                       placeholder=".my-lt { background: rgba(0,0,0,.85); padding: 20px; }"></textarea>
                   </div>
                 </div>
                 <div class="template-preset-row">
+                  <label class="visually-hidden" for="template-preset-select">Template preset</label>
                   <select id="template-preset-select" class="template-preset-select">
                     <option value="">No template presets yet</option>
                   </select>
@@ -1185,7 +1203,7 @@
 </div>
 
 <!-- ── In-App User Guide ─────────────────────────────────────────────── -->
-<div id="user-guide-modal" class="guide-modal" aria-hidden="true" role="dialog" aria-labelledby="guide-title">
+<div id="user-guide-modal" class="guide-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guide-title">
   <div class="guide-backdrop" onclick="closeUserGuide()"></div>
   <div class="guide-dialog" role="document">
     <div class="guide-header">

@@ -216,6 +216,7 @@ const DEFAULT_TEXT_EFFECTS = {
 let renderSyncRaf = 0;
 let monitorResizeObserver = null;
 const INDIC_LANG_CODES = new Set(['hi', 'ta', 'te', 'ml', 'kn']);
+let modalReturnFocus = null;
 
 // ── Initialise ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -264,6 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSettingsSubsectionState();
   switchTextEffectsLine('line1');
   initMonitorRenderSync();
+  initTabKeyboardNavigation();
   scheduleMonitorRenderSync();
   // Ensure output windows follow the control's current live state after reload.
   setTimeout(() => syncCurrentStateToOutputs(), 120);
@@ -714,6 +716,7 @@ function applyLineTextEffects(line1El, line2El, settings) {
 
 // ── Mode Toggle ───────────────────────────────────────────────────────────────
 function setMode(mode) {
+  if (!['bible', 'speaker', 'custom', 'ticker'].includes(mode)) return;
   const modeChanged = mode !== currentMode;
 
   // Persist outgoing mode-specific style only when actually switching modes.
@@ -731,14 +734,16 @@ function setMode(mode) {
     applyModeDependentSettingsToUi(mode);
   }
 
-  document.getElementById('tab-bible').classList.toggle('active', mode === 'bible');
-  document.getElementById('tab-speaker').classList.toggle('active', mode === 'speaker');
-  document.getElementById('tab-custom')?.classList.toggle('active', mode === 'custom');
-  document.getElementById('tab-ticker').classList.toggle('active', mode === 'ticker');
-  document.getElementById('panel-bible').classList.toggle('hidden', mode !== 'bible');
-  document.getElementById('panel-speaker').classList.toggle('hidden', mode !== 'speaker');
-  document.getElementById('panel-custom')?.classList.toggle('hidden', mode !== 'custom');
-  document.getElementById('panel-ticker').classList.toggle('hidden', mode !== 'ticker');
+  ['bible', 'speaker', 'custom', 'ticker'].forEach((name) => {
+    const tab = document.getElementById(`tab-${name}`);
+    const panel = document.getElementById(`panel-${name}`);
+    const selected = name === mode;
+    tab?.classList.toggle('active', selected);
+    tab?.setAttribute('aria-selected', selected ? 'true' : 'false');
+    tab?.setAttribute('tabindex', selected ? '0' : '-1');
+    panel?.classList.toggle('hidden', !selected);
+    if (panel) panel.hidden = !selected;
+  });
 
   if (mode === 'bible') {
     document.getElementById('speaker-name').value  = '';
@@ -2010,8 +2015,22 @@ function switchTextEffectsLine(lineKey) {
 
   if (l1Btn)  l1Btn.classList.toggle('active', showLine1);
   if (l2Btn)  l2Btn.classList.toggle('active', !showLine1);
-  if (l1Card) l1Card.style.display = showLine1 ? '' : 'none';
-  if (l2Card) l2Card.style.display = showLine1 ? 'none' : '';
+  if (l1Btn) {
+    l1Btn.setAttribute('aria-selected', showLine1 ? 'true' : 'false');
+    l1Btn.tabIndex = showLine1 ? 0 : -1;
+  }
+  if (l2Btn) {
+    l2Btn.setAttribute('aria-selected', showLine1 ? 'false' : 'true');
+    l2Btn.tabIndex = showLine1 ? -1 : 0;
+  }
+  if (l1Card) {
+    l1Card.style.display = showLine1 ? '' : 'none';
+    l1Card.hidden = !showLine1;
+  }
+  if (l2Card) {
+    l2Card.style.display = showLine1 ? 'none' : '';
+    l2Card.hidden = showLine1;
+  }
 }
 
 function updateTextFxSectionState(lineKey, sectionKey) {
@@ -2033,6 +2052,8 @@ function toggleTextFxSection(lineKey, sectionKey) {
   const sectionCardEl = sectionBodyEl.closest('.textfx-section');
   if (!sectionCardEl) return;
   sectionCardEl.classList.toggle('collapsed');
+  const button = document.getElementById(`${lineKey}-${sectionKey}-collapse`);
+  button?.setAttribute('aria-expanded', sectionCardEl.classList.contains('collapsed') ? 'false' : 'true');
 }
 
 function applyMonitorCustomStageScale(stageEl, viewportEl, settings = getSettings()) {
@@ -2918,6 +2939,8 @@ function setOverlayStatus(visible) {
                    : tickerActive            ? 'TICKER LIVE'
                    :                          'OFF AIR';
   document.getElementById('monitor-program-block')?.classList.toggle('live', anyLive);
+  const pgmState = document.getElementById('monitor-pgm-state');
+  if (pgmState) pgmState.textContent = anyLive ? 'PGM · ON AIR' : 'PGM · OFF AIR';
 }
 
 function setTickerStatus(live) {
@@ -2930,6 +2953,8 @@ function setTickerStatus(live) {
                    : overlayVisible         ? 'LIVE'
                    :                          'OFF AIR';
   document.getElementById('monitor-program-block')?.classList.toggle('live', anyLive);
+  const pgmState = document.getElementById('monitor-pgm-state');
+  if (pgmState) pgmState.textContent = anyLive ? 'PGM · ON AIR' : 'PGM · OFF AIR';
 }
 
 // ── Program Monitor Renderer ──────────────────────────────────────────────────
@@ -3061,8 +3086,9 @@ function updateProgramMonitor() {
 function broadcast(msg) {
   // 1. All open output windows via postMessage
   outputWindows = outputWindows.filter(w => !w.closed);
+  const targetOrigin = location.protocol === 'file:' ? '*' : location.origin;
   outputWindows.forEach(w => {
-    try { w.postMessage(msg, '*'); } catch (_) {}
+    try { w.postMessage(msg, targetOrigin); } catch (_) {}
   });
 
   // 2. BroadcastChannel (same-origin tabs)
@@ -3130,9 +3156,11 @@ function toggleSettingsPanel() {
 function openUserGuide() {
   const modal = document.getElementById('user-guide-modal');
   if (!modal) return;
+  modalReturnFocus = document.activeElement;
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
+  modal.querySelector('.guide-close')?.focus();
 }
 
 function closeUserGuide() {
@@ -3141,6 +3169,8 @@ function closeUserGuide() {
   modal.classList.remove('open');
   modal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
+  if (modalReturnFocus && typeof modalReturnFocus.focus === 'function') modalReturnFocus.focus();
+  modalReturnFocus = null;
 }
 
 function isUserGuideOpen() {
@@ -3158,10 +3188,12 @@ function setOutputSetupTab(tab) {
   if (browserBtn) {
     browserBtn.classList.toggle('is-active', showBrowser);
     browserBtn.setAttribute('aria-selected', showBrowser ? 'true' : 'false');
+    browserBtn.tabIndex = showBrowser ? 0 : -1;
   }
   if (atemBtn) {
     atemBtn.classList.toggle('is-active', !showBrowser);
     atemBtn.setAttribute('aria-selected', !showBrowser ? 'true' : 'false');
+    atemBtn.tabIndex = showBrowser ? -1 : 0;
   }
   if (browserPanel) {
     browserPanel.classList.toggle('is-active', showBrowser);
@@ -3171,6 +3203,25 @@ function setOutputSetupTab(tab) {
     atemPanel.classList.toggle('is-active', !showBrowser);
     atemPanel.hidden = showBrowser;
   }
+}
+
+function initTabKeyboardNavigation() {
+  document.querySelectorAll('[role="tablist"]').forEach((tablist) => {
+    tablist.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+      if (!tabs.length) return;
+      const current = Math.max(0, tabs.indexOf(document.activeElement));
+      let next = current;
+      if (event.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+      if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
+      if (event.key === 'Home') next = 0;
+      if (event.key === 'End') next = tabs.length - 1;
+      event.preventDefault();
+      tabs[next].focus();
+      tabs[next].click();
+    });
+  });
 }
 
 // ── Copy Output Link ──────────────────────────────────────────────────────────
@@ -3388,6 +3439,7 @@ function setWsIndicator(state) {
     error:   'WebSocket error',
   };
   el.title = labels[state] || '';
+  el.setAttribute('aria-label', labels[state] || 'WebSocket status unavailable');
 }
 
 function applyRemoteSettingsToUi(settings) {
@@ -4117,9 +4169,26 @@ function clearLogo() {
 // ── Keyboard Shortcuts ────────────────────────────────────────────────────────
 function bindKeyboard() {
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && isUserGuideOpen()) {
-      e.preventDefault();
-      closeUserGuide();
+    if (isUserGuideOpen()) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeUserGuide();
+      } else if (e.key === 'Tab') {
+        const modal = document.getElementById('user-guide-modal');
+        const focusable = Array.from(modal?.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])') || [])
+          .filter((el) => !el.disabled && el.getClientRects().length);
+        if (focusable.length) {
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
       return;
     }
 

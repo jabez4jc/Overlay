@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Serif:wght@400;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap">
+<style>
+body { margin: 0; background: #8e8e8e; }
+a { color: inherit; }
+a:hover { color: inherit; }
+</style>
+</helmet>
+
+<div style="position:absolute; left:0px; top:64px; width:1760px; height:1000px; font-family:'Archivo', system-ui, sans-serif; --bg:#f3f2f2; --surf:#eae9e9; --ink:#201e1d; --acc:#ec3013; --acc7:#ae1800; --acc1:#fff2ef; --div:rgba(32,30,29,0.4); --n2:#eae7e7; --n3:#d7d3d3; --n5:#9b9797; --n7:#605d5d; --n9:#2d2b2b;">
+  <div style="position:absolute; left:0px; top:-44px; display:flex; align-items:baseline; gap:12px; color:#1b1b1b;">
+    <span style="font-size:22px; font-weight:800; letter-spacing:-0.01em;">Direction 1 — Modernist</span>
+    <span style="font-size:13px; font-weight:500; color:#3a3a3a; letter-spacing:0.02em;">flat, architectural, Archivo, 2px rules, zero radius</span>
+  </div>
+
+  <div style="background:var(--bg); color:var(--ink); border:2px solid var(--ink); display:flex; flex-direction:column;">
+
+    <div style="display:flex; align-items:stretch; border-bottom:2px solid var(--ink);">
+      <div style="display:flex; align-items:center; gap:12px; padding:0 20px; height:60px; border-right:2px solid var(--div);">
+        <div style="width:18px; height:18px; background:var(--acc);"></div>
+        <span style="font-size:17px; font-weight:800; letter-spacing:-0.01em;">OVERLAY</span>
+        <span style="font-size:11px; font-weight:600; letter-spacing:0.14em; color:var(--n7); text-transform:uppercase;">Control</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:20px; padding:0 20px; height:60px; border-right:2px solid var(--div);">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:var(--n7); text-transform:uppercase;">Session</span>
+          <span style="font-size:14px; font-weight:700;">sunday-1030</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:8px; height:8px; background:var(--acc);"></div>
+          <span style="font-size:12px; font-weight:600; letter-spacing:0.06em;">WS LINKED · 3 CLIENTS</span>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; align-items:center; gap:8px; padding:0 20px;">
+        <span style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:var(--n7); text-transform:uppercase;">Keys</span>
+        <span style="font-size:11px; font-weight:600; border:2px solid var(--div); padding:3px 8px;">ENTER take</span>
+        <span style="font-size:11px; font-weight:600; border:2px solid var(--div); padding:3px 8px;">ESC clear</span>
+        <span style="font-size:11px; font-weight:600; border:2px solid var(--div); padding:3px 8px;">B S C T modes</span>
+        <span style="font-size:11px; font-weight:600; border:2px solid var(--div); padding:3px 8px;">O output</span>
+      </div>
+      <div style="display:flex; align-items:center; padding:0 20px; border-left:2px solid var(--div);">
+        <span style="font-size:12px; font-weight:600; color:var(--n7);">1920 × 1080 · 60p · alpha</span>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:stretch;">
+
+      <div style="flex:1; border-right:2px solid var(--ink); display:flex; flex-direction:column;">
+        <div style="display:grid; grid-template-columns:1fr 1fr;">
+
+          <div style="border-right:2px solid var(--div); padding:16px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+              <span style="font-size:13px; font-weight:800; letter-spacing:0.14em;">PREVIEW</span>
+              <span style="font-size:10px; font-weight:600; letter-spacing:0.12em; color:var(--n7);">PVW · STAGED</span>
+            </div>
+            <div style="position:relative; width:608px; height:342px; background:#2d2b2b; border:2px solid var(--n7); overflow:hidden;">
+              <div style="position:absolute; inset:0; background:repeating-linear-gradient(135deg, #3a3838 0 14px, #333131 14px 28px);"></div>
+              <div style="position:absolute; inset:5%; border:1px dashed rgba(255,255,255,0.28);"></div>
+              <div style="position:absolute; inset:10%; border:1px dashed rgba(255,255,255,0.18);"></div>
+              <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+                <div style="display:inline-flex; flex-direction:column;">
+                  <div style="background:rgba(0,0,0,0.78); border-left:6px solid #ec3013; padding:10px 22px 10px 16px;">
+                    <div style="font-family:'Noto Serif', serif; font-weight:700; font-size:27px; line-height:1.05; color:#fff; letter-spacing:0.005em;">John 3:16</div>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.6); border-left:6px solid #ec3013; padding:7px 22px 7px 16px;">
+                    <div style="font-family:'Noto Sans', sans-serif; font-weight:500; font-size:15px; color:#efeceb; letter-spacing:0.01em;">For God so loved the world…</div>
+                  </div>
+                </div>
+              </div>
+              <div style="position:absolute; left:8px; top:8px; font-family:'Noto Sans', sans-serif; font-size:10px; font-weight:700; letter-spacing:0.12em; color:rgba(255,255,255,0.55);">SAFE AREA 90 / 80</div>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:10px;">
+              <span style="font-size:11px; font-weight:600; border:2px solid var(--div); padding:3px 8px;">Style: Broadcast Bar</span>
+              <span style="font-size:11px; font-weight:600; border:2px solid var(--div); padding:3px 8px;">Theme: Dark Scrim</span>
+            </div>
+          </div>
+
+          <div style="padding:16px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+              <span style="font-size:13px; font-weight:800; letter-spacing:0.14em; color:var(--acc);">PROGRAM</span>
+              <span style="font-size:10px; font-weight:600; letter-spacing:0.12em; color:var(--acc);">PGM · ON AIR 00:41</span>
+            </div>
+            <div style="position:relative; width:608px; height:342px; background:#2d2b2b; border:2px solid var(--acc); overflow:hidden;">
+              <div style="position:absolute; inset:0; background:repeating-linear-gradient(135deg, #3a3838 0 14px, #333131 14px 28px);"></div>
+              <div style="position:absolute; inset:5%; border:1px dashed rgba(255,255,255,0.28);"></div>
+              <div style="position:absolute; inset:10%; border:1px dashed rgba(255,255,255,0.18);"></div>
+              <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+                <div style="display:inline-flex; flex-direction:column;">
+                  <div style="background:rgba(0,0,0,0.78); border-left:6px solid #ec3013; padding:10px 22px 10px 16px;">
+                    <div style="font-family:'Noto Serif', serif; font-weight:700; font-size:27px; line-height:1.05; color:#fff; letter-spacing:0.005em;">John 3:16</div>
+                  </div>
+                  <div style="background:rgba(0,0,0,0.6); border-left:6px solid #ec3013; padding:7px 22px 7px 16px;">
+                    <div style="font-family:'Noto Sans', sans-serif; font-weight:500; font-size:15px; color:#efeceb; letter-spacing:0.01em;">For God so loved the world…</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:10px;">
+              <span style="font-size:11px; font-weight:600; border:2px solid var(--acc); color:var(--acc7); padding:3px 8px;">Rendered by the same engine as PVW</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:stretch; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink);">
+          <div style="display:flex; align-items:center; gap:0; border-right:2px solid var(--div);">
+            <div style="padding:0 18px; height:64px; display:flex; align-items:center; font-size:13px; font-weight:800; letter-spacing:0.1em; background:var(--acc); color:#fff;">BIBLE</div>
+            <div style="padding:0 18px; height:64px; display:flex; align-items:center; font-size:13px; font-weight:600; letter-spacing:0.1em; border-right:2px solid var(--div);">SPEAKER</div>
+            <div style="padding:0 18px; height:64px; display:flex; align-items:center; font-size:13px; font-weight:600; letter-spacing:0.1em; border-right:2px solid var(--div);">CUSTOM</div>
+            <div style="padding:0 18px; height:64px; display:flex; align-items:center; font-size:13px; font-weight:600; letter-spacing:0.1em;">TICKER</div>
+          </div>
+          <div style="flex:1; display:flex; align-items:center; gap:10px; padding:0 16px;">
+            <span style="font-size:11px; font-weight:600; letter-spacing:0.12em; color:var(--n7);">TRANSITION</span>
+            <span style="font-size:12px; font-weight:700; border:2px solid var(--ink); padding:6px 12px;">CUT</span>
+            <span style="font-size:12px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:6px 12px;">SWIPE</span>
+            <span style="font-size:12px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:6px 12px;">FADE</span>
+          </div>
+          <div style="display:flex;">
+            <div style="width:180px; height:64px; display:flex; align-items:center; padding-left:18px; background:var(--acc); color:#fff; font-size:16px; font-weight:800; letter-spacing:0.08em;">TAKE TO AIR</div>
+            <div style="width:130px; height:64px; display:flex; align-items:center; padding-left:18px; border-left:2px solid var(--ink); font-size:16px; font-weight:800; letter-spacing:0.08em;">CLEAR</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; ">
+          <div style="padding:16px; border-right:2px solid var(--div);">
+            <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:var(--n7); margin-bottom:12px;">CONTENT · BIBLE REFERENCE</div>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
+              <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11px; font-weight:600; color:var(--n7);">Book</span><div style="border:2px solid var(--ink); padding:8px 10px; font-size:14px; font-weight:600; background:#fff;">John</div></div>
+              <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11px; font-weight:600; color:var(--n7);">Chapter</span><div style="border:2px solid var(--ink); padding:8px 10px; font-size:14px; font-weight:600; background:#fff;">3</div></div>
+              <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11px; font-weight:600; color:var(--n7);">Verses</span><div style="border:2px solid var(--ink); padding:8px 10px; font-size:14px; font-weight:600; background:#fff;">16</div></div>
+              <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11px; font-weight:600; color:var(--n7);">Translation</span><div style="border:2px solid var(--ink); padding:8px 10px; font-size:14px; font-weight:600; background:#fff;">Hidden</div></div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <span style="font-size:12px; font-weight:700; border:2px solid var(--ink); padding:6px 12px;">LOOK UP TEXT</span>
+              <span style="font-size:12px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:6px 12px;">Verse text → line 2</span>
+              <span style="font-size:12px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:6px 12px;">Presets</span>
+            </div>
+            <div style="height:2px; background:var(--ink); margin:16px 0;"></div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:var(--n7); margin-bottom:10px;">BACKGROUND THEME</div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;">
+              <div style="border:2px solid var(--ink); padding:8px;"><div style="height:26px; background:linear-gradient(90deg, rgba(0,0,0,0.85), rgba(0,0,0,0.2));"></div><div style="font-size:11px; font-weight:700; margin-top:6px;">Dark scrim</div></div>
+              <div style="border:2px solid var(--div); padding:8px;"><div style="height:26px; background:#f3f2f2; border:1px solid var(--n3);"></div><div style="font-size:11px; font-weight:600; margin-top:6px; color:var(--n7);">Light bar</div></div>
+              <div style="border:2px solid var(--div); padding:8px;"><div style="height:26px; background:var(--acc);"></div><div style="font-size:11px; font-weight:600; margin-top:6px; color:var(--n7);">Brand accent</div></div>
+              <div style="border:2px solid var(--div); padding:8px;"><div style="height:26px; background:linear-gradient(90deg,#d7d3d3 50%,#eae9e9 50%);"></div><div style="font-size:11px; font-weight:600; margin-top:6px; color:var(--n7);">Transparent</div></div>
+            </div>
+          </div>
+
+          <div style="padding:16px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px;">
+              <span style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:var(--n7);">OVERLAY STYLES · 12</span>
+              <span style="font-size:11px; font-weight:600; color:var(--n7);">applies to PVW → PGM → Output</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+              <div style="border:2px solid var(--ink); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:14%; width:62%; height:22%; background:#f3f2f2; border-left:4px solid var(--acc);"></div></div><div style="font-size:10px; font-weight:700; margin-top:5px;">01 Broadcast bar</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:14%; width:26%; height:22%; background:var(--acc);"></div><div style="position:absolute; left:33%; bottom:14%; width:40%; height:22%; background:#f3f2f2;"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">02 Split bar</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:0; bottom:8%; width:100%; height:18%; background:#f3f2f2;"></div><div style="position:absolute; left:0; bottom:8%; width:20%; height:18%; background:var(--acc);"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">03 News ticker</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:8%; bottom:22%; width:44%; height:2px; background:#f3f2f2;"></div><div style="position:absolute; left:8%; bottom:28%; width:30%; height:6px; background:#bab6b6;"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">04 Cinema rule</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:8%; bottom:20%; width:2px; height:26%; background:var(--acc);"></div><div style="position:absolute; left:13%; bottom:34%; width:36%; height:5px; background:#f3f2f2;"></div><div style="position:absolute; left:13%; bottom:24%; width:24%; height:4px; background:#9b9797;"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">05 Cinema serif</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:14%; width:62%; height:26%; background:rgba(243,242,242,0.35);"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">06 Glass panel</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:16%; width:52%; height:20%; background:rgba(243,242,242,0.35); border-radius:999px;"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">07 Glass pill</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:0; bottom:14%; width:70%; height:24%; background:linear-gradient(90deg, var(--acc), rgba(236,48,19,0)); clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%);"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">08 Gradient wedge</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:0; bottom:12%; width:80%; height:26%; background:linear-gradient(90deg, rgba(0,0,0,0.9), rgba(0,0,0,0));"></div><div style="position:absolute; left:8%; bottom:22%; width:30%; height:5px; background:#f3f2f2;"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">09 Fade left</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:10%; width:70%; height:38%; background:rgba(0,0,0,0.8); border-left:4px solid #f3f2f2;"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">10 Scripture block</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:0; bottom:0; width:100%; height:46%; background:rgba(0,0,0,0.82);"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">11 Scripture full</div></div>
+              <div style="border:2px solid var(--div); padding:6px;"><div style="height:74px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:14%; width:16%; height:26%; background:var(--acc);"></div><div style="position:absolute; left:24%; bottom:14%; width:46%; height:26%; background:rgba(243,242,242,0.9);"></div></div><div style="font-size:10px; font-weight:600; margin-top:5px; color:var(--n7);">12 Worship lock</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:470px; display:flex; flex-direction:column;">
+        <div style="padding:16px; border-bottom:2px solid var(--ink);">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-size:13px; font-weight:800; letter-spacing:0.14em;">OUTPUT WINDOW</span>
+            <span style="font-size:10px; font-weight:600; letter-spacing:0.12em; color:var(--n7);">/output.html?session=sunday-1030</span>
+          </div>
+          <div style="position:relative; width:434px; height:244px; background:#00b140; border:2px solid var(--ink); overflow:hidden;">
+            <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+              <div style="display:inline-flex; flex-direction:column;">
+                <div style="background:rgba(0,0,0,0.78); border-left:6px solid #ec3013; padding:10px 22px 10px 16px;">
+                  <div style="font-family:'Noto Serif', serif; font-weight:700; font-size:27px; line-height:1.05; color:#fff;">John 3:16</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.6); border-left:6px solid #ec3013; padding:7px 22px 7px 16px;">
+                  <div style="font-family:'Noto Sans', sans-serif; font-weight:500; font-size:15px; color:#efeceb;">For God so loved the world…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+            <span style="font-size:11px; font-weight:700; border:2px solid var(--ink); padding:4px 9px;">CHROMA GREEN</span>
+            <span style="font-size:11px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:4px 9px;">Blue</span>
+            <span style="font-size:11px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:4px 9px;">Magenta</span>
+            <span style="font-size:11px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:4px 9px;">Transparent / alpha</span>
+          </div>
+          <div style="margin-top:12px; border:2px solid var(--ink); padding:12px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <div style="width:10px; height:10px; background:var(--acc);"></div>
+              <span style="font-size:12px; font-weight:800; letter-spacing:0.1em;">SYNC LOCK · MATCHED</span>
+            </div>
+            <div style="font-size:12px; line-height:1.5; color:var(--n9);">Output inherits the PGM render verbatim — same style, same theme, same font metrics — and drops only the operator layer: no safe-area grid, no tally border, no labels. Type scales as a ratio of frame width, so 1920, 1280 and 720 outputs stay identical in proportion.</div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px;">
+              <div style="border-left:2px solid var(--div); padding-left:8px;"><div style="font-size:10px; font-weight:600; color:var(--n7);">PVW</div><div style="font-size:13px; font-weight:700;">1.000×</div></div>
+              <div style="border-left:2px solid var(--div); padding-left:8px;"><div style="font-size:10px; font-weight:600; color:var(--n7);">PGM</div><div style="font-size:13px; font-weight:700;">1.000×</div></div>
+              <div style="border-left:2px solid var(--acc); padding-left:8px;"><div style="font-size:10px; font-weight:600; color:var(--n7);">OUTPUT</div><div style="font-size:13px; font-weight:700; color:var(--acc7);">1.000×</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:16px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:var(--n7); margin-bottom:12px;">ON-AIR TYPE SYSTEM</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="border-left:2px solid var(--ink); padding-left:12px;">
+              <div style="font-family:'Noto Serif', serif; font-weight:700; font-size:26px; line-height:1.1;">Noto Serif</div>
+              <div style="font-size:11px; font-weight:600; color:var(--n7); margin-top:3px;">Scripture &amp; reference — reverent, open, variable. 100+ scripts incl. Devanagari, Tamil, Malayalam, Telugu.</div>
+            </div>
+            <div style="border-left:2px solid var(--ink); padding-left:12px;">
+              <div style="font-family:'Noto Sans', sans-serif; font-weight:600; font-size:24px; line-height:1.1;">Noto Sans</div>
+              <div style="font-size:11px; font-weight:600; color:var(--n7); margin-top:3px;">Speaker names, roles, line 2 — open apertures survive 720p and heavy compression.</div>
+            </div>
+            <div style="border-left:2px solid var(--ink); padding-left:12px;">
+              <div style="font-family:'Noto Sans', sans-serif; font-weight:700; font-size:19px; letter-spacing:0.1em; line-height:1.1;">NOTO SANS 700 · TICKER</div>
+              <div style="font-size:11px; font-weight:600; color:var(--n7); margin-top:3px;">Badge and ticker voice — uppercase, +0.1em tracking, never below 32px on a 1080 frame.</div>
+            </div>
+          </div>
+          <div style="height:2px; background:var(--ink); margin:14px 0;"></div>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px 14px;">
+            <div><div style="font-size:10px; font-weight:600; color:var(--n7);">LINE 1</div><div style="font-size:13px; font-weight:700;">88px · 700 · −0.01em</div></div>
+            <div><div style="font-size:10px; font-weight:600; color:var(--n7);">LINE 2</div><div style="font-size:13px; font-weight:700;">50px · 500 · +0.01em</div></div>
+            <div><div style="font-size:10px; font-weight:600; color:var(--n7);">MIN ON AIR</div><div style="font-size:13px; font-weight:700;">32px @ 1080</div></div>
+            <div><div style="font-size:10px; font-weight:600; color:var(--n7);">STROKE / SHADOW</div><div style="font-size:13px; font-weight:700;">2px · 0 2px 8px</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="position:absolute; left:1860px; top:64px; width:1760px; height:1000px; font-family:'Inter', system-ui, sans-serif; --bg:#161826; --surf:#232532; --ink:#e9e9ed; --acc:#9184d9; --acc3:#d2cefd; --div:rgba(233,233,237,0.16); --n4:#b2b6ca; --n6:#75798c; --n7:#595d6c; --n8:#3f424d; --n9:#292b31;">
+  <div style="position:absolute; left:0px; top:-44px; display:flex; align-items:baseline; gap:12px; color:#1b1b1b;">
+    <span style="font-size:22px; font-weight:700; letter-spacing:-0.01em;">Direction 2 — Nocturne</span>
+    <span style="font-size:13px; font-weight:500; color:#3a3a3a; letter-spacing:0.02em;">quiet dark, Inter, 8px radii, accent as line and glow</span>
+  </div>
+
+  <div style="background:var(--bg); color:var(--ink); border-radius:12px; border:1px solid var(--div); overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,0.35);">
+
+    <div style="display:flex; align-items:center; gap:22px; padding:0 17px; height:52px; border-bottom:1px solid var(--div); background:linear-gradient(180deg, #1c1e2e, #161826);">
+      <div style="display:flex; align-items:center; gap:9px;">
+        <div style="width:14px; height:14px; border-radius:4px; border:1px solid var(--acc); box-shadow:0 0 12px rgba(145,132,217,0.55);"></div>
+        <span style="font-size:15px; font-weight:600; letter-spacing:-0.01em;">Overlay</span>
+        <span style="font-size:10px; font-weight:500; letter-spacing:0.14em; color:var(--n6); text-transform:uppercase;">Control</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:9px; padding:4px 10px; border:1px solid var(--div); border-radius:8px;">
+        <span style="font-size:10px; font-weight:500; letter-spacing:0.12em; color:var(--n6); text-transform:uppercase;">Session</span>
+        <span style="font-size:13px; font-weight:500;">sunday-1030</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:7px;">
+        <div style="width:6px; height:6px; border-radius:50%; background:var(--acc); box-shadow:0 0 10px var(--acc);"></div>
+        <span style="font-size:11px; font-weight:500; color:var(--n4); letter-spacing:0.04em;">WebSocket linked · 3 clients</span>
+      </div>
+      <div style="flex:1; display:flex; align-items:center; gap:6px;">
+        <span style="font-size:11px; font-weight:500; color:var(--n6); border:1px solid var(--div); border-radius:6px; padding:3px 8px;">Enter take</span>
+        <span style="font-size:11px; font-weight:500; color:var(--n6); border:1px solid var(--div); border-radius:6px; padding:3px 8px;">Esc clear</span>
+        <span style="font-size:11px; font-weight:500; color:var(--n6); border:1px solid var(--div); border-radius:6px; padding:3px 8px;">B S C T modes</span>
+        <span style="font-size:11px; font-weight:500; color:var(--n6); border:1px solid var(--div); border-radius:6px; padding:3px 8px;">O output</span>
+      </div>
+      <span style="font-size:11px; font-weight:500; color:var(--n6);">1920 × 1080 · 60p · alpha</span>
+    </div>
+
+    <div style="display:flex; align-items:stretch;">
+
+      <div style="flex:1; display:flex; flex-direction:column; border-right:1px solid var(--div);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px;">
+
+          <div>
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <span style="font-size:12px; font-weight:600; letter-spacing:0.14em; color:var(--n4); text-transform:uppercase;">Preview</span>
+              <span style="font-size:10px; font-weight:500; letter-spacing:0.1em; color:var(--n6);">PVW · STAGED</span>
+            </div>
+            <div style="position:relative; width:618px; height:348px; background:#0f1018; border-radius:8px; border:1px solid var(--n7); overflow:hidden;">
+              <div style="position:absolute; inset:0; background:radial-gradient(120% 90% at 30% 20%, #2a2d3f, #14151f);"></div>
+              <div style="position:absolute; inset:5%; border:1px dashed rgba(233,233,237,0.22); border-radius:4px;"></div>
+              <div style="position:absolute; inset:10%; border:1px dashed rgba(233,233,237,0.13); border-radius:4px;"></div>
+              <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+                <div style="display:inline-flex; flex-direction:column; gap:5px;">
+                  <div style="background:rgba(22,24,38,0.72); border-left:3px solid #9184d9; border-radius:8px; padding:9px 24px 9px 15px;">
+                    <div style="font-family:'Noto Serif', serif; font-weight:600; font-size:26px; line-height:1.06; color:#f3f5fe;">John 3:16</div>
+                  </div>
+                  <div style="background:rgba(22,24,38,0.55); border-left:3px solid #9184d9; border-radius:8px; padding:6px 24px 6px 15px;">
+                    <div style="font-family:'Noto Sans', sans-serif; font-weight:500; font-size:15px; color:#cfd3e5;">For God so loved the world…</div>
+                  </div>
+                </div>
+              </div>
+              <div style="position:absolute; left:8px; top:8px; font-family:'Noto Sans', sans-serif; font-size:10px; font-weight:600; letter-spacing:0.12em; color:rgba(233,233,237,0.45);">SAFE AREA 90 / 80</div>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:8px;">
+              <span style="font-size:11px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:6px; padding:3px 9px;">Style · Glass panel</span>
+              <span style="font-size:11px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:6px; padding:3px 9px;">Theme · Dark scrim</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <span style="font-size:12px; font-weight:600; letter-spacing:0.14em; color:var(--acc); text-transform:uppercase;">Program</span>
+              <span style="font-size:10px; font-weight:500; letter-spacing:0.1em; color:var(--acc);">PGM · ON AIR 00:41</span>
+            </div>
+            <div style="position:relative; width:618px; height:348px; background:#0f1018; border-radius:8px; border:1px solid var(--acc); box-shadow:0 0 0 1px rgba(145,132,217,0.25), 0 0 28px rgba(145,132,217,0.28); overflow:hidden;">
+              <div style="position:absolute; inset:0; background:radial-gradient(120% 90% at 30% 20%, #2a2d3f, #14151f);"></div>
+              <div style="position:absolute; inset:5%; border:1px dashed rgba(233,233,237,0.22); border-radius:4px;"></div>
+              <div style="position:absolute; inset:10%; border:1px dashed rgba(233,233,237,0.13); border-radius:4px;"></div>
+              <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+                <div style="display:inline-flex; flex-direction:column; gap:5px;">
+                  <div style="background:rgba(22,24,38,0.72); border-left:3px solid #9184d9; border-radius:8px; padding:9px 24px 9px 15px;">
+                    <div style="font-family:'Noto Serif', serif; font-weight:600; font-size:26px; line-height:1.06; color:#f3f5fe;">John 3:16</div>
+                  </div>
+                  <div style="background:rgba(22,24,38,0.55); border-left:3px solid #9184d9; border-radius:8px; padding:6px 24px 6px 15px;">
+                    <div style="font-family:'Noto Sans', sans-serif; font-weight:500; font-size:15px; color:#cfd3e5;">For God so loved the world…</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:8px;">
+              <span style="font-size:11px; font-weight:500; color:var(--acc3); border:1px solid var(--acc); border-radius:6px; padding:3px 9px;">Rendered by the same engine as PVW</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:14px; padding:0 14px; height:58px; border-top:1px solid var(--div); border-bottom:1px solid var(--div); background:linear-gradient(180deg, #1a1c2b, #161826);">
+          <div style="display:flex; align-items:center; gap:4px; padding:3px; border:1px solid var(--div); border-radius:8px;">
+            <span style="font-size:12px; font-weight:600; color:var(--acc3); background:rgba(145,132,217,0.16); border-radius:6px; padding:6px 13px;">Bible</span>
+            <span style="font-size:12px; font-weight:500; color:var(--n4); padding:6px 13px;">Speaker</span>
+            <span style="font-size:12px; font-weight:500; color:var(--n4); padding:6px 13px;">Custom</span>
+            <span style="font-size:12px; font-weight:500; color:var(--n4); padding:6px 13px;">Ticker</span>
+          </div>
+          <div style="flex:1; display:flex; align-items:center; gap:8px;">
+            <span style="font-size:10px; font-weight:500; letter-spacing:0.12em; color:var(--n6); text-transform:uppercase;">Transition</span>
+            <span style="font-size:12px; font-weight:500; color:var(--acc3); border:1px solid var(--acc); border-radius:8px; padding:6px 14px;">Cut</span>
+            <span style="font-size:12px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:6px 14px;">Swipe</span>
+            <span style="font-size:12px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:6px 14px;">Fade</span>
+          </div>
+          <span style="font-size:14px; font-weight:600; color:var(--acc3); border:1px solid var(--acc); border-radius:8px; padding:10px 26px; box-shadow:0 0 22px rgba(145,132,217,0.3);">Take to air</span>
+          <span style="font-size:14px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:10px 22px;">Clear</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px;">
+          <div>
+            <div style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:var(--n6); text-transform:uppercase; margin-bottom:10px;">Content · Bible reference</div>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+              <div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:500; color:var(--n6);">Book</span><div style="background:var(--surf); border:1px solid var(--div); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:500;">John</div></div>
+              <div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:500; color:var(--n6);">Chapter</span><div style="background:var(--surf); border:1px solid var(--div); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:500;">3</div></div>
+              <div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:500; color:var(--n6);">Verses</span><div style="background:var(--surf); border:1px solid var(--div); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:500;">16</div></div>
+              <div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:500; color:var(--n6);">Translation</span><div style="background:var(--surf); border:1px solid var(--div); border-radius:8px; padding:8px 10px; font-size:13px; font-weight:500;">Hidden</div></div>
+            </div>
+            <div style="display:flex; gap:7px; margin-top:10px;">
+              <span style="font-size:12px; font-weight:500; color:var(--acc3); border:1px solid var(--acc); border-radius:8px; padding:6px 13px;">Look up text</span>
+              <span style="font-size:12px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:6px 13px;">Verse text → line 2</span>
+              <span style="font-size:12px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:6px 13px;">Presets</span>
+            </div>
+            <div style="height:1px; margin:16px 0; background:linear-gradient(90deg, transparent, rgba(233,233,237,0.16) 48px, rgba(233,233,237,0.16) calc(100% - 48px), transparent);"></div>
+            <div style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:var(--n6); text-transform:uppercase; margin-bottom:9px;">Background theme</div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;">
+              <div style="border:1px solid var(--acc); border-radius:8px; padding:7px;"><div style="height:26px; border-radius:5px; background:linear-gradient(90deg, rgba(22,24,38,0.95), rgba(22,24,38,0.15));"></div><div style="font-size:11px; font-weight:500; margin-top:6px; color:var(--acc3);">Dark scrim</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:7px;"><div style="height:26px; border-radius:5px; background:#e4e7f5;"></div><div style="font-size:11px; font-weight:500; margin-top:6px; color:var(--n4);">Light bar</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:7px;"><div style="height:26px; border-radius:5px; background:var(--acc);"></div><div style="font-size:11px; font-weight:500; margin-top:6px; color:var(--n4);">Brand accent</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:7px;"><div style="height:26px; border-radius:5px; background:linear-gradient(90deg,#292b31 50%,#3f424d 50%);"></div><div style="font-size:11px; font-weight:500; margin-top:6px; color:var(--n4);">Transparent</div></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+              <span style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:var(--n6); text-transform:uppercase;">Overlay styles · 12</span>
+              <span style="font-size:11px; font-weight:500; color:var(--n6);">applies to PVW → PGM → Output</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:14%; width:62%; height:22%; background:#e4e7f5; border-left:3px solid var(--acc);"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">01 Broadcast bar</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:14%; width:26%; height:22%; background:var(--acc);"></div><div style="position:absolute; left:33%; bottom:14%; width:40%; height:22%; background:#e4e7f5;"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">02 Split bar</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:0; bottom:8%; width:100%; height:18%; background:#e4e7f5;"></div><div style="position:absolute; left:0; bottom:8%; width:20%; height:18%; background:var(--acc);"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">03 News ticker</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:8%; bottom:22%; width:44%; height:1px; background:#e4e7f5;"></div><div style="position:absolute; left:8%; bottom:28%; width:30%; height:5px; background:#75798c;"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">04 Cinema rule</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:8%; bottom:20%; width:1px; height:26%; background:var(--acc);"></div><div style="position:absolute; left:13%; bottom:34%; width:36%; height:5px; background:#e4e7f5;"></div><div style="position:absolute; left:13%; bottom:24%; width:24%; height:4px; background:#75798c;"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">05 Cinema serif</div></div>
+              <div style="border:1px solid var(--acc); border-radius:8px; padding:6px; box-shadow:0 0 18px rgba(145,132,217,0.22);"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:14%; width:62%; height:26%; border-radius:5px; background:rgba(233,233,237,0.28);"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--acc3);">06 Glass panel</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:16%; width:52%; height:20%; border-radius:999px; background:rgba(233,233,237,0.28);"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">07 Glass pill</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:0; bottom:14%; width:70%; height:24%; background:linear-gradient(90deg, var(--acc), rgba(145,132,217,0)); clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%);"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">08 Gradient wedge</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:0; bottom:12%; width:80%; height:26%; background:linear-gradient(90deg, rgba(15,16,24,0.95), rgba(15,16,24,0));"></div><div style="position:absolute; left:8%; bottom:22%; width:30%; height:5px; background:#e4e7f5;"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">09 Fade left</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:10%; width:70%; height:38%; border-radius:5px; background:rgba(22,24,38,0.85); border-left:3px solid #e4e7f5;"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">10 Scripture block</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:0; bottom:0; width:100%; height:46%; background:linear-gradient(180deg, rgba(22,24,38,0.2), rgba(22,24,38,0.92));"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">11 Scripture full</div></div>
+              <div style="border:1px solid var(--div); border-radius:8px; padding:6px;"><div style="height:76px; border-radius:5px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:14%; width:16%; height:26%; border-radius:4px; background:var(--acc);"></div><div style="position:absolute; left:24%; bottom:14%; width:46%; height:26%; border-radius:4px; background:rgba(233,233,237,0.85);"></div></div><div style="font-size:10px; font-weight:500; margin-top:5px; color:var(--n4);">12 Worship lock</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:470px; display:flex; flex-direction:column;">
+        <div style="padding:14px; border-bottom:1px solid var(--div);">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:12px; font-weight:600; letter-spacing:0.14em; color:var(--n4); text-transform:uppercase;">Output window</span>
+            <span style="font-size:10px; font-weight:500; color:var(--n6);">/output.html?session=sunday-1030</span>
+          </div>
+          <div style="position:relative; width:440px; height:248px; background:#00b140; border-radius:8px; border:1px solid var(--div); overflow:hidden;">
+            <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+              <div style="display:inline-flex; flex-direction:column; gap:5px;">
+                <div style="background:rgba(22,24,38,0.72); border-left:3px solid #9184d9; border-radius:8px; padding:9px 24px 9px 15px;">
+                  <div style="font-family:'Noto Serif', serif; font-weight:600; font-size:26px; line-height:1.06; color:#f3f5fe;">John 3:16</div>
+                </div>
+                <div style="background:rgba(22,24,38,0.55); border-left:3px solid #9184d9; border-radius:8px; padding:6px 24px 6px 15px;">
+                  <div style="font-family:'Noto Sans', sans-serif; font-weight:500; font-size:15px; color:#cfd3e5;">For God so loved the world…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+            <span style="font-size:11px; font-weight:500; color:var(--acc3); border:1px solid var(--acc); border-radius:6px; padding:4px 9px;">Chroma green</span>
+            <span style="font-size:11px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:6px; padding:4px 9px;">Blue</span>
+            <span style="font-size:11px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:6px; padding:4px 9px;">Magenta</span>
+            <span style="font-size:11px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:6px; padding:4px 9px;">Transparent / alpha</span>
+          </div>
+          <div style="margin-top:12px; background:var(--surf); border:1px solid var(--div); border-radius:8px; padding:12px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:7px;">
+              <div style="width:6px; height:6px; border-radius:50%; background:var(--acc); box-shadow:0 0 10px var(--acc);"></div>
+              <span style="font-size:12px; font-weight:600; letter-spacing:0.08em; color:var(--acc3);">Sync lock · matched</span>
+            </div>
+            <div style="font-size:12px; line-height:1.55; color:var(--n4);">Output inherits the PGM render verbatim — same style, same theme, same font metrics — and drops only the operator layer: no safe-area grid, no tally border, no labels. Type scales as a ratio of frame width, so 1920, 1280 and 720 outputs stay identical in proportion.</div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px;">
+              <div><div style="font-size:10px; font-weight:500; color:var(--n6);">PVW</div><div style="font-size:13px; font-weight:600;">1.000×</div></div>
+              <div><div style="font-size:10px; font-weight:500; color:var(--n6);">PGM</div><div style="font-size:13px; font-weight:600;">1.000×</div></div>
+              <div><div style="font-size:10px; font-weight:500; color:var(--n6);">Output</div><div style="font-size:13px; font-weight:600; color:var(--acc3);">1.000×</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:14px;">
+          <div style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:var(--n6); text-transform:uppercase; margin-bottom:12px;">On-air type system</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <div style="font-family:'Noto Serif', serif; font-weight:600; font-size:26px; line-height:1.1;">Noto Serif</div>
+              <div style="font-size:11px; font-weight:400; color:var(--n4); margin-top:3px; line-height:1.5;">Scripture &amp; reference — reverent, open, variable. 100+ scripts incl. Devanagari, Tamil, Malayalam, Telugu.</div>
+            </div>
+            <div>
+              <div style="font-family:'Noto Sans', sans-serif; font-weight:600; font-size:24px; line-height:1.1;">Noto Sans</div>
+              <div style="font-size:11px; font-weight:400; color:var(--n4); margin-top:3px; line-height:1.5;">Speaker names, roles, line 2 — open apertures survive 720p and heavy compression.</div>
+            </div>
+            <div>
+              <div style="font-family:'Noto Sans', sans-serif; font-weight:700; font-size:19px; letter-spacing:0.1em; line-height:1.1;">NOTO SANS 700 · TICKER</div>
+              <div style="font-size:11px; font-weight:400; color:var(--n4); margin-top:3px; line-height:1.5;">Badge and ticker voice — uppercase, +0.1em tracking, never below 32px on a 1080 frame.</div>
+            </div>
+          </div>
+          <div style="height:1px; margin:14px 0; background:linear-gradient(90deg, transparent, rgba(233,233,237,0.16) 48px, rgba(233,233,237,0.16) calc(100% - 48px), transparent);"></div>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px 14px;">
+            <div><div style="font-size:10px; font-weight:500; color:var(--n6);">Line 1</div><div style="font-size:13px; font-weight:600;">88px · 700 · −0.01em</div></div>
+            <div><div style="font-size:10px; font-weight:500; color:var(--n6);">Line 2</div><div style="font-size:13px; font-weight:600;">50px · 500 · +0.01em</div></div>
+            <div><div style="font-size:10px; font-weight:500; color:var(--n6);">Min on air</div><div style="font-size:13px; font-weight:600;">32px @ 1080</div></div>
+            <div><div style="font-size:10px; font-weight:500; color:var(--n6);">Stroke / shadow</div><div style="font-size:13px; font-weight:600;">2px · 0 2px 8px</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div style="position:absolute; left:0px; top:1160px; width:820px; height:960px; font-family:'Archivo', system-ui, sans-serif; --bg:#f3f2f2; --surf:#eae9e9; --ink:#201e1d; --acc:#ec3013; --acc7:#ae1800; --div:rgba(32,30,29,0.4); --n3:#d7d3d3; --n5:#9b9797; --n7:#605d5d;">
+  <div style="position:absolute; left:0px; top:-44px; display:flex; align-items:baseline; gap:12px; color:#1b1b1b;">
+    <span style="font-size:22px; font-weight:800; letter-spacing:-0.01em;">Modernist — phone operator</span>
+    <span style="font-size:13px; font-weight:500; color:#3a3a3a;">390 × 844 · one-thumb take, settings in a drawer</span>
+  </div>
+
+  <div style="display:flex; gap:40px;">
+
+    <div style="width:390px; height:844px; background:var(--bg); color:var(--ink); border:2px solid var(--ink); display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:0 14px; height:52px; border-bottom:2px solid var(--ink);">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <div style="width:14px; height:14px; background:var(--acc);"></div>
+          <span style="font-size:15px; font-weight:800;">OVERLAY</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:7px; height:7px; background:var(--acc);"></div>
+          <span style="font-size:11px; font-weight:700; letter-spacing:0.08em;">sunday-1030</span>
+        </div>
+      </div>
+
+      <div style="padding:14px 14px 0;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px;">
+          <span style="font-size:12px; font-weight:800; letter-spacing:0.14em; color:var(--acc);">PROGRAM</span>
+          <span style="font-size:10px; font-weight:700; letter-spacing:0.1em; color:var(--acc);">ON AIR 00:41</span>
+        </div>
+        <div style="position:relative; width:358px; height:201px; background:#2d2b2b; border:2px solid var(--acc); overflow:hidden;">
+          <div style="position:absolute; inset:0; background:repeating-linear-gradient(135deg, #3a3838 0 14px, #333131 14px 28px);"></div>
+          <div style="position:absolute; inset:5%; border:1px dashed rgba(255,255,255,0.26);"></div>
+          <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+            <div style="display:inline-flex; flex-direction:column;">
+              <div style="background:rgba(0,0,0,0.78); border-left:4px solid #ec3013; padding:6px 14px 6px 10px;">
+                <div style="font-family:'Noto Serif', serif; font-weight:700; font-size:17px; line-height:1.05; color:#fff;">John 3:16</div>
+              </div>
+              <div style="background:rgba(0,0,0,0.6); border-left:4px solid #ec3013; padding:4px 14px 4px 10px;">
+                <div style="font-family:'Noto Sans', sans-serif; font-weight:500; font-size:10px; color:#efeceb;">For God so loved the world…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; padding:12px 14px 0;">
+        <div style="width:174px;">
+          <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; margin-bottom:6px;">PREVIEW</div>
+          <div style="position:relative; width:170px; height:96px; background:#2d2b2b; border:2px solid var(--n7); overflow:hidden;">
+            <div style="position:absolute; inset:0; background:repeating-linear-gradient(135deg, #3a3838 0 14px, #333131 14px 28px);"></div>
+            <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+              <div style="display:inline-flex; flex-direction:column;">
+                <div style="background:rgba(0,0,0,0.78); border-left:3px solid #ec3013; padding:3px 8px 3px 6px;">
+                  <div style="font-family:'Noto Serif', serif; font-weight:700; font-size:10px; color:#fff;">John 3:16</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1; border-left:2px solid var(--div); padding-left:10px;">
+          <div style="font-size:11px; font-weight:800; letter-spacing:0.14em; margin-bottom:6px;">OUTPUT</div>
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <div style="display:flex; align-items:center; gap:7px;"><div style="width:8px; height:8px; background:var(--acc);"></div><span style="font-size:11px; font-weight:700;">SYNC LOCK · MATCHED</span></div>
+            <span style="font-size:11px; font-weight:600; color:var(--n7);">Chroma green · 1920×1080</span>
+            <span style="font-size:11px; font-weight:600; color:var(--n7);">3 clients connected</span>
+            <span style="font-size:11px; font-weight:700; border:2px solid var(--ink); padding:5px 9px; align-self:flex-start;">OPEN OUTPUT</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; margin:14px 0 0; border-top:2px solid var(--ink); border-bottom:2px solid var(--ink);">
+        <div style="flex:1; height:48px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; letter-spacing:0.08em; background:var(--acc); color:#fff;">BIBLE</div>
+        <div style="flex:1; height:48px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; letter-spacing:0.08em; border-left:2px solid var(--div);">SPEAKER</div>
+        <div style="flex:1; height:48px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; letter-spacing:0.08em; border-left:2px solid var(--div);">CUSTOM</div>
+        <div style="flex:1; height:48px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; letter-spacing:0.08em; border-left:2px solid var(--div);">TICKER</div>
+      </div>
+
+      <div style="padding:14px;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px;">
+          <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11px; font-weight:600; color:var(--n7);">Book</span><div style="border:2px solid var(--ink); background:#fff; padding:12px 10px; font-size:15px; font-weight:700;">John</div></div>
+          <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11px; font-weight:600; color:var(--n7);">Ch</span><div style="border:2px solid var(--ink); background:#fff; padding:12px 10px; font-size:15px; font-weight:700;">3</div></div>
+          <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11px; font-weight:600; color:var(--n7);">Verses</span><div style="border:2px solid var(--ink); background:#fff; padding:12px 10px; font-size:15px; font-weight:700;">16</div></div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <span style="flex:1; text-align:left; font-size:12px; font-weight:700; border:2px solid var(--ink); padding:11px 12px;">LOOK UP TEXT</span>
+          <span style="flex:1; font-size:12px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:11px 12px;">PRESETS</span>
+          <span style="font-size:12px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:11px 14px;">STYLE ▸</span>
+        </div>
+      </div>
+
+      <div style="margin-top:auto; border-top:2px solid var(--ink);">
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:2px solid var(--div);">
+          <span style="font-size:10px; font-weight:700; letter-spacing:0.12em; color:var(--n7);">TRANSITION</span>
+          <span style="font-size:12px; font-weight:700; border:2px solid var(--ink); padding:7px 14px;">CUT</span>
+          <span style="font-size:12px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:7px 14px;">SWIPE</span>
+          <span style="font-size:12px; font-weight:600; border:2px solid var(--div); color:var(--n7); padding:7px 14px;">FADE</span>
+        </div>
+        <div style="display:flex;">
+          <div style="flex:1; height:76px; display:flex; align-items:center; padding-left:18px; background:var(--acc); color:#fff; font-size:19px; font-weight:800; letter-spacing:0.06em;">TAKE TO AIR</div>
+          <div style="width:118px; height:76px; display:flex; align-items:center; padding-left:16px; border-left:2px solid var(--ink); font-size:19px; font-weight:800; letter-spacing:0.06em;">CLEAR</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:390px; height:844px; background:var(--bg); color:var(--ink); border:2px solid var(--ink); display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:0 14px; height:52px; border-bottom:2px solid var(--ink);">
+        <span style="font-size:15px; font-weight:800; letter-spacing:0.02em;">STYLE &amp; THEME</span>
+        <span style="font-size:12px; font-weight:700; border:2px solid var(--ink); padding:5px 10px;">DONE</span>
+      </div>
+      <div style="padding:14px; overflow:hidden;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:var(--n7); margin-bottom:10px;">OVERLAY STYLES · 12</div>
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:9px;">
+          <div style="border:2px solid var(--ink); padding:7px;"><div style="height:94px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:14%; width:62%; height:22%; background:#f3f2f2; border-left:5px solid var(--acc);"></div></div><div style="font-size:12px; font-weight:700; margin-top:6px;">01 Broadcast bar</div></div>
+          <div style="border:2px solid var(--div); padding:7px;"><div style="height:94px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:14%; width:26%; height:22%; background:var(--acc);"></div><div style="position:absolute; left:33%; bottom:14%; width:40%; height:22%; background:#f3f2f2;"></div></div><div style="font-size:12px; font-weight:600; margin-top:6px; color:var(--n7);">02 Split bar</div></div>
+          <div style="border:2px solid var(--div); padding:7px;"><div style="height:94px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:0; bottom:8%; width:100%; height:18%; background:#f3f2f2;"></div><div style="position:absolute; left:0; bottom:8%; width:20%; height:18%; background:var(--acc);"></div></div><div style="font-size:12px; font-weight:600; margin-top:6px; color:var(--n7);">03 News ticker</div></div>
+          <div style="border:2px solid var(--div); padding:7px;"><div style="height:94px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:8%; bottom:22%; width:44%; height:2px; background:#f3f2f2;"></div><div style="position:absolute; left:8%; bottom:28%; width:30%; height:7px; background:#bab6b6;"></div></div><div style="font-size:12px; font-weight:600; margin-top:6px; color:var(--n7);">04 Cinema rule</div></div>
+          <div style="border:2px solid var(--div); padding:7px;"><div style="height:94px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:6%; bottom:14%; width:62%; height:26%; background:rgba(243,242,242,0.35);"></div></div><div style="font-size:12px; font-weight:600; margin-top:6px; color:var(--n7);">06 Glass panel</div></div>
+          <div style="border:2px solid var(--div); padding:7px;"><div style="height:94px; background:#2d2b2b; position:relative;"><div style="position:absolute; left:0; bottom:14%; width:70%; height:24%; background:linear-gradient(90deg, var(--acc), rgba(236,48,19,0)); clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%);"></div></div><div style="font-size:12px; font-weight:600; margin-top:6px; color:var(--n7);">08 Gradient wedge</div></div>
+        </div>
+        <div style="height:2px; background:var(--ink); margin:14px 0;"></div>
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:var(--n7); margin-bottom:10px;">BACKGROUND THEME</div>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:9px;">
+          <div style="border:2px solid var(--ink); padding:9px;"><div style="height:30px; background:linear-gradient(90deg, rgba(0,0,0,0.85), rgba(0,0,0,0.2));"></div><div style="font-size:12px; font-weight:700; margin-top:7px;">Dark scrim</div></div>
+          <div style="border:2px solid var(--div); padding:9px;"><div style="height:30px; background:#f3f2f2; border:1px solid var(--n3);"></div><div style="font-size:12px; font-weight:600; margin-top:7px; color:var(--n7);">Light bar</div></div>
+          <div style="border:2px solid var(--div); padding:9px;"><div style="height:30px; background:var(--acc);"></div><div style="font-size:12px; font-weight:600; margin-top:7px; color:var(--n7);">Brand accent</div></div>
+          <div style="border:2px solid var(--div); padding:9px;"><div style="height:30px; background:linear-gradient(90deg,#d7d3d3 50%,#eae9e9 50%);"></div><div style="font-size:12px; font-weight:600; margin-top:7px; color:var(--n7);">Transparent</div></div>
+        </div>
+      </div>
+      <div style="margin-top:auto; border-top:2px solid var(--ink); display:flex;">
+        <div style="flex:1; height:76px; display:flex; align-items:center; padding-left:18px; background:var(--acc); color:#fff; font-size:19px; font-weight:800; letter-spacing:0.06em;">APPLY TO PVW</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="position:absolute; left:1860px; top:1160px; width:820px; height:960px; font-family:'Inter', system-ui, sans-serif; --bg:#161826; --surf:#232532; --ink:#e9e9ed; --acc:#9184d9; --acc3:#d2cefd; --div:rgba(233,233,237,0.16); --n4:#b2b6ca; --n6:#75798c; --n7:#595d6c;">
+  <div style="position:absolute; left:0px; top:-44px; display:flex; align-items:baseline; gap:12px; color:#1b1b1b;">
+    <span style="font-size:22px; font-weight:700; letter-spacing:-0.01em;">Nocturne — phone operator</span>
+    <span style="font-size:13px; font-weight:500; color:#3a3a3a;">390 × 844 · one-thumb take, settings in a drawer</span>
+  </div>
+
+  <div style="display:flex; gap:40px;">
+
+    <div style="width:390px; height:844px; background:var(--bg); color:var(--ink); border:1px solid var(--div); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,0.35);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:0 14px; height:52px; border-bottom:1px solid var(--div); background:linear-gradient(180deg,#1c1e2e,#161826);">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <div style="width:13px; height:13px; border-radius:4px; border:1px solid var(--acc); box-shadow:0 0 12px rgba(145,132,217,0.55);"></div>
+          <span style="font-size:15px; font-weight:600;">Overlay</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:6px; height:6px; border-radius:50%; background:var(--acc); box-shadow:0 0 10px var(--acc);"></div>
+          <span style="font-size:12px; font-weight:500; color:var(--n4);">sunday-1030</span>
+        </div>
+      </div>
+
+      <div style="padding:12px 12px 0;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px;">
+          <span style="font-size:11px; font-weight:600; letter-spacing:0.14em; color:var(--acc); text-transform:uppercase;">Program</span>
+          <span style="font-size:10px; font-weight:500; letter-spacing:0.1em; color:var(--acc);">ON AIR 00:41</span>
+        </div>
+        <div style="position:relative; width:364px; height:205px; border-radius:8px; background:#0f1018; border:1px solid var(--acc); box-shadow:0 0 22px rgba(145,132,217,0.25); overflow:hidden;">
+          <div style="position:absolute; inset:0; background:radial-gradient(120% 90% at 30% 20%, #2a2d3f, #14151f);"></div>
+          <div style="position:absolute; inset:5%; border:1px dashed rgba(233,233,237,0.2); border-radius:4px;"></div>
+          <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+            <div style="display:inline-flex; flex-direction:column; gap:4px;">
+              <div style="background:rgba(22,24,38,0.72); border-left:3px solid #9184d9; border-radius:7px; padding:6px 15px 6px 10px;">
+                <div style="font-family:'Noto Serif', serif; font-weight:600; font-size:17px; line-height:1.06; color:#f3f5fe;">John 3:16</div>
+              </div>
+              <div style="background:rgba(22,24,38,0.55); border-left:3px solid #9184d9; border-radius:7px; padding:4px 15px 4px 10px;">
+                <div style="font-family:'Noto Sans', sans-serif; font-weight:500; font-size:10px; color:#cfd3e5;">For God so loved the world…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; padding:12px 12px 0;">
+        <div>
+          <div style="font-size:11px; font-weight:600; letter-spacing:0.14em; color:var(--n4); text-transform:uppercase; margin-bottom:6px;">Preview</div>
+          <div style="position:relative; width:172px; height:97px; border-radius:8px; background:#0f1018; border:1px solid var(--n7); overflow:hidden;">
+            <div style="position:absolute; inset:0; background:radial-gradient(120% 90% at 30% 20%, #2a2d3f, #14151f);"></div>
+            <div style="position:absolute; left:0; right:0; bottom:11%; padding-left:5%;">
+              <div style="display:inline-flex;">
+                <div style="background:rgba(22,24,38,0.72); border-left:2px solid #9184d9; border-radius:5px; padding:3px 8px 3px 6px;">
+                  <div style="font-family:'Noto Serif', serif; font-weight:600; font-size:10px; color:#f3f5fe;">John 3:16</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:11px; font-weight:600; letter-spacing:0.14em; color:var(--n4); text-transform:uppercase; margin-bottom:6px;">Output</div>
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <div style="display:flex; align-items:center; gap:7px;"><div style="width:6px; height:6px; border-radius:50%; background:var(--acc); box-shadow:0 0 10px var(--acc);"></div><span style="font-size:11px; font-weight:600; color:var(--acc3);">Sync lock · matched</span></div>
+            <span style="font-size:11px; font-weight:400; color:var(--n4);">Chroma green · 1920×1080</span>
+            <span style="font-size:11px; font-weight:400; color:var(--n4);">3 clients connected</span>
+            <span style="font-size:12px; font-weight:500; color:var(--acc3); border:1px solid var(--acc); border-radius:8px; padding:7px 12px; align-self:flex-start;">Open output</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:14px 12px 0;">
+        <div style="display:flex; align-items:center; gap:3px; padding:3px; border:1px solid var(--div); border-radius:9px;">
+          <span style="flex:1; text-align:center; font-size:12px; font-weight:600; color:var(--acc3); background:rgba(145,132,217,0.16); border-radius:6px; padding:10px 0;">Bible</span>
+          <span style="flex:1; text-align:center; font-size:12px; font-weight:500; color:var(--n4); padding:10px 0;">Speaker</span>
+          <span style="flex:1; text-align:center; font-size:12px; font-weight:500; color:var(--n4); padding:10px 0;">Custom</span>
+          <span style="flex:1; text-align:center; font-size:12px; font-weight:500; color:var(--n4); padding:10px 0;">Ticker</span>
+        </div>
+      </div>
+
+      <div style="padding:12px;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px;">
+          <div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:500; color:var(--n6);">Book</span><div style="background:var(--surf); border:1px solid var(--div); border-radius:8px; padding:12px 10px; font-size:15px; font-weight:500;">John</div></div>
+          <div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:500; color:var(--n6);">Ch</span><div style="background:var(--surf); border:1px solid var(--div); border-radius:8px; padding:12px 10px; font-size:15px; font-weight:500;">3</div></div>
+          <div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; font-weight:500; color:var(--n6);">Verses</span><div style="background:var(--surf); border:1px solid var(--div); border-radius:8px; padding:12px 10px; font-size:15px; font-weight:500;">16</div></div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <span style="flex:1; text-align:center; font-size:12px; font-weight:500; color:var(--acc3); border:1px solid var(--acc); border-radius:8px; padding:11px 0;">Look up text</span>
+          <span style="flex:1; text-align:center; font-size:12px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:11px 0;">Presets</span>
+          <span style="font-size:12px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:11px 14px;">Style ›</span>
+        </div>
+      </div>
+
+      <div style="margin-top:auto; border-top:1px solid var(--div); background:linear-gradient(180deg,#1a1c2b,#161826);">
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 12px;">
+          <span style="font-size:10px; font-weight:500; letter-spacing:0.12em; color:var(--n6); text-transform:uppercase;">Transition</span>
+          <span style="font-size:12px; font-weight:500; color:var(--acc3); border:1px solid var(--acc); border-radius:8px; padding:8px 15px;">Cut</span>
+          <span style="font-size:12px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:8px 15px;">Swipe</span>
+          <span style="font-size:12px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:8px; padding:8px 15px;">Fade</span>
+        </div>
+        <div style="display:flex; gap:10px; padding:0 12px 16px;">
+          <span style="flex:1; text-align:center; font-size:18px; font-weight:600; color:var(--acc3); border:1px solid var(--acc); border-radius:10px; padding:20px 0; box-shadow:0 0 26px rgba(145,132,217,0.3);">Take to air</span>
+          <span style="width:118px; text-align:center; font-size:18px; font-weight:500; color:var(--n4); border:1px solid var(--div); border-radius:10px; padding:20px 0;">Clear</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:390px; height:844px; background:var(--bg); color:var(--ink); border:1px solid var(--div); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,0.35);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:0 14px; height:52px; border-bottom:1px solid var(--div); background:linear-gradient(180deg,#1c1e2e,#161826);">
+        <span style="font-size:15px; font-weight:600;">Style &amp; theme</span>
+        <span style="font-size:12px; font-weight:500; color:var(--acc3); border:1px solid var(--acc); border-radius:8px; padding:6px 12px;">Done</span>
+      </div>
+      <div style="padding:12px; overflow:hidden;">
+        <div style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:var(--n6); text-transform:uppercase; margin-bottom:10px;">Overlay styles · 12</div>
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:9px;">
+          <div style="border:1px solid var(--acc); border-radius:9px; padding:7px; box-shadow:0 0 18px rgba(145,132,217,0.2);"><div style="height:94px; border-radius:6px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:14%; width:62%; height:26%; border-radius:5px; background:rgba(233,233,237,0.28);"></div></div><div style="font-size:12px; font-weight:500; margin-top:6px; color:var(--acc3);">06 Glass panel</div></div>
+          <div style="border:1px solid var(--div); border-radius:9px; padding:7px;"><div style="height:94px; border-radius:6px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:14%; width:62%; height:22%; background:#e4e7f5; border-left:3px solid var(--acc);"></div></div><div style="font-size:12px; font-weight:500; margin-top:6px; color:var(--n4);">01 Broadcast bar</div></div>
+          <div style="border:1px solid var(--div); border-radius:9px; padding:7px;"><div style="height:94px; border-radius:6px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:6%; bottom:14%; width:26%; height:22%; background:var(--acc);"></div><div style="position:absolute; left:33%; bottom:14%; width:40%; height:22%; background:#e4e7f5;"></div></div><div style="font-size:12px; font-weight:500; margin-top:6px; color:var(--n4);">02 Split bar</div></div>
+          <div style="border:1px solid var(--div); border-radius:9px; padding:7px;"><div style="height:94px; border-radius:6px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:0; bottom:8%; width:100%; height:18%; background:#e4e7f5;"></div><div style="position:absolute; left:0; bottom:8%; width:20%; height:18%; background:var(--acc);"></div></div><div style="font-size:12px; font-weight:500; margin-top:6px; color:var(--n4);">03 News ticker</div></div>
+          <div style="border:1px solid var(--div); border-radius:9px; padding:7px;"><div style="height:94px; border-radius:6px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:8%; bottom:22%; width:44%; height:1px; background:#e4e7f5;"></div><div style="position:absolute; left:8%; bottom:28%; width:30%; height:6px; background:#75798c;"></div></div><div style="font-size:12px; font-weight:500; margin-top:6px; color:var(--n4);">04 Cinema rule</div></div>
+          <div style="border:1px solid var(--div); border-radius:9px; padding:7px;"><div style="height:94px; border-radius:6px; background:#0f1018; position:relative; overflow:hidden;"><div style="position:absolute; left:0; bottom:14%; width:70%; height:24%; background:linear-gradient(90deg, var(--acc), rgba(145,132,217,0)); clip-path:polygon(0 0, 100% 0, 88% 100%, 0 100%);"></div></div><div style="font-size:12px; font-weight:500; margin-top:6px; color:var(--n4);">08 Gradient wedge</div></div>
+        </div>
+        <div style="height:1px; margin:14px 0; background:linear-gradient(90deg, transparent, rgba(233,233,237,0.16) 48px, rgba(233,233,237,0.16) calc(100% - 48px), transparent);"></div>
+        <div style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:var(--n6); text-transform:uppercase; margin-bottom:10px;">Background theme</div>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:9px;">
+          <div style="border:1px solid var(--acc); border-radius:9px; padding:9px;"><div style="height:30px; border-radius:5px; background:linear-gradient(90deg, rgba(22,24,38,0.95), rgba(22,24,38,0.15));"></div><div style="font-size:12px; font-weight:500; margin-top:7px; color:var(--acc3);">Dark scrim</div></div>
+          <div style="border:1px solid var(--div); border-radius:9px; padding:9px;"><div style="height:30px; border-radius:5px; background:#e4e7f5;"></div><div style="font-size:12px; font-weight:500; margin-top:7px; color:var(--n4);">Light bar</div></div>
+          <div style="border:1px solid var(--div); border-radius:9px; padding:9px;"><div style="height:30px; border-radius:5px; background:var(--acc);"></div><div style="font-size:12px; font-weight:500; margin-top:7px; color:var(--n4);">Brand accent</div></div>
+          <div style="border:1px solid var(--div); border-radius:9px; padding:9px;"><div style="height:30px; border-radius:5px; background:linear-gradient(90deg,#292b31 50%,#3f424d 50%);"></div><div style="font-size:12px; font-weight:500; margin-top:7px; color:var(--n4);">Transparent</div></div>
+        </div>
+      </div>
+      <div style="margin-top:auto; padding:0 12px 16px;">
+        <span style="display:block; text-align:center; font-size:18px; font-weight:600; color:var(--acc3); border:1px solid var(--acc); border-radius:10px; padding:20px 0; box-shadow:0 0 26px rgba(145,132,217,0.3);">Apply to PVW</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

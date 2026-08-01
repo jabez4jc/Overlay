@@ -9,10 +9,14 @@ Live demo: `https://overlay.simplifyed.in`
 
 ## Quick Start
 
+Requires Node.js 20 or newer.
+
 ```bash
 npm install
 npm start
 ```
+
+Run the built-in checks with `npm run check && npm test`.
 
 Open:
 - Control UI: `http://localhost:3333/`
@@ -81,6 +85,12 @@ Recommended runbook:
 
 ## Styling System
 
+### Control UI Design System
+
+The operator interface adopts the **Nocturne** direction from `Design/Overlay Design System Template`: its dark compact palette, Inter typography, 8px radius, accent focus rings, neutral surface hierarchy, framed console shell, shortcut rail, segmented mode navigation, PVW/PGM tally treatment, safe-area guides, section kickers, outlined take controls, preset cards, and layered settings surfaces are mapped onto the existing application structure in `css/control.css`. This keeps the interface comfortable in dim production environments while preserving its established workflows and functional hooks.
+
+The control design system is intentionally separate from the rendered output. Lower thirds, ticker themes, saved settings, logos, and custom templates retain their own broadcast colors and typography, so control-panel design changes do not alter an on-air composition.
+
 ### Lower Third Styles
 
 - Includes classic, gradient, scripture/high-capacity, and modern inline variants.
@@ -101,6 +111,7 @@ Each line (Line 1 / Line 2) supports:
 ### Custom Template and Assets
 
 - `Custom HTML Template` can fully override built-in styles.
+- Custom templates are trusted operator-authored content. Import templates only from sources you trust.
 - Supported variables: `{{line1}}`, `{{line2}}`, `{{accentColor}}`, `{{font}}`, `{{line1Font}}`, `{{line2Font}}`, `{{logoUrl}}`.
 - `Logo` supports PNG logos with transparency for lower thirds and the standalone output logo.
 
@@ -236,6 +247,12 @@ If you still prefer Nixpacks:
 - Mobile UX issues:
   - Keep settings collapsed unless editing.
   - Use User Guide (`H`) for fast-operate workflow.
+
+## Network Security
+
+- Session IDs isolate production lanes; they are not passwords or authentication tokens.
+- Run Overlay on a trusted production network or place it behind an authenticated reverse proxy before exposing it to the public internet.
+- The server validates session IDs, limits WebSocket payloads and per-session clients, separates control/output roles, and serves only application assets.
 
 ## Project Structure
 

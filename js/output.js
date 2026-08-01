@@ -6,7 +6,15 @@
 
 // Read the session ID from the URL (?session=...) so this output window
 // only communicates with its paired control panel, not with other sessions.
-const SESSION_ID   = new URLSearchParams(location.search).get('session') || 'default';
+function sanitizeSessionId(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .slice(0, 40) || 'default';
+}
+
+const SESSION_ID   = sanitizeSessionId(new URLSearchParams(location.search).get('session'));
 const CHANNEL_NAME = 'reference-overlay-' + SESSION_ID;
 const LS_KEY       = 'referenceOverlayState-' + SESSION_ID;
 
@@ -183,6 +191,7 @@ function applyLineTextEffects(s) {
 
 // ── window.postMessage listener ───────────────────────────────────────────────
 window.addEventListener('message', e => {
+  if (location.protocol !== 'file:' && e.origin !== location.origin) return;
   if (e.data && typeof e.data === 'object' && e.data.action) {
     handleMessage(e.data);
   }

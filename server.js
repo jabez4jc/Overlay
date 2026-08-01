@@ -28,6 +28,13 @@ const { PNG } = require('pngjs');
 
 const PORT = parseInt(process.env.PORT, 10) || 3333;
 const ROOT = __dirname;
+const MAX_SESSION_ID_LENGTH = 40;
+const MAX_WS_PAYLOAD_BYTES = 1024 * 1024;
+const MAX_CLIENTS_PER_SESSION = 32;
+const ALLOWED_WS_ACTIONS = new Set([
+  'settings', 'show', 'clear', 'show-ticker', 'clear-ticker',
+  'atem-export-config', 'atem-export-status', 'atem-export-refresh',
+]);
 
 const ATEM_PNG_EXPORT_ENABLED = process.env.ATEM_PNG_EXPORT !== '0';
 const ATEM_PNG_EXPORT_PATH = process.env.ATEM_PNG_PATH
@@ -50,8 +57,31 @@ const ATEM_PNG_BASE_FILE = path.basename(ATEM_PNG_EXPORT_PATH);
 const ATEM_PNG_BASE_STEM = ATEM_PNG_BASE_FILE.replace(/\.png$/i, '') || 'atem-live';
 
 function normalizeSessionId(value) {
-  const s = String(value || '').trim();
+  const s = String(value || '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .slice(0, MAX_SESSION_ID_LENGTH);
   return s || 'default';
+}
+
+function isValidSessionId(value) {
+  return typeof value === 'string'
+    && value.length > 0
+    && value.length <= MAX_SESSION_ID_LENGTH
+    && /^[a-zA-Z0-9_-]+$/.test(value);
+}
+
+function writeResponse(res, status, contentType, body, extraHeaders = {}) {
+  const headers = {
+    'Content-Type': contentType,
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    ...extraHeaders,
+  };
+  res.writeHead(status, headers);
+  if (body != null) res.end(body);
+  else res.end();
 }
 
 function sanitizeSessionForFile(value) {
@@ -149,10 +179,23 @@ const MIME = {
 
 // ── HTTP Server ───────────────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
-  const reqUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  const reqUrl = new URL(req.url || '/', 'http://localhost');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-  if (req.method === 'GET' && reqUrl.pathname === '/api/state') {
-    const sessionId = normalizeSessionId(reqUrl.searchParams.get('session') || 'default');
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    writeResponse(res, 405, 'text/plain; charset=utf-8', 'Method Not Allowed', { Allow: 'GET, HEAD' });
+    return;
+  }
+
+  if ((req.method === 'GET' || req.method === 'HEAD') && reqUrl.pathname === '/api/state') {
+    const rawSessionId = reqUrl.searchParams.get('session') || 'default';
+    if (!isValidSessionId(rawSessionId)) {
+      writeResponse(res, 400, 'application/json; charset=utf-8', JSON.stringify({ code: 400, message: 'Invalid session ID' }));
+      return;
+    }
+    const sessionId = normalizeSessionId(rawSessionId);
     const state = sessionState.get(sessionId) || {
       settings: null,
       show: null,
@@ -176,7 +219,7 @@ const server = http.createServer(async (req, res) => {
       'Pragma': 'no-cache',
       'Expires': '0',
     });
-    res.end(JSON.stringify({
+    const responseBody = JSON.stringify({
       sessionId,
       updatedAt: state.updatedAt || 0,
       overlayVisible: !!state.overlayVisible,
@@ -184,15 +227,21 @@ const server = http.createServer(async (req, res) => {
       settings: (settingsMsg && typeof settingsMsg === 'object') ? (settingsMsg.settings || settingsMsg) : null,
       show: showMsg?.data || null,
       showTicker: showTickerMsg?.data || null,
-    }));
+    });
+    if (req.method === 'HEAD') res.end();
+    else res.end(responseBody);
     return;
   }
 
-  if (req.method === 'GET' && reqUrl.pathname === '/atem-live.png') {
+  if ((req.method === 'GET' || req.method === 'HEAD') && reqUrl.pathname === '/atem-live.png') {
     const rawSession = reqUrl.searchParams.get('session');
     if (!rawSession) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end('Session is required. Use /atem-live/<session>.png or /atem-live.png?session=<session>.');
+      return;
+    }
+    if (!isValidSessionId(rawSession)) {
+      writeResponse(res, 400, 'text/plain; charset=utf-8', 'Invalid session ID');
       return;
     }
     const requestedSession = normalizeSessionId(rawSession);
@@ -223,14 +272,20 @@ const server = http.createServer(async (req, res) => {
         'Pragma': 'no-cache',
         'Expires': '0',
       });
-      res.end(data);
+      res.end(req.method === 'HEAD' ? undefined : data);
     });
     return;
   }
 
   const atemSessionMatch = /^\/atem-live\/([^\/]+)\.png$/i.exec(reqUrl.pathname || '');
-  if (req.method === 'GET' && atemSessionMatch) {
-    const requestedSession = normalizeSessionId(decodeURIComponent(atemSessionMatch[1] || 'default'));
+  if ((req.method === 'GET' || req.method === 'HEAD') && atemSessionMatch) {
+    let decodedSession = '';
+    try { decodedSession = decodeURIComponent(atemSessionMatch[1] || ''); } catch (_) {}
+    if (!isValidSessionId(decodedSession)) {
+      writeResponse(res, 400, 'text/plain; charset=utf-8', 'Invalid session ID');
+      return;
+    }
+    const requestedSession = normalizeSessionId(decodedSession);
     const alphaMode = String(reqUrl.searchParams.get('alpha') || '').trim().toLowerCase();
     const target = (alphaMode === 'straight' || alphaMode === 'premultiplied')
       ? getAtemExportPathForSessionVariant(requestedSession, alphaMode)
@@ -258,7 +313,7 @@ const server = http.createServer(async (req, res) => {
         'Pragma': 'no-cache',
         'Expires': '0',
       });
-      res.end(data);
+      res.end(req.method === 'HEAD' ? undefined : data);
     });
     return;
   }
@@ -277,7 +332,8 @@ const server = http.createServer(async (req, res) => {
     }
 
     // Guard against garbage input before forwarding to BibleGateway
-    if (!/^[0-9]+(?:[-,][0-9]+)*$/.test(verses)) {
+    if (book.length > 40 || version.length > 20 || !/^[0-9]{1,3}$/.test(chapter)
+      || !/^[0-9]+(?:[-,][0-9]+)*$/.test(verses) || verses.length > 80) {
       res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ code: 400, message: 'Invalid verse reference format' }));
       return;
@@ -348,19 +404,28 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Strip query string, resolve relative paths, prevent directory traversal
-  const rawPath  = reqUrl.pathname;
-  const safePath = path.normalize(rawPath).replace(/^(\.\.(\/|\\|$))+/, '');
-  const filePath = path.join(ROOT, safePath === '/' || safePath === '' ? 'index.html' : safePath);
-
-  // Only serve files inside ROOT
-  if (!filePath.startsWith(ROOT + path.sep) && filePath !== ROOT) {
-    res.writeHead(403); res.end('Forbidden'); return;
+  let rawPath = '';
+  try { rawPath = decodeURIComponent(reqUrl.pathname); } catch (_) {
+    writeResponse(res, 400, 'text/plain; charset=utf-8', 'Bad Request');
+    return;
   }
+  const safePath = path.posix.normalize(rawPath);
+  const publicPath = safePath === '/' ? '/index.html' : safePath;
+  const isPublicFile = publicPath === '/index.html'
+    || publicPath === '/output.html'
+    || publicPath === '/favicon.svg'
+    || publicPath.startsWith('/css/')
+    || publicPath.startsWith('/js/')
+    || publicPath.startsWith('/assets/');
+  if (!isPublicFile || publicPath.includes('/.') || publicPath.includes('\\')) {
+    writeResponse(res, 404, 'text/plain; charset=utf-8', '404 Not Found');
+    return;
+  }
+  const filePath = path.join(ROOT, publicPath.slice(1));
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('404 Not Found: ' + safePath);
+      writeResponse(res, 404, 'text/plain; charset=utf-8', '404 Not Found');
       return;
     }
     const ext  = path.extname(filePath).toLowerCase();
@@ -369,7 +434,7 @@ const server = http.createServer(async (req, res) => {
       'Content-Type':  mime,
       'Cache-Control': 'no-cache',         // always fresh for live use
     });
-    res.end(data);
+    res.end(req.method === 'HEAD' ? undefined : data);
   });
 });
 
@@ -467,7 +532,11 @@ try {
   return;
 }
 
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({
+  server,
+  maxPayload: MAX_WS_PAYLOAD_BYTES,
+  perMessageDeflate: false,
+});
 
 // rooms:        Map<sessionId, Set<WebSocket>>
 // sessionState: Map<sessionId, { settings: string|null, show: string|null }>
@@ -516,14 +585,6 @@ function broadcastToRoom(sessionId, payload, sender) {
   }
 }
 
-function broadcastToAllClients(payload) {
-  for (const client of wss.clients) {
-    if (client.readyState === 1 /* OPEN */) {
-      try { client.send(payload); } catch (_) {}
-    }
-  }
-}
-
 function shouldExportSession(sessionId) {
   if (!atemPngPinnedSessions.size) return true;
   return atemPngPinnedSessions.has(normalizeSessionId(sessionId));
@@ -538,8 +599,19 @@ function writeTransparentPng(filePath, width, height) {
 
 wss.on('connection', (ws, req) => {
   const params    = new URLSearchParams((req.url || '').split('?')[1] || '');
-  const sessionId = params.get('session') || 'default';
-  const role      = params.get('role')    || 'unknown';
+  const rawSessionId = params.get('session') || 'default';
+  const sessionId = normalizeSessionId(rawSessionId);
+  const role      = params.get('role') || 'unknown';
+
+  if (!isValidSessionId(rawSessionId) || (role !== 'control' && role !== 'output')) {
+    ws.close(1008, 'Invalid connection parameters');
+    return;
+  }
+
+  if ((rooms.get(sessionId)?.size || 0) >= MAX_CLIENTS_PER_SESSION) {
+    ws.close(1013, 'Session is full');
+    return;
+  }
 
   joinRoom(sessionId, ws);
   const room = rooms.get(sessionId);
@@ -550,21 +622,27 @@ wss.on('connection', (ws, req) => {
     if (state.settings) {
       try { ws.send(state.settings); } catch (_) {}
     }
-    if (state.show) {
+    if (state.overlayVisible && state.show) {
       try { ws.send(state.show); } catch (_) {}
+    } else {
+      try { ws.send(JSON.stringify({ action: 'clear' })); } catch (_) {}
     }
-    if (state.showTicker) {
+    if (state.tickerVisible && state.showTicker) {
       try { ws.send(state.showTicker); } catch (_) {}
+    } else {
+      try { ws.send(JSON.stringify({ action: 'clear-ticker' })); } catch (_) {}
     }
   }
 
   ws.on('message', raw => {
+    if (role !== 'control') return;
     try {
       const msg = JSON.parse(raw);
+      if (!msg || typeof msg !== 'object' || Array.isArray(msg) || !ALLOWED_WS_ACTIONS.has(msg.action)) return;
       const state = getState(sessionId);
       if (msg.action === 'atem-export-config') {
         const requestedPin = !!msg.pinCurrentSession;
-        const requestedSessionId = normalizeSessionId(msg.sessionId || sessionId || 'default');
+        const requestedSessionId = sessionId;
         if (requestedPin) atemPngPinnedSessions.add(requestedSessionId);
         else atemPngPinnedSessions.delete(requestedSessionId);
 
@@ -575,10 +653,10 @@ wss.on('connection', (ws, req) => {
           pinnedSessions: Array.from(atemPngPinnedSessions),
           exportUrl: getAtemExportUrlForSession(requestedSessionId),
         });
-        broadcastToAllClients(ack);
+        broadcastToRoom(sessionId, ack, null);
         schedulePngExport(requestedSessionId);
       } else if (msg.action === 'atem-export-status') {
-        const requestedSessionId = normalizeSessionId(msg.sessionId || sessionId || 'default');
+        const requestedSessionId = sessionId;
         const ack = JSON.stringify({
           action: 'atem-export-config-ack',
           sessionId: requestedSessionId,
@@ -588,12 +666,14 @@ wss.on('connection', (ws, req) => {
         });
         try { ws.send(ack); } catch (_) {}
       } else if (msg.action === 'atem-export-refresh') {
-        const requestedSessionId = normalizeSessionId(msg.sessionId || sessionId || 'default');
+        const requestedSessionId = sessionId;
         schedulePngExport(requestedSessionId);
       } else if (msg.action === 'settings') {
+        if (!msg.settings || typeof msg.settings !== 'object' || Array.isArray(msg.settings)) return;
         state.settings = raw.toString();
         state.updatedAt = Date.now();
       } else if (msg.action === 'show') {
+        if (!msg.data || typeof msg.data !== 'object' || Array.isArray(msg.data)) return;
         state.show = raw.toString();
         if (msg.settings) state.settings = JSON.stringify(msg.settings);
         state.overlayVisible = true;
@@ -602,6 +682,7 @@ wss.on('connection', (ws, req) => {
         state.overlayVisible = false;
         state.updatedAt = Date.now();
       } else if (msg.action === 'show-ticker') {
+        if (!msg.data || typeof msg.data !== 'object' || Array.isArray(msg.data)) return;
         state.showTicker = raw.toString();
         state.tickerVisible = true;
         state.updatedAt = Date.now();
@@ -613,9 +694,8 @@ wss.on('connection', (ws, req) => {
       if (msg.action === 'settings' || msg.action === 'show' || msg.action === 'clear' || msg.action === 'show-ticker' || msg.action === 'clear-ticker') {
         schedulePngExport(sessionId);
       }
+      broadcastToRoom(sessionId, raw, ws);
     } catch (_) {}
-
-    broadcastToRoom(sessionId, raw, ws);
   });
 
   ws.on('close', () => {
