@@ -9,10 +9,10 @@ Live demo: `https://overlay.simplifyed.in`
 
 ## Quick Start
 
-Requires Node.js 20 or newer.
+Requires Node.js 20 or newer. Use the lockfile for a reproducible install:
 
 ```bash
-npm install
+npm ci
 npm start
 ```
 
@@ -48,8 +48,10 @@ Keyboard shortcuts:
 - You can run multiple sessions from one server at the same time.
 - You can set a custom session at load time (URL/session switcher).
 - Appearance and output settings are stored atomically on the server per session and restored when that session is opened again.
+- Persistent snapshots are written to `data/sessions/<session-id>.json` by default. Override the directory with `SESSION_DATA_DIR`.
 - Connected control panels receive saved-setting changes immediately over the existing WebSocket room. The latest committed change wins.
 - Existing browser-only settings initialize a session automatically the first time it is opened on a server with no saved snapshot.
+- Live `PGM` visibility is intentionally transient. Saved settings and presets survive a restart; an on-air graphic is not automatically replayed after one.
 
 ## Mode Workflows
 
@@ -125,7 +127,9 @@ Each line (Line 1 / Line 2) supports:
 - Speaker presets
 - Ticker presets
 
-Presets are stored in the server-side session snapshot and synchronize to every connected control using that session ID. Existing browser-only presets are used to initialize a session when the server has no saved snapshot yet.
+Presets are stored in the server-side session snapshot and synchronize to every connected control using that session ID. **Save Preset** reports success only after the server acknowledges its disk write or the client reads the exact preset collection back from `/api/state`. Existing browser-only presets are used to initialize a session when the server has no saved snapshot yet.
+
+Browser storage is a session-scoped cache and migration fallback, not the authoritative store. Back up `data/sessions` (or the configured `SESSION_DATA_DIR`) if session setups must survive machine or container replacement.
 
 ### Session Transfer
 
@@ -225,11 +229,11 @@ Why Dockerfile mode:
 Coolify settings:
 1. Expose port `3333`.
 2. Add domain (for example `overlay.simplifyed.in`).
-3. Mount persistent storage at `/app/data/sessions` if session settings must survive container replacement or redeployment.
+3. Mount persistent storage at `/app/data/sessions` if session settings and presets must survive container replacement or redeployment.
 4. Optional env vars:
    - `ATEM_PNG_MODE=premultiplied`
    - `ATEM_PNG_SESSIONS=<comma-separated-session-ids>` if you want pre-pinned sessions.
-   - `SESSION_DATA_DIR=/app/data/sessions` to use a different server settings directory.
+   - `SESSION_DATA_DIR=/app/data/sessions` to set the server snapshot directory explicitly.
 
 If you still prefer Nixpacks:
 - Keep install command as `npm ci` (do not use `--ignore-scripts`).
@@ -238,6 +242,14 @@ If you still prefer Nixpacks:
 
 ## Troubleshooting
 
+- Preset shows `WebSocket is not connected`:
+  - Open the control through the Node server rather than as a local `file://` page.
+  - Confirm the header connection indicator is online.
+- Preset save is not acknowledged or persisted:
+  - Restart the Node process after updating `server.js`; refreshing the browser does not reload backend code.
+  - Hard-refresh the control page after updating `js/control.js`.
+  - Confirm the service user can write to `SESSION_DATA_DIR`.
+  - Check the saved snapshot with `GET /api/state?session=<session-id>` and inspect the server log for disk-write errors.
 - Output not syncing:
   - Confirm same session ID in Control and Output URLs.
   - Confirm active WebSocket connection.
@@ -262,14 +274,22 @@ If you still prefer Nixpacks:
 
 - `index.html` - Control UI
 - `output.html` - Output renderer
-- `js/control.js` - control logic, sync, presets/profiles
+- `js/control.js` - control logic, synchronization, presets, and session transfer
 - `js/output.js` - output rendering logic
 - `js/data.js` - Bible data, translation/font metadata
 - `css/control.css` - control styles
 - `css/output.css` - output styles
 - `server.js` - HTTP/WebSocket + ATEM PNG export pipeline
+- `test/` - protocol, persistence/restart, security, and UI-contract regression tests
+- `Design/Overlay Design System Template/` - retained Modernist and Nocturne design-system source
 - `scripts/bootstrap_ubuntu_server.sh` - Ubuntu bootstrap
 - `scripts/install_ubuntu_server.sh` - Ubuntu installer
+
+Generated runtime content is intentionally not tracked:
+
+- `node_modules/` - installed dependencies
+- `exports/` - generated ATEM PNGs
+- `data/sessions/` - server-owned session snapshots; back this directory up separately when needed
 
 ## License and Copyright
 

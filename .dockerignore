@@ -3,4 +3,8 @@ npm-debug.log*
 .git
 .gitignore
 .DS_Store
-exports/*.png
+.vscode
+Design
+test
+data/sessions
+exports
