@@ -29,10 +29,13 @@ const { PNG } = require('pngjs');
 const PORT = parseInt(process.env.PORT, 10) || 3333;
 const ROOT = __dirname;
 const MAX_SESSION_ID_LENGTH = 40;
-const MAX_WS_PAYLOAD_BYTES = 1024 * 1024;
+const MAX_WS_PAYLOAD_BYTES = 12 * 1024 * 1024;
 const MAX_CLIENTS_PER_SESSION = 32;
+const SESSION_DATA_DIR = process.env.SESSION_DATA_DIR
+  ? path.resolve(process.env.SESSION_DATA_DIR)
+  : path.join(ROOT, 'data', 'sessions');
 const ALLOWED_WS_ACTIONS = new Set([
-  'settings', 'show', 'clear', 'show-ticker', 'clear-ticker',
+  'settings', 'session-settings-save', 'session-presets-save', 'show', 'clear', 'show-ticker', 'clear-ticker',
   'atem-export-config', 'atem-export-status', 'atem-export-refresh',
 ]);
 
@@ -122,6 +125,78 @@ let warnedPlaywrightMissing = false;
 const exportSessions = new Map(); // sessionId -> { context, page, timer, running, queued }
 const sessionState = new Map(); // sessionId -> shared live state (for ws + polling fallback)
 
+function getSessionSettingsPath(sessionId) {
+  return path.join(SESSION_DATA_DIR, `${sanitizeSessionForFile(sessionId)}.json`);
+}
+
+function makeEmptySessionState() {
+  return {
+    settings: null,
+    show: null,
+    showTicker: null,
+    overlayVisible: false,
+    tickerVisible: false,
+    settingsUpdatedAt: 0,
+    updatedAt: 0,
+  };
+}
+
+function loadPersistedSessionState(sessionId) {
+  const state = makeEmptySessionState();
+  try {
+    const stored = JSON.parse(fs.readFileSync(getSessionSettingsPath(sessionId), 'utf8'));
+    if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return state;
+    if (!stored.settings || typeof stored.settings !== 'object' || Array.isArray(stored.settings)) return state;
+    const settingsUpdatedAt = Number(stored.updatedAt || 0);
+    state.settingsUpdatedAt = Number.isFinite(settingsUpdatedAt) ? settingsUpdatedAt : 0;
+    state.updatedAt = state.settingsUpdatedAt;
+    state.settings = JSON.stringify({
+      action: 'settings',
+      settings: stored.settings,
+      sessionSettings: stored.sessionSettings && typeof stored.sessionSettings === 'object'
+        ? stored.sessionSettings
+        : null,
+      updatedAt: state.settingsUpdatedAt,
+    });
+  } catch (err) {
+    if (err?.code !== 'ENOENT') console.warn(`  ⚠  Could not load settings for session "${sessionId}": ${err.message}`);
+  }
+  return state;
+}
+
+function persistSessionSettings(sessionId, settings, sessionSettings, updatedAt) {
+  const target = getSessionSettingsPath(sessionId);
+  const temporary = `${target}.${process.pid}.tmp`;
+  const payload = JSON.stringify({
+    version: 1,
+    sessionId,
+    updatedAt,
+    settings,
+    sessionSettings: sessionSettings && typeof sessionSettings === 'object' ? sessionSettings : null,
+  }, null, 2);
+  fs.mkdirSync(SESSION_DATA_DIR, { recursive: true });
+  fs.writeFileSync(temporary, payload, { encoding: 'utf8', mode: 0o600 });
+  fs.renameSync(temporary, target);
+}
+
+function storeSessionSettings(state, sessionId, settings, sessionSettings) {
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return false;
+  const updatedAt = Date.now();
+  const snapshot = sessionSettings && typeof sessionSettings === 'object' && !Array.isArray(sessionSettings)
+    ? sessionSettings
+    : { settings };
+  try {
+    persistSessionSettings(sessionId, settings, snapshot, updatedAt);
+  } catch (err) {
+    console.warn(`  ⚠  Could not save settings for session "${sessionId}": ${err.message}`);
+    return false;
+  }
+  state.settingsUpdatedAt = updatedAt;
+  state.updatedAt = updatedAt;
+  state.settings = JSON.stringify({ action: 'settings', settings, sessionSettings: snapshot, updatedAt });
+  return true;
+}
+
 try {
   ({ chromium } = require('playwright'));
 } catch (_) {
@@ -196,14 +271,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const sessionId = normalizeSessionId(rawSessionId);
-    const state = sessionState.get(sessionId) || {
-      settings: null,
-      show: null,
-      showTicker: null,
-      overlayVisible: false,
-      tickerVisible: false,
-      updatedAt: 0,
-    };
+    const state = getState(sessionId);
     const parsePayload = (raw) => {
       if (!raw) return null;
       try { return JSON.parse(raw); } catch (_) { return null; }
@@ -222,9 +290,11 @@ const server = http.createServer(async (req, res) => {
     const responseBody = JSON.stringify({
       sessionId,
       updatedAt: state.updatedAt || 0,
+      settingsUpdatedAt: state.settingsUpdatedAt || 0,
       overlayVisible: !!state.overlayVisible,
       tickerVisible: !!state.tickerVisible,
       settings: (settingsMsg && typeof settingsMsg === 'object') ? (settingsMsg.settings || settingsMsg) : null,
+      sessionSettings: settingsMsg?.sessionSettings || null,
       show: showMsg?.data || null,
       showTicker: showTickerMsg?.data || null,
     });
@@ -547,14 +617,7 @@ const rooms        = new Map();
 
 function getState(sessionId) {
   if (!sessionState.has(sessionId)) {
-    sessionState.set(sessionId, {
-      settings: null,
-      show: null,
-      showTicker: null,
-      overlayVisible: false,
-      tickerVisible: false,
-      updatedAt: 0,
-    });
+    sessionState.set(sessionId, loadPersistedSessionState(sessionId));
   }
   return sessionState.get(sessionId);
 }
@@ -583,6 +646,44 @@ function broadcastToRoom(sessionId, payload, sender) {
       try { client.send(payload); } catch (_) {}
     }
   }
+}
+
+function broadcastToControls(sessionId, payload, sender) {
+  const clients = rooms.get(sessionId);
+  if (!clients) return;
+  for (const client of clients) {
+    if (client !== sender && client.overlayRole === 'control' && client.readyState === 1) {
+      try { client.send(payload); } catch (_) {}
+    }
+  }
+}
+
+function getControlSettingsMessage(state) {
+  if (!state.settings) return null;
+  try {
+    const message = JSON.parse(state.settings);
+    return JSON.stringify({
+      action: 'session-settings',
+      settings: message.settings || null,
+      sessionSettings: message.sessionSettings || null,
+      updatedAt: message.updatedAt || state.settingsUpdatedAt || 0,
+    });
+  } catch (_) {
+    return null;
+  }
+}
+
+function sendSessionSaveAck(ws, requestId, ok, message, updatedAt = 0) {
+  if (!requestId || typeof requestId !== 'string' || requestId.length > 100) return;
+  try {
+    ws.send(JSON.stringify({
+      action: 'session-save-ack',
+      requestId,
+      ok: !!ok,
+      message: message || (ok ? 'Saved' : 'Save failed'),
+      updatedAt: Number(updatedAt || 0),
+    }));
+  } catch (_) {}
 }
 
 function shouldExportSession(sessionId) {
@@ -614,14 +715,24 @@ wss.on('connection', (ws, req) => {
   }
 
   joinRoom(sessionId, ws);
+  ws.overlayRole = role;
   const room = rooms.get(sessionId);
   console.log(`  [WS+] ${role.padEnd(8)} session=${sessionId}  (room: ${room ? room.size : 0} clients)`);
 
-  if (role === 'output') {
-    const state = getState(sessionId);
-    if (state.settings) {
-      try { ws.send(state.settings); } catch (_) {}
+  const connectedState = getState(sessionId);
+  if (connectedState.settings) {
+    const initialMessage = role === 'control'
+      ? getControlSettingsMessage(connectedState)
+      : connectedState.settings;
+    if (initialMessage) {
+      try { ws.send(initialMessage); } catch (_) {}
     }
+  } else if (role === 'control') {
+    try { ws.send(JSON.stringify({ action: 'settings-required' })); } catch (_) {}
+  }
+
+  if (role === 'output') {
+    const state = connectedState;
     if (state.overlayVisible && state.show) {
       try { ws.send(state.show); } catch (_) {}
     } else {
@@ -668,14 +779,61 @@ wss.on('connection', (ws, req) => {
       } else if (msg.action === 'atem-export-refresh') {
         const requestedSessionId = sessionId;
         schedulePngExport(requestedSessionId);
+      } else if (msg.action === 'session-settings-save') {
+        if (!msg.settings || typeof msg.settings !== 'object' || Array.isArray(msg.settings)) return;
+        if (msg.initializeOnly && state.settings) {
+          const currentSettings = getControlSettingsMessage(state);
+          if (currentSettings) {
+            try { ws.send(currentSettings); } catch (_) {}
+          }
+          sendSessionSaveAck(ws, msg.requestId, true, 'Session settings already initialized', state.settingsUpdatedAt);
+          return;
+        }
+        if (!storeSessionSettings(state, sessionId, msg.settings, msg.sessionSettings)) {
+          sendSessionSaveAck(ws, msg.requestId, false, 'The server could not write the session settings to disk');
+          return;
+        }
+        const savedSettings = getControlSettingsMessage(state);
+        if (savedSettings) broadcastToControls(sessionId, savedSettings, ws);
+        sendSessionSaveAck(ws, msg.requestId, true, 'Session settings saved on server', state.settingsUpdatedAt);
+        return;
+      } else if (msg.action === 'session-presets-save') {
+        const presets = msg.presets;
+        if (!presets || typeof presets !== 'object' || Array.isArray(presets)
+          || !Array.isArray(presets.overlay) || !Array.isArray(presets.ticker)) {
+          sendSessionSaveAck(ws, msg.requestId, false, 'The preset payload is invalid');
+          return;
+        }
+        const currentRaw = getControlSettingsMessage(state);
+        const current = currentRaw ? JSON.parse(currentRaw) : null;
+        if (!current?.settings) {
+          sendSessionSaveAck(ws, msg.requestId, false, 'Session settings have not been initialized');
+          return;
+        }
+        const sessionSettings = current.sessionSettings && typeof current.sessionSettings === 'object'
+          ? { ...current.sessionSettings, presets, savedAt: Date.now() }
+          : { version: 1, presets, savedAt: Date.now() };
+        if (!storeSessionSettings(state, sessionId, current.settings, sessionSettings)) {
+          sendSessionSaveAck(ws, msg.requestId, false, 'The server could not write presets to disk');
+          return;
+        }
+        const savedSettings = getControlSettingsMessage(state);
+        if (savedSettings) broadcastToControls(sessionId, savedSettings, ws);
+        sendSessionSaveAck(ws, msg.requestId, true, 'Presets saved on server', state.settingsUpdatedAt);
+        return;
       } else if (msg.action === 'settings') {
         if (!msg.settings || typeof msg.settings !== 'object' || Array.isArray(msg.settings)) return;
-        state.settings = raw.toString();
-        state.updatedAt = Date.now();
+        if (msg.initializeOnly && state.settings) {
+          try { ws.send(state.settings); } catch (_) {}
+          return;
+        }
+        if (!storeSessionSettings(state, sessionId, msg.settings, msg.sessionSettings)) return;
       } else if (msg.action === 'show') {
         if (!msg.data || typeof msg.data !== 'object' || Array.isArray(msg.data)) return;
         state.show = raw.toString();
-        if (msg.settings) state.settings = JSON.stringify(msg.settings);
+        if (msg.settings && typeof msg.settings === 'object' && !Array.isArray(msg.settings)) {
+          storeSessionSettings(state, sessionId, msg.settings, msg.sessionSettings);
+        }
         state.overlayVisible = true;
         state.updatedAt = Date.now();
       } else if (msg.action === 'clear') {
@@ -694,7 +852,8 @@ wss.on('connection', (ws, req) => {
       if (msg.action === 'settings' || msg.action === 'show' || msg.action === 'clear' || msg.action === 'show-ticker' || msg.action === 'clear-ticker') {
         schedulePngExport(sessionId);
       }
-      broadcastToRoom(sessionId, raw, ws);
+      const outbound = msg.action === 'settings' ? state.settings : raw;
+      broadcastToRoom(sessionId, outbound, ws);
     } catch (_) {}
   });
 

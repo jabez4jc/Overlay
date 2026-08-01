@@ -1,7 +1,9 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const net = require('node:net');
+const os = require('node:os');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { after, before, test } = require('node:test');
@@ -10,6 +12,7 @@ const WebSocket = require('ws');
 let child;
 let baseUrl;
 let wsUrl;
+let sessionDataDir;
 
 function reservePort() {
   return new Promise((resolve, reject) => {
@@ -46,11 +49,17 @@ async function waitFor(check, timeoutMs = 2000) {
 
 before(async () => {
   const port = await reservePort();
+  sessionDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'overlay-session-test-'));
   baseUrl = `http://127.0.0.1:${port}`;
   wsUrl = `ws://127.0.0.1:${port}`;
   child = spawn(process.execPath, ['server.js'], {
     cwd: path.resolve(__dirname, '..'),
-    env: { ...process.env, PORT: String(port), ATEM_PNG_EXPORT: '0' },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      ATEM_PNG_EXPORT: '0',
+      SESSION_DATA_DIR: sessionDataDir,
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let output = '';
@@ -60,9 +69,13 @@ before(async () => {
 });
 
 after(async () => {
-  if (!child || child.exitCode != null) return;
-  child.kill('SIGINT');
-  await new Promise((resolve) => child.once('exit', resolve));
+  if (child && child.exitCode == null) {
+    child.kill('SIGINT');
+    await new Promise((resolve) => child.once('exit', resolve));
+  }
+  if (sessionDataDir && sessionDataDir.startsWith(os.tmpdir())) {
+    fs.rmSync(sessionDataDir, { recursive: true, force: true });
+  }
 });
 
 test('serves only public application assets', async () => {
@@ -103,6 +116,84 @@ test('isolates WebSocket roles and does not replay cleared graphics', async () =
 
   lateOutput.socket.close();
   control.socket.close();
+});
+
+test('persists session settings and synchronizes all controls in the room', async () => {
+  const first = await connectWebSocket(`${wsUrl}/?session=saved-session&role=control`);
+  await waitFor(() => first.messages.some((message) => message.action === 'settings-required'));
+
+  first.socket.send(JSON.stringify({
+    action: 'session-settings-save',
+    initializeOnly: true,
+    settings: { style: 'gradient', accentColor: '#112233' },
+    sessionSettings: {
+      version: 1,
+      overlayModeSettings: { bible: { style: 'gradient' }, speaker: { style: 'solid' }, custom: { style: 'minimal' } },
+      presets: { overlay: [{ id: 'reference-1', mode: 'bible', label: 'John 3:16' }], ticker: [] },
+    },
+  }));
+
+  const second = await connectWebSocket(`${wsUrl}/?session=saved-session&role=control`);
+  const initial = await waitFor(() => second.messages.find((message) => message.action === 'session-settings'));
+  assert.equal(initial.settings.accentColor, '#112233');
+  assert.equal(initial.sessionSettings.overlayModeSettings.speaker.style, 'solid');
+  assert.equal(initial.sessionSettings.presets.overlay[0].label, 'John 3:16');
+
+  first.socket.send(JSON.stringify({
+    action: 'session-presets-save',
+    requestId: 'preset-save-1',
+    presets: { overlay: [{ id: 'speaker-1', mode: 'speaker', label: 'Guest speaker' }], ticker: [] },
+  }));
+  const presetAcknowledgement = await waitFor(() => first.messages.find(
+    (message) => message.action === 'session-save-ack' && message.requestId === 'preset-save-1'
+  ));
+  assert.equal(presetAcknowledgement.ok, true);
+  assert.ok(presetAcknowledgement.updatedAt > 0);
+  await waitFor(() => second.messages.find(
+    (message) => message.action === 'session-settings'
+      && message.sessionSettings?.presets?.overlay?.[0]?.label === 'Guest speaker'
+  ));
+
+  first.socket.send(JSON.stringify({
+    action: 'session-presets-save',
+    requestId: 'invalid-preset-save',
+    presets: { overlay: 'invalid', ticker: [] },
+  }));
+  const rejected = await waitFor(() => first.messages.find(
+    (message) => message.action === 'session-save-ack' && message.requestId === 'invalid-preset-save'
+  ));
+  assert.equal(rejected.ok, false);
+
+  second.socket.send(JSON.stringify({
+    action: 'session-settings-save',
+    requestId: 'settings-save-2',
+    settings: { style: 'frosted', accentColor: '#abcdef' },
+    sessionSettings: {
+      version: 1,
+      overlayModeSettings: { bible: { style: 'frosted' }, speaker: { style: 'solid' }, custom: { style: 'minimal' } },
+      presets: { overlay: [{ id: 'speaker-1', mode: 'speaker', label: 'Guest speaker' }], ticker: [] },
+    },
+  }));
+  const acknowledged = await waitFor(() => second.messages.find(
+    (message) => message.action === 'session-save-ack' && message.requestId === 'settings-save-2'
+  ));
+  assert.equal(acknowledged.ok, true);
+  const reflected = await waitFor(() => first.messages.find(
+    (message) => message.action === 'session-settings' && message.settings?.accentColor === '#abcdef'
+  ));
+  assert.equal(reflected.settings.style, 'frosted');
+
+  first.socket.close();
+  second.socket.close();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  const restored = await fetch(`${baseUrl}/api/state?session=saved-session`).then((response) => response.json());
+  assert.equal(restored.settings.style, 'frosted');
+  assert.equal(restored.settings.accentColor, '#abcdef');
+  assert.equal(restored.sessionSettings.overlayModeSettings.bible.style, 'frosted');
+  assert.equal(restored.sessionSettings.presets.overlay[0].label, 'Guest speaker');
+  assert.ok(restored.settingsUpdatedAt > 0);
+  assert.equal(fs.existsSync(path.join(sessionDataDir, 'saved-session.json')), true);
 });
 
 test('rejects invalid WebSocket connection parameters', async () => {

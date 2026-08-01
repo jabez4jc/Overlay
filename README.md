@@ -47,6 +47,9 @@ Keyboard shortcuts:
 - Control and Output must share session ID.
 - You can run multiple sessions from one server at the same time.
 - You can set a custom session at load time (URL/session switcher).
+- Appearance and output settings are stored atomically on the server per session and restored when that session is opened again.
+- Connected control panels receive saved-setting changes immediately over the existing WebSocket room. The latest committed change wins.
+- Existing browser-only settings initialize a session automatically the first time it is opened on a server with no saved snapshot.
 
 ## Mode Workflows
 
@@ -87,9 +90,11 @@ Recommended runbook:
 
 ### Control UI Design System
 
-The operator interface adopts the **Nocturne** direction from `Design/Overlay Design System Template`: its dark compact palette, Inter typography, 8px radius, accent focus rings, neutral surface hierarchy, framed console shell, shortcut rail, segmented mode navigation, PVW/PGM tally treatment, safe-area guides, section kickers, outlined take controls, preset cards, and layered settings surfaces are mapped onto the existing application structure in `css/control.css`. This keeps the interface comfortable in dim production environments while preserving its established workflows and functional hooks.
+The operator interface includes both the **Nocturne** and **Modernist** directions from `Design/Overlay Design System Template`. Nocturne provides the dark compact palette, Inter typography, soft radii, and layered surfaces suited to dim production environments. Modernist provides Archivo typography, high-contrast editorial rules, square geometry, pale surfaces, and a vivid red accent. The header theme switch saves the operator's preference locally and synchronizes it across open control tabs.
 
-The control design system is intentionally separate from the rendered output. Lower thirds, ticker themes, saved settings, logos, and custom templates retain their own broadcast colors and typography, so control-panel design changes do not alter an on-air composition.
+Lower-third styles use the template's visual gallery pattern: numbered preview cards, a clear selected state, responsive columns, and arrow-key navigation. Each card is a miniature render using the same lower-third markup and style rules as PVW, PGM, and Output, including the current accent, background, opacity, and direction. The gallery retains the original style identifiers internally, keeping saved presets and output rendering backward compatible.
+
+The control design system is intentionally separate from the rendered output. Lower thirds, ticker themes, saved settings, and logos retain their own broadcast colors and typography, so control-panel design changes do not alter an on-air composition.
 
 ### Lower Third Styles
 
@@ -108,31 +113,29 @@ Each line (Line 1 / Line 2) supports:
 - Stroke (toggle + color + width)
 - Drop shadow (toggle + direction/depth/blur/opacity/color)
 
-### Custom Template and Assets
+### Assets
 
-- `Custom HTML Template` can fully override built-in styles.
-- Custom templates are trusted operator-authored content. Import templates only from sources you trust.
-- Supported variables: `{{line1}}`, `{{line2}}`, `{{accentColor}}`, `{{font}}`, `{{line1Font}}`, `{{line2Font}}`, `{{logoUrl}}`.
 - `Logo` supports PNG logos with transparency for lower thirds and the standalone output logo.
 
-## Presets and Settings Profiles
+## Presets and Session Transfer
 
 ### Presets
 
 - Reference presets
 - Speaker presets
 - Ticker presets
-- Template presets
 
-### Settings Profiles
+Presets are stored in the server-side session snapshot and synchronize to every connected control using that session ID. Existing browser-only presets are used to initialize a session when the server has no saved snapshot yet.
 
-Global Save/Load/Export/Import for:
-- Visual settings
-- Layout options
-- Mode defaults
-- Presets bundle
+### Session Transfer
 
-Use profiles for rapid show setup reuse across sessions/devices.
+The current session ID is its saved server-side profile; no separate Save or Load action is required. To reuse a complete setup under another session ID:
+
+1. Open the source session and choose **Download Session Setup**.
+2. Open a different target session ID.
+3. Choose **Import Setup Here** and select the exported JSON file.
+
+An export cannot be imported back into the same session ID because that session already owns the configuration.
 
 ## Output Setup
 
@@ -222,10 +225,11 @@ Why Dockerfile mode:
 Coolify settings:
 1. Expose port `3333`.
 2. Add domain (for example `overlay.simplifyed.in`).
-3. Keep persistent storage optional (not required for operation).
+3. Mount persistent storage at `/app/data/sessions` if session settings must survive container replacement or redeployment.
 4. Optional env vars:
    - `ATEM_PNG_MODE=premultiplied`
    - `ATEM_PNG_SESSIONS=<comma-separated-session-ids>` if you want pre-pinned sessions.
+   - `SESSION_DATA_DIR=/app/data/sessions` to use a different server settings directory.
 
 If you still prefer Nixpacks:
 - Keep install command as `npm ci` (do not use `--ignore-scripts`).
@@ -239,7 +243,7 @@ If you still prefer Nixpacks:
   - Confirm active WebSocket connection.
 - PVW/PGM vs Output mismatch:
   - Verify mode and active cut state.
-  - Confirm custom template is not overriding expected style.
+  - Confirm the same overlay style and appearance settings are selected.
 - ATEM PNG mismatch:
   - Regenerate export.
   - Compare `?alpha=straight` vs `?alpha=premultiplied`.

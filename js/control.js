@@ -4,6 +4,141 @@
 
 'use strict';
 
+// ── Control theme ────────────────────────────────────────────────────────────
+// This preference only changes the operator interface. It is deliberately kept
+// out of session state so it never affects an output window or on-air graphics.
+const CONTROL_THEME_KEY = 'overlayControlTheme';
+const CONTROL_THEMES = new Set(['nocturne', 'modernist']);
+
+function normaliseControlTheme(theme) {
+  return CONTROL_THEMES.has(theme) ? theme : 'nocturne';
+}
+
+function applyControlTheme(theme, { persist = true } = {}) {
+  const selectedTheme = normaliseControlTheme(theme);
+  document.documentElement.dataset.controlTheme = selectedTheme;
+
+  if (persist) {
+    try { localStorage.setItem(CONTROL_THEME_KEY, selectedTheme); } catch (_) {}
+  }
+
+  const nextTheme = selectedTheme === 'nocturne' ? 'Modernist' : 'Nocturne';
+  const button = document.getElementById('btn-theme-toggle');
+  if (button) {
+    button.setAttribute('aria-label', `Switch to ${nextTheme} theme`);
+    button.title = `Switch to ${nextTheme} theme`;
+  }
+}
+
+function toggleControlTheme() {
+  const currentTheme = normaliseControlTheme(document.documentElement.dataset.controlTheme);
+  applyControlTheme(currentTheme === 'nocturne' ? 'modernist' : 'nocturne');
+}
+
+function initControlTheme() {
+  let savedTheme = document.documentElement.dataset.controlTheme;
+  try { savedTheme = localStorage.getItem(CONTROL_THEME_KEY) || savedTheme; } catch (_) {}
+  applyControlTheme(savedTheme, { persist: false });
+}
+
+const OVERLAY_STYLE_OPTIONS = [
+  ['classic', 'Broadcast bar'],
+  ['accent', 'Accent line'],
+  ['minimal', 'Minimal'],
+  ['outline', 'Outline'],
+  ['gradient', 'Gradient fade'],
+  ['scripture', 'Scripture wrap'],
+  ['scripture-panel', 'Scripture panel'],
+  ['solid', 'Accent fill'],
+  ['split', 'Split lines'],
+  ['frosted', 'Frosted glass'],
+  ['inline-duo', 'Inline duo'],
+  ['inline-chip', 'Inline chip'],
+  ['inline-glass', 'Inline glass'],
+];
+
+function syncOverlayStylePicker() {
+  const picker = document.getElementById('overlay-style-picker');
+  const select = document.getElementById('style-select');
+  if (!picker || !select) return;
+
+  picker.style.setProperty('--style-picker-accent', document.getElementById('accent-color')?.value || '#C8A951');
+  picker.querySelectorAll('[data-overlay-style]').forEach((button) => {
+    const selected = button.dataset.overlayStyle === select.value;
+    button.classList.toggle('selected', selected);
+    button.setAttribute('aria-checked', String(selected));
+    button.tabIndex = selected ? 0 : -1;
+
+    const style = button.dataset.overlayStyle;
+    const render = button.querySelector('.overlay-style-render');
+    const text = button.querySelector('.lt-text');
+    const accent = document.getElementById('accent-color')?.value || '#C8A951';
+    const direction = document.getElementById('lt-bg-direction')?.value || 'ltr';
+    if (render && text) {
+      render.style.setProperty('--accent', accent);
+      render.style.setProperty('--accent-color', accent);
+      render.classList.toggle('dir-rtl', DIRECTIONAL_LOWER_THIRD_STYLES.has(style) && direction === 'rtl');
+      render.classList.toggle('dir-ltr', !DIRECTIONAL_LOWER_THIRD_STYLES.has(style) || direction !== 'rtl');
+      render.querySelector('.lt-accent')?.style.setProperty('background', accent);
+      applyStyleAwareLowerThirdBackground(text, {
+        style,
+        ltBgColor: document.getElementById('lt-bg-color')?.value || '#000000',
+        ltBgOpacity: document.getElementById('lt-bg-opacity')?.value || '0.88',
+        lowerThirdDirection: direction,
+      });
+    }
+  });
+}
+
+function selectOverlayStyle(style, { focus = false } = {}) {
+  const select = document.getElementById('style-select');
+  if (!select || !OVERLAY_STYLE_OPTIONS.some(([value]) => value === style)) return;
+  select.value = style;
+  syncOverlayStylePicker();
+  if (focus) document.querySelector(`[data-overlay-style="${style}"]`)?.focus();
+  onSettingsChange();
+}
+
+function initOverlayStylePicker() {
+  const picker = document.getElementById('overlay-style-picker');
+  if (!picker || picker.childElementCount) return;
+
+  OVERLAY_STYLE_OPTIONS.forEach(([value, label], index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'overlay-style-card';
+    button.dataset.overlayStyle = value;
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-label', label);
+    const isScripture = value === 'scripture' || value === 'scripture-panel';
+    button.innerHTML = `<span class="overlay-style-thumb" aria-hidden="true"><span class="overlay-style-render lower-third style-${value}"><span class="lt-accent"></span><span class="lt-text"><span class="lt-line1">${isScripture ? 'John 3:16' : 'Title'}</span><span class="lt-line2">${isScripture ? 'For God so loved…' : 'Subtitle'}</span></span></span></span><span class="overlay-style-name"><b>${String(index + 1).padStart(2, '0')}</b>${label}</span>`;
+    button.addEventListener('click', () => selectOverlayStyle(value));
+    picker.appendChild(button);
+  });
+
+  picker.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const currentIndex = Math.max(0, OVERLAY_STYLE_OPTIONS.findIndex(([value]) => value === document.getElementById('style-select')?.value));
+    const columns = Math.max(1, Math.round(picker.clientWidth / picker.querySelector('.overlay-style-card').clientWidth));
+    let nextIndex = currentIndex;
+    if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = OVERLAY_STYLE_OPTIONS.length - 1;
+    else if (event.key === 'ArrowLeft') nextIndex = currentIndex - 1;
+    else if (event.key === 'ArrowRight') nextIndex = currentIndex + 1;
+    else if (event.key === 'ArrowUp') nextIndex = currentIndex - columns;
+    else if (event.key === 'ArrowDown') nextIndex = currentIndex + columns;
+    nextIndex = Math.max(0, Math.min(OVERLAY_STYLE_OPTIONS.length - 1, nextIndex));
+    selectOverlayStyle(OVERLAY_STYLE_OPTIONS[nextIndex][0], { focus: true });
+  });
+
+  syncOverlayStylePicker();
+}
+
+window.addEventListener('storage', (event) => {
+  if (event.key === CONTROL_THEME_KEY) applyControlTheme(event.newValue, { persist: false });
+});
+
 // ── Session ID ────────────────────────────────────────────────────────────────
 // Each browser tab gets its own session ID so multiple operators can run
 // independent control panels with isolated output windows simultaneously.
@@ -125,7 +260,6 @@ let referenceOnlyLookup = false;  // true when text is ASV reference, not for ou
 let overlayPresets = [];
 let tickerPresets  = [];
 let templatePresets = [];
-let settingsProfiles = [];
 let overlayModeSettings = { bible: null, speaker: null, custom: null };
 let defaultOverlayModeSettings = null;
 let activeOverlaySettingsMode = 'bible';
@@ -153,6 +287,7 @@ function configureSessionKeys(sessionId) {
 
 // WebSocket client — only active when served via http:// (server.js mode)
 let ws      = null;
+const pendingSessionSaves = new Map();
 let controlStatePollTimer = null;
 let lastControlStateUpdatedAt = 0;
 let lastRemoteSettingsSignature = '';
@@ -220,6 +355,8 @@ let modalReturnFocus = null;
 
 // ── Initialise ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  initControlTheme();
+  initOverlayStylePicker();
   const sessionId = await getOrCreateSessionId();
   configureSessionKeys(sessionId);
 
@@ -234,7 +371,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadSettings();
   syncBookNameDisplayOption();
   loadPresets();
-  loadSettingsProfiles();
   updatePreview();
   bindKeyboard();
   initWebSocket();
@@ -243,6 +379,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Display short session ID in the header badge
   const sessionBadge = document.getElementById('session-id-text');
   if (sessionBadge) sessionBadge.textContent = '#' + SESSION_ID;
+  const settingsSessionId = document.getElementById('settings-session-id');
+  if (settingsSessionId) settingsSessionId.textContent = '#' + SESSION_ID;
 
   // Populate the Browser Source URL in the settings panel
   const bsiUrl = document.getElementById('bsi-url');
@@ -1006,6 +1144,7 @@ function applyModeDependentSettingsToUi(mode) {
   onLine2MaxLinesInput();
   updateLowerThirdDirectionState();
   updateTextEffectLabels();
+  syncOverlayStylePicker();
 }
 
 function updateCutToAirButtonState() {
@@ -2232,19 +2371,24 @@ function updatePreview() {
 }
 
 // ── Presets ───────────────────────────────────────────────────────────────────
-// Preset storage uses global keys (no session ID) so presets are shared across
-// all sessions on the same browser. Use Export / Import to move between devices.
+// Browser storage is a local fallback/cache; the authoritative preset arrays
+// live in the server's per-session settings snapshot.
 const PRESET_KEY_OVERLAY = 'overlayPresets';
 const PRESET_KEY_TICKER  = 'tickerPresets';
 const PRESET_KEY_TEMPLATE = 'templatePresets';
-const SETTINGS_PROFILE_KEY = 'overlaySettingsProfiles';
+
+function getSessionPresetKey(baseKey) {
+  return `${baseKey}-${SESSION_ID}`;
+}
 
 function loadPresets() {
   try {
-    overlayPresets = JSON.parse(localStorage.getItem(PRESET_KEY_OVERLAY) || '[]');
+    const stored = localStorage.getItem(getSessionPresetKey(PRESET_KEY_OVERLAY));
+    overlayPresets = JSON.parse(stored ?? localStorage.getItem(PRESET_KEY_OVERLAY) ?? '[]');
   } catch (_) { overlayPresets = []; }
   try {
-    tickerPresets  = JSON.parse(localStorage.getItem(PRESET_KEY_TICKER)  || '[]');
+    const stored = localStorage.getItem(getSessionPresetKey(PRESET_KEY_TICKER));
+    tickerPresets = JSON.parse(stored ?? localStorage.getItem(PRESET_KEY_TICKER) ?? '[]');
   } catch (_) { tickerPresets  = []; }
   try {
     templatePresets = JSON.parse(localStorage.getItem(PRESET_KEY_TEMPLATE) || '[]');
@@ -2253,16 +2397,69 @@ function loadPresets() {
   renderTemplatePresets();
 }
 
-function loadSettingsProfiles() {
-  try {
-    settingsProfiles = JSON.parse(localStorage.getItem(SETTINGS_PROFILE_KEY) || '[]');
-  } catch (_) {
-    settingsProfiles = [];
-  }
-  renderSettingsProfiles();
+function showPresetNameModal(suggested, mode) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('preset-modal');
+    const input = document.getElementById('preset-modal-input');
+    const saveButton = document.getElementById('preset-modal-save');
+    const cancelButton = document.getElementById('preset-modal-cancel');
+    const backdrop = document.getElementById('preset-modal-backdrop');
+    const help = document.getElementById('preset-modal-help');
+    const error = document.getElementById('preset-modal-error');
+    if (!modal || !input || !saveButton || !cancelButton || !backdrop || !error) {
+      resolve(null);
+      return;
+    }
+
+    const returnFocus = document.activeElement;
+    input.value = suggested || '';
+    error.textContent = '';
+    if (help) help.textContent = `Save the current ${mode} content for quick recall.`;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+
+    const close = (value) => {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      saveButton.removeEventListener('click', onSave);
+      cancelButton.removeEventListener('click', onCancel);
+      backdrop.removeEventListener('click', onCancel);
+      input.removeEventListener('keydown', onKeyDown);
+      if (returnFocus instanceof HTMLElement) returnFocus.focus();
+      resolve(value);
+    };
+    const onSave = () => {
+      const value = input.value.trim();
+      if (!value) {
+        error.textContent = 'Enter a name for this preset.';
+        input.focus();
+        return;
+      }
+      close(value);
+    };
+    const onCancel = () => close(null);
+    const onKeyDown = (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        onSave();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        onCancel();
+      }
+    };
+
+    saveButton.addEventListener('click', onSave);
+    cancelButton.addEventListener('click', onCancel);
+    backdrop.addEventListener('click', onCancel);
+    input.addEventListener('keydown', onKeyDown);
+    requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  });
 }
 
-function saveCurrentPreset() {
+async function saveCurrentPreset() {
   let defaultLabel = '';
   if (currentMode === 'bible') {
     const book  = document.getElementById('book').value;
@@ -2283,12 +2480,13 @@ function saveCurrentPreset() {
     defaultLabel = msg.slice(0, 40) + (msg.length > 40 ? '...' : '');
   }
 
-  const label = prompt('Preset name:', defaultLabel);
-  if (label === null || !label.trim()) return;
+  const modeLabel = currentMode === 'bible' ? 'reference' : currentMode;
+  const label = await showPresetNameModal(defaultLabel, modeLabel);
+  if (!label) return;
 
   const preset = {
     id:    Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
-    label: label.trim(),
+    label,
     mode:  currentMode,
     data:  currentMode === 'bible'
       ? { book:        document.getElementById('book').value,
@@ -2326,6 +2524,14 @@ function saveCurrentPreset() {
   }
   savePresetsToStorage();
   renderPresets();
+  setPresetSaveStatus('Saving to server…', 'saving');
+  try {
+    await savePresetsOnServer();
+    setPresetSaveStatus('Saved on server.', 'saved');
+  } catch (err) {
+    console.error('Could not save preset on the server:', err);
+    setPresetSaveStatus(`Server save failed: ${err.message}`, 'error');
+  }
 }
 
 function loadPreset(id) {
@@ -2398,7 +2604,7 @@ function loadPreset(id) {
   updatePreview();
 }
 
-function deletePreset(id) {
+async function deletePreset(id) {
   if (currentMode === 'ticker') {
     tickerPresets  = tickerPresets.filter(p => p.id !== id);
   } else {
@@ -2406,12 +2612,117 @@ function deletePreset(id) {
   }
   savePresetsToStorage();
   renderPresets();
+  setPresetSaveStatus('Saving to server…', 'saving');
+  try {
+    await savePresetsOnServer();
+    setPresetSaveStatus('Saved on server.', 'saved');
+  } catch (err) {
+    console.error('Could not delete preset on the server:', err);
+    setPresetSaveStatus(`Server save failed: ${err.message}`, 'error');
+  }
 }
 
 function savePresetsToStorage() {
-  try { localStorage.setItem(PRESET_KEY_OVERLAY, JSON.stringify(overlayPresets)); } catch (_) {}
-  try { localStorage.setItem(PRESET_KEY_TICKER,  JSON.stringify(tickerPresets));  } catch (_) {}
+  try { localStorage.setItem(getSessionPresetKey(PRESET_KEY_OVERLAY), JSON.stringify(overlayPresets)); } catch (_) {}
+  try { localStorage.setItem(getSessionPresetKey(PRESET_KEY_TICKER), JSON.stringify(tickerPresets)); } catch (_) {}
   try { localStorage.setItem(PRESET_KEY_TEMPLATE, JSON.stringify(templatePresets)); } catch (_) {}
+}
+
+function setPresetSaveStatus(message, state = '') {
+  const status = document.getElementById('preset-save-status');
+  if (!status) return;
+  status.textContent = message;
+  status.dataset.state = state;
+}
+
+async function savePresetsOnServer() {
+  if (location.protocol === 'file:') {
+    throw new Error('open this control through the Overlay server');
+  }
+  await waitForWebSocketConnection();
+  const settings = getSettings();
+  const sessionSettings = buildSessionSettingsSnapshot(settings);
+  try {
+    return await sendAcknowledgedSessionSave({
+      action: 'session-settings-save',
+      settings,
+      sessionSettings,
+    }, 2500);
+  } catch (err) {
+    // Servers released before save acknowledgements still persist this action.
+    // Read the authoritative state back before deciding that the save failed.
+    const verified = await verifyPresetsOnServer(sessionSettings.presets, 8000);
+    if (verified) return { ok: true, message: 'Presets verified on server' };
+    throw new Error(err.message === 'the server did not acknowledge the save'
+      ? 'the server did not persist the presets'
+      : err.message);
+  }
+}
+
+async function verifyPresetsOnServer(expectedPresets, timeoutMs = 8000) {
+  const expected = JSON.stringify(expectedPresets);
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      const response = await fetch('/api/state?session=' + encodeURIComponent(SESSION_ID), {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      });
+      if (response.ok) {
+        const state = await response.json();
+        if (JSON.stringify(state.sessionSettings?.presets || null) === expected) return true;
+      }
+    } catch (_) {}
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return false;
+}
+
+function waitForWebSocketConnection(timeoutMs = 8000) {
+  if (ws && ws.readyState === WebSocket.OPEN) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        clearInterval(timer);
+        resolve();
+      } else if (Date.now() - startedAt >= timeoutMs) {
+        clearInterval(timer);
+        reject(new Error('WebSocket is not connected'));
+      }
+    }, 100);
+  });
+}
+
+function sendAcknowledgedSessionSave(message, timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      reject(new Error('WebSocket is not connected'));
+      return;
+    }
+    const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    const timer = setTimeout(() => {
+      pendingSessionSaves.delete(requestId);
+      reject(new Error('the server did not acknowledge the save'));
+    }, timeoutMs);
+    pendingSessionSaves.set(requestId, {
+      resolve: (ack) => {
+        clearTimeout(timer);
+        resolve(ack);
+      },
+      reject: (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    });
+    try {
+      ws.send(JSON.stringify({ ...message, requestId }));
+    } catch (err) {
+      clearTimeout(timer);
+      pendingSessionSaves.delete(requestId);
+      reject(err);
+    }
+  });
 }
 
 // ── Preset Export / Import ─────────────────────────────────────────────────────
@@ -2434,7 +2745,7 @@ function importPresets() {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
       try {
         const data = JSON.parse(ev.target.result);
         // Merge: add imported presets that don't already exist by id
@@ -2448,6 +2759,9 @@ function importPresets() {
         savePresetsToStorage();
         renderPresets();
         renderTemplatePresets();
+        setPresetSaveStatus('Saving to server…', 'saving');
+        await savePresetsOnServer();
+        setPresetSaveStatus('Imported presets saved on server.', 'saved');
         const countO = Array.isArray(data.overlayPresets) ? data.overlayPresets.length : 0;
         const countT = Array.isArray(data.tickerPresets)  ? data.tickerPresets.length  : 0;
         const countTpl = Array.isArray(data.templatePresets) ? data.templatePresets.length : 0;
@@ -2461,7 +2775,7 @@ function importPresets() {
   input.click();
 }
 
-// ── Settings Profiles (global, reusable across sessions) ─────────────────────
+// ── Session configuration transfer ───────────────────────────────────────────
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -2505,76 +2819,6 @@ function buildSessionControlState() {
       textColorOverride: document.getElementById('ticker-text-color-override')?.value || '#ffffff',
     },
   };
-}
-
-function buildSettingsProfilePayload() {
-  return {
-    settings: getSettings(),
-    overlayModeSettings: cloneJson(overlayModeSettings),
-    controlState: buildSessionControlState(),
-    overlayPresets: cloneJson(overlayPresets),
-    tickerPresets: cloneJson(tickerPresets),
-    templatePresets: cloneJson(templatePresets),
-    exportedAt: Date.now(),
-  };
-}
-
-function saveSettingsProfilesToStorage() {
-  try {
-    localStorage.setItem(SETTINGS_PROFILE_KEY, JSON.stringify(settingsProfiles));
-  } catch (_) {}
-}
-
-function renderSettingsProfiles() {
-  const sel = document.getElementById('settings-profile-select');
-  if (!sel) return;
-  const previous = sel.value;
-  sel.innerHTML = '';
-  const empty = document.createElement('option');
-  empty.value = '';
-  empty.textContent = settingsProfiles.length ? 'Select a profile...' : 'No settings profiles yet';
-  sel.appendChild(empty);
-  settingsProfiles.forEach(profile => {
-    const opt = document.createElement('option');
-    opt.value = profile.id;
-    opt.textContent = profile.label || 'Unnamed profile';
-    sel.appendChild(opt);
-  });
-  if (previous && settingsProfiles.some(p => p.id === previous)) {
-    sel.value = previous;
-  } else {
-    sel.value = '';
-  }
-}
-
-function saveSettingsProfile() {
-  const defaultName = `Session Profile ${new Date().toLocaleString()}`;
-  const label = prompt('Settings profile name:', defaultName);
-  if (label === null || !label.trim()) return;
-
-  const payload = buildSettingsProfilePayload();
-  const existing = settingsProfiles.find(p => p.label.toLowerCase() === label.trim().toLowerCase());
-  let savedId = '';
-  if (existing) {
-    existing.payload = payload;
-    existing.updatedAt = Date.now();
-    savedId = existing.id;
-  } else {
-    const newProfile = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      label: label.trim(),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      payload,
-    };
-    settingsProfiles.push(newProfile);
-    savedId = newProfile.id;
-  }
-  settingsProfiles.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-  saveSettingsProfilesToStorage();
-  renderSettingsProfiles();
-  const sel = document.getElementById('settings-profile-select');
-  if (sel && savedId) sel.value = savedId;
 }
 
 function applyProfileSettingsToSession(profileSettings) {
@@ -2696,56 +2940,33 @@ function applyProfileControlState(controlState) {
   setMode(controlState.mode || 'bible');
 }
 
-function loadSelectedSettingsProfile() {
-  const sel = document.getElementById('settings-profile-select');
-  if (!sel || !sel.value) return;
-  const profile = settingsProfiles.find(p => p.id === sel.value);
-  if (!profile || !profile.payload) return;
+function exportSessionProfile() {
+  const settings = getSettings();
+  const sessionSnapshot = buildSessionSettingsSnapshot(settings);
+  const profile = {
+    format: 'overlay-session-profile',
+    version: 1,
+    sourceSessionId: SESSION_ID,
+    exportedAt: new Date().toISOString(),
+    settings,
+    overlayModeSettings: sessionSnapshot.overlayModeSettings,
+    presets: sessionSnapshot.presets,
+    controlState: buildSessionControlState(),
+  };
+  persistSettings(settings);
+  commitSessionSettings(settings);
 
-  const payload = profile.payload;
-  if (payload.overlayModeSettings && typeof payload.overlayModeSettings === 'object') {
-    overlayModeSettings = {
-      bible: payload.overlayModeSettings.bible ? cloneJson(payload.overlayModeSettings.bible) : cloneJson(defaultOverlayModeSettings),
-      speaker: payload.overlayModeSettings.speaker ? cloneJson(payload.overlayModeSettings.speaker) : cloneJson(defaultOverlayModeSettings),
-      custom: payload.overlayModeSettings.custom ? cloneJson(payload.overlayModeSettings.custom) : cloneJson(defaultOverlayModeSettings),
-    };
-    try {
-      localStorage.setItem(OVERLAY_MODE_SETTINGS_KEY_PREFIX + SESSION_ID, JSON.stringify(overlayModeSettings));
-    } catch (_) {}
-  }
-  overlayPresets = Array.isArray(payload.overlayPresets) ? cloneJson(payload.overlayPresets) : [];
-  tickerPresets = Array.isArray(payload.tickerPresets) ? cloneJson(payload.tickerPresets) : [];
-  templatePresets = Array.isArray(payload.templatePresets) ? cloneJson(payload.templatePresets) : [];
-  savePresetsToStorage();
-  renderPresets();
-  renderTemplatePresets();
-
-  applyProfileSettingsToSession(payload.settings || {});
-  loadSettings();
-  applyProfileControlState(payload.controlState || {});
-  updatePreview();
-}
-
-function deleteSelectedSettingsProfile() {
-  const sel = document.getElementById('settings-profile-select');
-  if (!sel || !sel.value) return;
-  settingsProfiles = settingsProfiles.filter(p => p.id !== sel.value);
-  saveSettingsProfilesToStorage();
-  renderSettingsProfiles();
-}
-
-function exportSettingsProfiles() {
-  const payload = JSON.stringify({ settingsProfiles }, null, 2);
+  const payload = JSON.stringify(profile, null, 2);
   const blob = new Blob([payload], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'overlay-settings-profiles.json';
+  a.download = `overlay-session-${SESSION_ID}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-function importSettingsProfiles() {
+function importSessionProfile() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.json,application/json';
@@ -2755,23 +2976,44 @@ function importSettingsProfiles() {
     const reader = new FileReader();
     reader.onload = ev => {
       try {
-        const parsed = JSON.parse(ev.target.result);
-        let incoming = [];
-        if (Array.isArray(parsed?.settingsProfiles)) incoming = parsed.settingsProfiles;
-        else if (parsed?.payload) incoming = [parsed];
-        if (!incoming.length) throw new Error('No profiles');
+        const profile = JSON.parse(ev.target.result);
+        if (profile?.format !== 'overlay-session-profile' || profile?.version !== 1
+          || !profile.settings || typeof profile.settings !== 'object' || Array.isArray(profile.settings)
+          || !profile.sourceSessionId || sanitizeSessionId(profile.sourceSessionId) !== profile.sourceSessionId) {
+          throw new Error('Invalid session profile');
+        }
+        if (profile.sourceSessionId === SESSION_ID) {
+          alert(`This configuration already belongs to session #${SESSION_ID}. Open a different session ID before importing it.`);
+          return;
+        }
+        if (!confirm(`Copy the configuration from session #${profile.sourceSessionId} into session #${SESSION_ID}?\n\nThis replaces the saved settings for #${SESSION_ID}.`)) return;
 
-        const byId = new Map(settingsProfiles.map(p => [p.id, p]));
-        incoming.forEach(profile => {
-          if (!profile || !profile.id || !profile.payload) return;
-          byId.set(profile.id, profile);
-        });
-        settingsProfiles = Array.from(byId.values())
-          .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-        saveSettingsProfilesToStorage();
-        renderSettingsProfiles();
+        if (profile.overlayModeSettings && typeof profile.overlayModeSettings === 'object') {
+          const incomingModes = profile.overlayModeSettings;
+          overlayModeSettings = {
+            bible: incomingModes.bible ? cloneJson(incomingModes.bible) : cloneJson(defaultOverlayModeSettings),
+            speaker: incomingModes.speaker ? cloneJson(incomingModes.speaker) : cloneJson(defaultOverlayModeSettings),
+            custom: incomingModes.custom ? cloneJson(incomingModes.custom) : cloneJson(defaultOverlayModeSettings),
+          };
+          try {
+            localStorage.setItem(OVERLAY_MODE_SETTINGS_KEY_PREFIX + SESSION_ID, JSON.stringify(overlayModeSettings));
+          } catch (_) {}
+        }
+        if (profile.presets && typeof profile.presets === 'object') {
+          overlayPresets = Array.isArray(profile.presets.overlay) ? cloneJson(profile.presets.overlay) : [];
+          tickerPresets = Array.isArray(profile.presets.ticker) ? cloneJson(profile.presets.ticker) : [];
+          savePresetsToStorage();
+          renderPresets();
+        }
+
+        applyProfileSettingsToSession(profile.settings);
+        loadSettings();
+        applyProfileControlState(profile.controlState || {});
+        updatePreview();
+        onSettingsChange();
+        alert(`Session #${SESSION_ID} now uses the configuration exported from #${profile.sourceSessionId}.`);
       } catch (_) {
-        alert('Import failed — file does not appear to be a valid settings profile export.');
+        alert('Import failed — choose a valid Overlay session profile export.');
       }
     };
     reader.readAsText(file);
@@ -2815,10 +3057,10 @@ function renderPresets() {
   if (store.length === 0) {
     if (empty && !isTicker) {
       empty.textContent = isBible
-        ? 'No reference presets saved — click Save Current to add one'
+        ? 'No reference presets yet. Save the current reference for quick recall.'
         : isCustom
-        ? 'No custom presets saved — click Save Current to add one'
-        : 'No speaker presets saved — click Save Current to add one';
+        ? 'No custom presets yet. Save the current message for quick recall.'
+        : 'No speaker presets yet. Save the current speaker for quick recall.';
     }
     if (empty) empty.style.display = '';
     return;
@@ -2903,7 +3145,9 @@ function sendShow() {
 
   const data     = buildOverlayData();
   const settings = getSettings();
-  broadcast({ action: 'show', data, settings });
+  persistSettings(settings);
+  commitSessionSettings(settings);
+  broadcast(buildShowMessage(data, settings));
   programOverlayData     = data;
   programOverlaySettings = settings;
   programOverlayLive     = true;
@@ -3109,6 +3353,39 @@ function broadcast(msg) {
       ws.send(JSON.stringify(msg));
     } catch (_) {}
   }
+}
+
+function buildSessionSettingsSnapshot(settings = getSettings()) {
+  const modes = cloneJson(overlayModeSettings);
+  const activeMode = getOverlayStyleModeForEditing();
+  if (isOverlayMode(activeMode)) modes[activeMode] = pickModeDependentSettings(settings);
+  return {
+    version: 1,
+    overlayModeSettings: modes,
+    presets: {
+      overlay: cloneJson(overlayPresets),
+      ticker: cloneJson(tickerPresets),
+    },
+    savedAt: Date.now(),
+  };
+}
+
+function commitSessionSettings(settings = getSettings(), { initializeOnly = false } = {}) {
+  broadcast({
+    action: 'session-settings-save',
+    settings,
+    sessionSettings: buildSessionSettingsSnapshot(settings),
+    initializeOnly,
+  });
+}
+
+function buildShowMessage(data, settings = getSettings()) {
+  return {
+    action: 'show',
+    data,
+    settings,
+    sessionSettings: buildSessionSettingsSnapshot(settings),
+  };
 }
 
 // ── New Session ───────────────────────────────────────────────────────────────
@@ -3374,11 +3651,11 @@ function openOutputWindow() {
     updateOutputCount();
     win.addEventListener('load', () => {
       const s = getSettings();
-      broadcast({ action: 'settings', settings: s });
+      broadcast({ action: 'settings', settings: s, sessionSettings: buildSessionSettingsSnapshot(s) });
       if (overlayVisible) {
         // Rehydrate with the actual on-air overlay snapshot, not current edit-mode placeholder data.
         const liveOverlayData = programOverlayData || buildOverlayData();
-        setTimeout(() => broadcast({ action: 'show', data: liveOverlayData, settings: s }), 200);
+        setTimeout(() => broadcast(buildShowMessage(liveOverlayData, s)), 200);
       }
     });
   }
@@ -3416,6 +3693,8 @@ function initWebSocket() {
       requestAtemExportStatus();
     };
     ws.onclose   = () => {
+      pendingSessionSaves.forEach(({ reject }) => reject(new Error('WebSocket disconnected before the save completed')));
+      pendingSessionSaves.clear();
       ws = null;
       setWsIndicator('offline');
       setTimeout(initWebSocket, wsRetryDelay);
@@ -3442,13 +3721,36 @@ function setWsIndicator(state) {
   el.setAttribute('aria-label', labels[state] || 'WebSocket status unavailable');
 }
 
-function applyRemoteSettingsToUi(settings) {
+function applyRemoteSettingsToUi(settings, sessionSettings = null) {
   if (!settings || typeof settings !== 'object') return;
   settings = hydrateMediaSettings(settings);
   let signature = '';
-  try { signature = JSON.stringify(settings); } catch (_) { signature = ''; }
+  try { signature = JSON.stringify({ settings, sessionSettings }); } catch (_) { signature = ''; }
   if (signature && signature === lastRemoteSettingsSignature) return;
   if (signature) lastRemoteSettingsSignature = signature;
+
+  if (sessionSettings?.overlayModeSettings && typeof sessionSettings.overlayModeSettings === 'object') {
+    const incomingModes = sessionSettings.overlayModeSettings;
+    overlayModeSettings = {
+      bible: incomingModes.bible ? cloneJson(incomingModes.bible) : cloneJson(defaultOverlayModeSettings),
+      speaker: incomingModes.speaker ? cloneJson(incomingModes.speaker) : cloneJson(defaultOverlayModeSettings),
+      custom: incomingModes.custom ? cloneJson(incomingModes.custom) : cloneJson(defaultOverlayModeSettings),
+    };
+    try {
+      localStorage.setItem(OVERLAY_MODE_SETTINGS_KEY_PREFIX + SESSION_ID, JSON.stringify(overlayModeSettings));
+    } catch (_) {}
+  }
+
+  if (sessionSettings?.presets && typeof sessionSettings.presets === 'object') {
+    overlayPresets = Array.isArray(sessionSettings.presets.overlay)
+      ? cloneJson(sessionSettings.presets.overlay)
+      : [];
+    tickerPresets = Array.isArray(sessionSettings.presets.ticker)
+      ? cloneJson(sessionSettings.presets.ticker)
+      : [];
+    savePresetsToStorage();
+    renderPresets();
+  }
 
   const preserveMode = currentMode;
   applyProfileSettingsToSession(settings);
@@ -3462,14 +3764,21 @@ function applyRemoteLiveStateAction(msg) {
   if (!msg || !msg.action) return;
 
   if (msg.action === 'settings') {
-    applyRemoteSettingsToUi(msg.settings);
+    applyRemoteSettingsToUi(msg.settings, msg.sessionSettings);
+    if (Number(msg.updatedAt) > lastControlStateUpdatedAt) lastControlStateUpdatedAt = Number(msg.updatedAt);
+    return;
+  }
+
+  if (msg.action === 'session-settings') {
+    applyRemoteSettingsToUi(msg.settings, msg.sessionSettings);
+    if (Number(msg.updatedAt) > lastControlStateUpdatedAt) lastControlStateUpdatedAt = Number(msg.updatedAt);
     return;
   }
 
   if (msg.action === 'show') {
     if (msg.settings) {
       msg.settings = hydrateMediaSettings(msg.settings);
-      applyRemoteSettingsToUi(msg.settings);
+      applyRemoteSettingsToUi(msg.settings, msg.sessionSettings);
     }
     programOverlayData = msg.data || programOverlayData || buildOverlayData();
     programOverlaySettings = msg.settings || getSettings();
@@ -3507,9 +3816,29 @@ function applyRemoteLiveStateAction(msg) {
 function handleRemoteCommand(msg) {
   if (!msg || !msg.action) return;
 
+  if (msg.action === 'session-save-ack') {
+    const pending = pendingSessionSaves.get(msg.requestId);
+    if (!pending) return;
+    pendingSessionSaves.delete(msg.requestId);
+    if (msg.ok) {
+      if (Number(msg.updatedAt) > lastControlStateUpdatedAt) {
+        lastControlStateUpdatedAt = Number(msg.updatedAt);
+      }
+      pending.resolve(msg);
+    } else {
+      pending.reject(new Error(msg.message || 'the server rejected the save'));
+    }
+    return;
+  }
+
   if (msg.action === 'atem-export-config-ack') {
     const sessions = Array.isArray(msg.pinnedSessions) ? msg.pinnedSessions : [];
     updateAtemExportUiState(sessions.includes(SESSION_ID));
+    return;
+  }
+
+  if (msg.action === 'settings-required') {
+    commitSessionSettings(getSettings(), { initializeOnly: true });
     return;
   }
 
@@ -3529,7 +3858,12 @@ async function pollControlSessionState() {
     if (!Number.isFinite(updatedAt) || updatedAt <= lastControlStateUpdatedAt) return;
 
     if (state.settings) {
-      applyRemoteLiveStateAction({ action: 'settings', settings: state.settings });
+      applyRemoteLiveStateAction({
+        action: 'session-settings',
+        settings: state.settings,
+        sessionSettings: state.sessionSettings,
+        updatedAt: state.settingsUpdatedAt || updatedAt,
+      });
     }
     if (state.overlayVisible && state.show) {
       applyRemoteLiveStateAction({ action: 'show', data: state.show, settings: state.settings || getSettings() });
@@ -3637,17 +3971,19 @@ function getSettings() {
 }
 
 function onSettingsChange() {
+  syncOverlayStylePicker();
   updateLowerThirdDirectionState();
   updatePreview();
   const settings = getSettings();
+  persistSettings(settings);
+  commitSessionSettings(settings);
   if (!overlayVisible && !tickerActive) {
-    broadcast({ action: 'settings', settings });
+    broadcast({ action: 'settings', settings, sessionSettings: buildSessionSettingsSnapshot(settings) });
   } else if (overlayVisible && programOverlayData && programOverlayData.type === currentMode) {
     programOverlaySettings = settings;
     updateProgramMonitor();
-    broadcast({ action: 'settings', settings });
+    broadcast({ action: 'settings', settings, sessionSettings: buildSessionSettingsSnapshot(settings) });
   }
-  persistSettings(settings);
   // Toggle transparent-mode helper note
   const note = document.getElementById('chroma-transparent-note');
   if (note) note.style.display = (settings.chroma === 'transparent') ? '' : 'none';
@@ -3656,7 +3992,7 @@ function onSettingsChange() {
 function syncCurrentStateToOutputs() {
   const settings = getSettings();
   if (!overlayVisible && !tickerActive) {
-    broadcast({ action: 'settings', settings });
+    broadcast({ action: 'settings', settings, sessionSettings: buildSessionSettingsSnapshot(settings) });
   }
   if (tickerActive) {
     broadcast({ action: 'show-ticker', data: buildTickerData() });
@@ -3666,7 +4002,7 @@ function syncCurrentStateToOutputs() {
   if (overlayVisible) {
     // Keep output aligned to what is actually live in PGM.
     const liveOverlayData = programOverlayData || buildOverlayData();
-    broadcast({ action: 'show', data: liveOverlayData, settings });
+    broadcast(buildShowMessage(liveOverlayData, settings));
   } else {
     broadcast({ action: 'clear' });
   }
