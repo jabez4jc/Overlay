@@ -139,3 +139,13 @@ test('provides a responsive, task-based and accessible operator guide', () => {
   assert.match(css, /@media \(max-width: 560px\)/);
   assert.match(css, /modernist"\] \.guide-nav-item\.active/);
 });
+
+test('provides a keyboard shortcut for toggling settings', () => {
+  const html = read('index.html');
+  const js = read('js/control.js');
+
+  assert.match(html, /<kbd>,<\/kbd> settings/);
+  assert.match(html, /<kbd>,<\/kbd> Settings/);
+  assert.match(html, /Toggle settings panel \(,\)/);
+  assert.match(js, /case ',':\s+toggleSettingsPanel\(\);/);
+});

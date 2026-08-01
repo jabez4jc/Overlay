@@ -72,6 +72,7 @@
       <span><kbd>Esc</kbd> clear</span>
       <span><kbd>B S C T</kbd> modes</span>
       <span><kbd>O</kbd> output</span>
+      <span><kbd>,</kbd> settings</span>
     </div>
     <div class="header-right">
       <span id="status-pill" class="status-pill status-off" role="status" aria-live="polite">OFF AIR</span>
@@ -100,7 +101,7 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
-      <button class="btn-settings-toggle" id="btn-settings-toggle" onclick="toggleSettingsPanel()" title="Toggle settings panel" aria-expanded="false">
+      <button class="btn-settings-toggle" id="btn-settings-toggle" onclick="toggleSettingsPanel()" title="Toggle settings panel (,)" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
         <span class="btn-settings-label">Settings</span>
       </button>
@@ -503,7 +504,7 @@
 
     <!-- ── Keyboard Shortcut Hint ─────────────────────────────────────────── -->
     <div class="kbd-hint">
-      <kbd>Enter</kbd> Take to Air &nbsp;·&nbsp; <kbd>Esc</kbd> Clear &nbsp;·&nbsp; <kbd>B</kbd> Bible &nbsp;·&nbsp; <kbd>S</kbd> Speaker &nbsp;·&nbsp; <kbd>C</kbd> Custom &nbsp;·&nbsp; <kbd>T</kbd> Ticker
+      <kbd>Enter</kbd> Take to Air &nbsp;·&nbsp; <kbd>Esc</kbd> Clear &nbsp;·&nbsp; <kbd>B</kbd> Bible &nbsp;·&nbsp; <kbd>S</kbd> Speaker &nbsp;·&nbsp; <kbd>C</kbd> Custom &nbsp;·&nbsp; <kbd>T</kbd> Ticker &nbsp;·&nbsp; <kbd>,</kbd> Settings
     </div>
     <div class="app-attribution">
       Copyright © 2026
@@ -1310,7 +1311,7 @@
             <h3>Shortcuts and quick fixes</h3>
           </div>
           <div class="guide-shortcuts" aria-label="Keyboard shortcuts">
-            <span><kbd>Enter</kbd> Take to air</span><span><kbd>Esc</kbd> Clear</span><span><kbd>B</kbd> Bible</span><span><kbd>S</kbd> Speaker</span><span><kbd>C</kbd> Custom</span><span><kbd>T</kbd> Ticker</span><span><kbd>O</kbd> Output</span><span><kbd>H</kbd> Guide</span>
+            <span><kbd>Enter</kbd> Take to air</span><span><kbd>Esc</kbd> Clear</span><span><kbd>B</kbd> Bible</span><span><kbd>S</kbd> Speaker</span><span><kbd>C</kbd> Custom</span><span><kbd>T</kbd> Ticker</span><span><kbd>O</kbd> Output</span><span><kbd>,</kbd> Settings</span><span><kbd>H</kbd> Guide</span>
           </div>
           <div class="guide-troubleshooting">
             <details><summary>Controls are not syncing</summary><p>Confirm every device uses the same session ID and shows an active WebSocket connection. Reload the page after restoring the network.</p></details>

@@ -4573,6 +4573,7 @@ function bindKeyboard() {
       case 'c': case 'C': setMode('custom');                         break;
       case 't': case 'T': setMode('ticker');                         break;
       case 'o': case 'O': openOutputWindow();                        break;
+      case ',':           toggleSettingsPanel();                     break;
       case 'h': case 'H': openUserGuide();                           break;
     }
   });
