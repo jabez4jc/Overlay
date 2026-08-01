@@ -116,3 +116,26 @@ test('ports every nested settings control to the Modernist light theme', () => {
   assert.match(css, /modernist"\] \.session-save-note/);
   assert.doesNotMatch(css, /modernist"\] :is\(input, select, textarea\)/);
 });
+
+test('provides a responsive, task-based and accessible operator guide', () => {
+  const html = read('index.html');
+  const js = read('js/control.js');
+  const css = read('css/control.css');
+
+  assert.match(html, /aria-describedby="guide-summary"/);
+  assert.match(html, /class="guide-layout"/);
+  assert.match(html, /class="guide-nav" aria-label="User guide topics"/);
+  assert.match(html, /id="guide-start"/);
+  assert.match(html, /id="guide-air"/);
+  assert.match(html, /id="guide-sync"/);
+  assert.match(html, /id="guide-output"/);
+  assert.match(html, /saved automatically on the server and synchronized across controls/);
+  assert.match(html, /PVW[\s\S]*PGM[\s\S]*Output/);
+  assert.match(html, /Ticker is not included in ATEM PNG export/);
+  assert.doesNotMatch(html, /<h3>\d+\./);
+  assert.match(js, /function navigateUserGuide\(sectionId, trigger\)/);
+  assert.match(js, /prefers-reduced-motion: reduce/);
+  assert.match(css, /grid-template-columns: 210px minmax\(0, 1fr\)/);
+  assert.match(css, /@media \(max-width: 560px\)/);
+  assert.match(css, /modernist"\] \.guide-nav-item\.active/);
+});

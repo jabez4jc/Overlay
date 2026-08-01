@@ -3437,7 +3437,32 @@ function openUserGuide() {
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
+  const guideBody = modal.querySelector('.guide-body');
+  if (guideBody) guideBody.scrollTop = 0;
+  const navItems = modal.querySelectorAll('.guide-nav-item');
+  navItems.forEach((item, index) => {
+    item.classList.toggle('active', index === 0);
+    if (index === 0) item.setAttribute('aria-current', 'true');
+    else item.removeAttribute('aria-current');
+  });
   modal.querySelector('.guide-close')?.focus();
+}
+
+function navigateUserGuide(sectionId, trigger) {
+  const modal = document.getElementById('user-guide-modal');
+  const section = document.getElementById(sectionId);
+  if (!modal || !section) return;
+
+  modal.querySelectorAll('.guide-nav-item').forEach((item) => {
+    const selected = item === trigger;
+    item.classList.toggle('active', selected);
+    if (selected) item.setAttribute('aria-current', 'true');
+    else item.removeAttribute('aria-current');
+  });
+  section.scrollIntoView({
+    block: 'start',
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+  });
 }
 
 function closeUserGuide() {

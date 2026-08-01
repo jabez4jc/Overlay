@@ -1191,131 +1191,135 @@
 </div>
 
 <!-- ── In-App User Guide ─────────────────────────────────────────────── -->
-<div id="user-guide-modal" class="guide-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+<div id="user-guide-modal" class="guide-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guide-title" aria-describedby="guide-summary">
   <div class="guide-backdrop" onclick="closeUserGuide()"></div>
   <div class="guide-dialog" role="document">
     <div class="guide-header">
-      <h2 id="guide-title">Overlay User Guide</h2>
-      <button class="guide-close" onclick="closeUserGuide()" aria-label="Close guide">×</button>
+      <div class="guide-heading">
+        <span class="guide-eyebrow">Operator handbook</span>
+        <h2 id="guide-title">Run the show with confidence</h2>
+        <p id="guide-summary">A quick, task-based guide to preparing content and taking it to air.</p>
+      </div>
+      <button type="button" class="guide-close" onclick="closeUserGuide()" aria-label="Close user guide">×</button>
     </div>
-    <div class="guide-body">
-      <section class="guide-section">
-        <h3>1. Session Setup and Pairing</h3>
-        <ol>
-          <li>Open Control UI at <code>/</code>.</li>
-          <li>Open Output at <code>/output.html?session=&lt;id&gt;</code>.</li>
-          <li>Keep the same session ID in all windows/devices for that production lane.</li>
-          <li>Use one session per independent output pipeline.</li>
-        </ol>
-      </section>
+    <div class="guide-layout">
+      <nav class="guide-nav" aria-label="User guide topics">
+        <span class="guide-nav-label">Jump to</span>
+        <button type="button" class="guide-nav-item active" onclick="navigateUserGuide('guide-start', this)" aria-current="true"><span>01</span> Start here</button>
+        <button type="button" class="guide-nav-item" onclick="navigateUserGuide('guide-content', this)"><span>02</span> Build content</button>
+        <button type="button" class="guide-nav-item" onclick="navigateUserGuide('guide-air', this)"><span>03</span> Take to air</button>
+        <button type="button" class="guide-nav-item" onclick="navigateUserGuide('guide-style', this)"><span>04</span> Style safely</button>
+        <button type="button" class="guide-nav-item" onclick="navigateUserGuide('guide-sync', this)"><span>05</span> Presets &amp; sync</button>
+        <button type="button" class="guide-nav-item" onclick="navigateUserGuide('guide-output', this)"><span>06</span> Output setup</button>
+        <button type="button" class="guide-nav-item" onclick="navigateUserGuide('guide-help', this)"><span>07</span> Shortcuts &amp; fixes</button>
+      </nav>
 
-      <section class="guide-section">
-        <h3>2. Live Operation Runbook</h3>
-        <ol>
-          <li>Select mode: <code>Bible</code>, <code>Speaker</code>, <code>Custom</code>, or <code>Ticker</code>.</li>
-          <li>Build content and verify in <code>PVW</code>.</li>
-          <li>Choose a transition, then press the on-air button to push to <code>PGM</code> and Output.</li>
-          <li>Press <code>CLEAR</code> to remove active lower-third/ticker output.</li>
-        </ol>
-        <p>Always treat PVW as final QA before every cut.</p>
-      </section>
+      <div class="guide-body">
+        <section class="guide-section guide-hero" id="guide-start">
+          <div class="guide-section-heading">
+            <span class="guide-step-tag">Start here</span>
+            <h3>One session connects every screen</h3>
+            <p>Use the same session ID in Control, Output, and every operator browser. Use a different session ID for each independent production.</p>
+          </div>
+          <div class="guide-flow" aria-label="Live overlay workflow">
+            <div class="guide-flow-step"><span>1</span><strong>Choose</strong><small>content mode</small></div>
+            <i aria-hidden="true">→</i>
+            <div class="guide-flow-step"><span>2</span><strong>Check PVW</strong><small>proof before air</small></div>
+            <i aria-hidden="true">→</i>
+            <div class="guide-flow-step"><span>3</span><strong>Fade to air</strong><small>send to PGM</small></div>
+            <i aria-hidden="true">→</i>
+            <div class="guide-flow-step"><span>4</span><strong>Output</strong><small>browser or ATEM</small></div>
+          </div>
+          <div class="guide-callout guide-callout-success">
+            <strong>Ready check</strong>
+            <span>Confirm the connection indicator is online and the session IDs match before the event starts.</span>
+          </div>
+        </section>
 
-      <section class="guide-section">
-        <h3>3. Bible Mode (Recommended Flow)</h3>
-        <ol>
-          <li>Choose Book / Chapter / Verse(s).</li>
-          <li>Select translation and reference language.</li>
-          <li>Set line behavior:
-            <ul>
-              <li><code>Hide Translation (Line 2)</code></li>
-              <li><code>Translation Abbreviation on Line 1</code></li>
-            </ul>
-          </li>
-          <li>Optional: click <code>Look Up Text</code>.</li>
-          <li>Enable <code>Use verse text as line 2 in output</code> only when you want passage text on-air.</li>
-          <li>Check PVW and cut to air.</li>
-        </ol>
-      </section>
+        <section class="guide-section" id="guide-content">
+          <div class="guide-section-heading">
+            <span class="guide-step-tag">Prepare</span>
+            <h3>Build the right content</h3>
+            <p>Select a mode, enter the content, then use the preview as your final proofing screen.</p>
+          </div>
+          <div class="guide-card-grid">
+            <article class="guide-card"><span class="guide-card-icon">¶</span><h4>Bible Reference</h4><p>Choose the book, chapter, verses, translation, and reference language. Look Up Text is for verification; enable <strong>Use verse text as line 2</strong> only when needed on air.</p></article>
+            <article class="guide-card"><span class="guide-card-icon">Aa</span><h4>Speaker</h4><p>Use the speaker’s name as the primary line and their title or role as the optional second line.</p></article>
+            <article class="guide-card"><span class="guide-card-icon">✦</span><h4>Custom</h4><p>Enter free-form text and choose one or two lines. Keep each line short enough to read at a glance.</p></article>
+            <article class="guide-card"><span class="guide-card-icon">→</span><h4>Ticker</h4><p>Set the message, badge, speed, position, and colors. The ticker can run independently of the lower third.</p></article>
+          </div>
+        </section>
 
-      <section class="guide-section">
-        <h3>4. Speaker, Custom, and Ticker</h3>
-        <ul>
-          <li>Speaker: speaker name is primary; role/title is optional.</li>
-          <li>Custom: enter free text and choose the number of displayed lines.</li>
-          <li>Ticker: configure message, badge, style, speed, position, and colors.</li>
-          <li>Ticker can be run independently from lower-thirds.</li>
-        </ul>
-      </section>
+        <section class="guide-section" id="guide-air">
+          <div class="guide-section-heading">
+            <span class="guide-step-tag">Live operation</span>
+            <h3>Preview first. Then take it to air.</h3>
+          </div>
+          <div class="guide-two-column">
+            <div class="guide-definition"><span class="guide-monitor-badge preview">PVW</span><div><strong>Preview</strong><p>Your next overlay. Proof spelling, line breaks, style, and position here.</p></div></div>
+            <div class="guide-definition"><span class="guide-monitor-badge program">PGM</span><div><strong>Program</strong><p>What the audience is currently seeing through the connected output.</p></div></div>
+          </div>
+          <ol class="guide-checklist">
+            <li><span>1</span><div><strong>Proof PVW</strong><p>Check names, references, wrapping, and safe placement.</p></div></li>
+            <li><span>2</span><div><strong>Choose the transition</strong><p>Cut is immediate; Fade, Swipe, and Slide animate the change.</p></div></li>
+            <li><span>3</span><div><strong>Press FADE TO AIR</strong><p>The prepared overlay moves to PGM and the output.</p></div></li>
+            <li><span>4</span><div><strong>Press CLEAR when finished</strong><p>This removes the active lower third or ticker from the output.</p></div></li>
+          </ol>
+        </section>
 
-      <section class="guide-section">
-        <h3>5. Styles and Text Effects</h3>
-        <ul>
-          <li><code>Lower Third Style</code> controls layout family and base visual style.</li>
-          <li><code>Text Effects (Per Line)</code> controls line-specific font, weight, size, color, stroke, and drop shadow.</li>
-          <li>Use Line 2 multiline for long scripture passages.</li>
-        </ul>
-      </section>
+        <section class="guide-section" id="guide-style">
+          <div class="guide-section-heading">
+            <span class="guide-step-tag">Appearance</span>
+            <h3>Style once, verify everywhere</h3>
+            <p>Open Settings to choose an Overlay Style, adjust position and colors, then fine-tune each text line.</p>
+          </div>
+          <div class="guide-two-column">
+            <div class="guide-feature"><strong>Overlay Styles</strong><p>The visual gallery changes the lower-third layout and background treatment. Select a card and confirm it in both PVW and PGM.</p></div>
+            <div class="guide-feature"><strong>Text Effects</strong><p>Line 1 and Line 2 have independent font, weight, size, color, stroke, and shadow controls. Enable multiline for longer passages.</p></div>
+          </div>
+          <div class="guide-callout"><strong>Theme vs. output</strong><span>The sun/moon button changes the Control interface only. It does not alter the broadcast design.</span></div>
+        </section>
 
-      <section class="guide-section">
-        <h3>6. Presets and Session Transfer</h3>
-        <ul>
-          <li>Presets speed up content recall (Reference/Speaker/Custom/Ticker).</li>
-          <li>The current session configuration saves automatically on the server.</li>
-          <li>To copy the setup, export it from one session ID and import it into another.</li>
-        </ul>
-      </section>
+        <section class="guide-section" id="guide-sync">
+          <div class="guide-section-heading">
+            <span class="guide-step-tag">Saved for the team</span>
+            <h3>Settings and presets follow the session</h3>
+          </div>
+          <div class="guide-callout guide-callout-success"><strong>Automatic server save</strong><span>Settings are saved automatically on the server and synchronized across controls connected to the same session.</span></div>
+          <div class="guide-two-column">
+            <div class="guide-feature"><strong>Save Preset</strong><p>Saves reusable content for the current mode to this session. Wait for the saved confirmation before closing the page.</p></div>
+            <div class="guide-feature"><strong>Move to another session</strong><p>Download Session Setup from the source session, open a different destination session ID, then choose Import Setup Here.</p></div>
+          </div>
+          <p class="guide-note"><strong>Good to know:</strong> Importing into the same session is unnecessary. Connected controls receive server updates automatically.</p>
+        </section>
 
-      <section class="guide-section">
-        <h3>7. Output Setup: Browser Source</h3>
-        <ol>
-          <li>Open <code>Settings → Output Setup → Browser Source</code>.</li>
-          <li>Copy Output URL and add it as a browser source in OBS/vMix/Wirecast.</li>
-          <li>Match source resolution to selected output resolution.</li>
-          <li>For alpha pipelines use <code>Transparent</code> mode and enable transparency in the switcher software.</li>
-          <li>For chroma workflows use Blue/Green/Magenta/Custom and key that color downstream.</li>
-        </ol>
-      </section>
+        <section class="guide-section" id="guide-output">
+          <div class="guide-section-heading">
+            <span class="guide-step-tag">Delivery</span>
+            <h3>Choose the output your production needs</h3>
+          </div>
+          <div class="guide-output-grid">
+            <article class="guide-output-card"><span class="guide-output-label">Browser source</span><h4>OBS, vMix, Wirecast</h4><ol><li>Open <strong>Settings → Output Setup</strong>.</li><li>Copy the Output URL into a browser source.</li><li>Match its resolution to the selected output size.</li><li>Use Transparent for alpha, or select a chroma color to key downstream.</li></ol></article>
+            <article class="guide-output-card"><span class="guide-output-label">ATEM PNG</span><h4>Still-image workflow</h4><ol><li>Choose the ATEM PNG Export tab.</li><li>Include the current session and use the premultiplied PNG URL for production.</li><li>Use Regenerate when an immediate refresh is required.</li><li>Compare straight and premultiplied variants if edges look different.</li></ol><p class="guide-warning">Ticker is not included in ATEM PNG export.</p></article>
+          </div>
+        </section>
 
-      <section class="guide-section">
-        <h3>8. Output Setup: ATEM PNG Export</h3>
-        <ol>
-          <li>Open <code>Settings → Output Setup → ATEM PNG Export</code>.</li>
-          <li>Include/pin the current session for ATEM export.</li>
-          <li>Ticker is not included in ATEM PNG export.</li>
-          <li>Use session PNG endpoints:
-            <ul>
-              <li><code>/atem-live/&lt;session&gt;.png?alpha=premultiplied</code> for ATEM production use.</li>
-              <li><code>/atem-live/&lt;session&gt;.png?alpha=straight</code> for browser QA/comparison.</li>
-            </ul>
-          </li>
-          <li>Use <code>Regenerate</code> if immediate refresh is required.</li>
-          <li>If preview mismatch appears, compare straight and premultiplied outputs first.</li>
-        </ol>
-      </section>
-
-      <section class="guide-section">
-        <h3>9. Multi-Session Best Practices</h3>
-        <ul>
-          <li>Keep each operator/program lane on its own session ID.</li>
-          <li>Pin only sessions that must publish ATEM PNG outputs.</li>
-          <li>Avoid sharing one session across unrelated productions.</li>
-        </ul>
-      </section>
-
-      <section class="guide-section">
-        <h3>10. Keyboard and Fast Operations</h3>
-        <p><code>Enter</code> Take to air, <code>Esc</code> Clear, <code>B</code> Bible, <code>S</code> Speaker, <code>C</code> Custom, <code>T</code> Ticker, <code>O</code> Output Window, <code>H</code> User Guide.</p>
-      </section>
-
-      <section class="guide-section">
-        <h3>11. Troubleshooting</h3>
-        <ul>
-          <li>No live sync: verify matching session ID and active WebSocket connection.</li>
-          <li>Output differs from PVW/PGM: check active mode, cut state, and selected overlay style.</li>
-          <li>ATEM PNG differs from output: regenerate and compare straight vs premultiplied variants.</li>
-          <li>Layout issues on small screens: keep settings collapsed while operating live.</li>
-        </ul>
-      </section>
+        <section class="guide-section" id="guide-help">
+          <div class="guide-section-heading">
+            <span class="guide-step-tag">Keep moving</span>
+            <h3>Shortcuts and quick fixes</h3>
+          </div>
+          <div class="guide-shortcuts" aria-label="Keyboard shortcuts">
+            <span><kbd>Enter</kbd> Take to air</span><span><kbd>Esc</kbd> Clear</span><span><kbd>B</kbd> Bible</span><span><kbd>S</kbd> Speaker</span><span><kbd>C</kbd> Custom</span><span><kbd>T</kbd> Ticker</span><span><kbd>O</kbd> Output</span><span><kbd>H</kbd> Guide</span>
+          </div>
+          <div class="guide-troubleshooting">
+            <details><summary>Controls are not syncing</summary><p>Confirm every device uses the same session ID and shows an active WebSocket connection. Reload the page after restoring the network.</p></details>
+            <details><summary>Output does not match the preview</summary><p>Check PGM, not only PVW. Confirm the active mode and Overlay Style, then take the corrected preview to air.</p></details>
+            <details><summary>ATEM image looks different</summary><p>Choose Regenerate, then compare the straight and premultiplied PNG variants. ATEM production normally uses premultiplied alpha.</p></details>
+            <details><summary>A saved setting is missing</summary><p>Confirm the session ID, connection status, and automatic-save confirmation. Presets and settings belong to the session in which they were saved.</p></details>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 </div>
