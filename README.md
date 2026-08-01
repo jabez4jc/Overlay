@@ -250,6 +250,10 @@ If you still prefer Nixpacks:
   - Hard-refresh the control page after updating `js/control.js`.
   - Confirm the service user can write to `SESSION_DATA_DIR`.
   - Check the saved snapshot with `GET /api/state?session=<session-id>` and inspect the server log for disk-write errors.
+- Deployed UI does not reflect new CSS or JavaScript:
+  - Confirm the deployment is built from the latest `main` commit; a successful backend health check does not prove a later CSS-only commit was included.
+  - Restart/redeploy the Node container so it generates new content-hashed asset URLs.
+  - The served HTML should reference assets such as `css/control.css?v=<12-character-hash>` with no `__CONTROL_ASSET_VERSION__` placeholder remaining.
 - Output not syncing:
   - Confirm same session ID in Control and Output URLs.
   - Confirm active WebSocket connection.

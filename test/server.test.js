@@ -79,8 +79,22 @@ after(async () => {
 });
 
 test('serves only public application assets', async () => {
-  assert.equal((await fetch(`${baseUrl}/`)).status, 200);
-  assert.equal((await fetch(`${baseUrl}/output.html?session=test`)).status, 200);
+  const controlResponse = await fetch(`${baseUrl}/`);
+  assert.equal(controlResponse.status, 200);
+  const controlHtml = await controlResponse.text();
+  const controlVersion = controlHtml.match(/css\/control\.css\?v=([a-f0-9]{12})/)?.[1];
+  assert.ok(controlVersion);
+  assert.match(controlHtml, new RegExp(`js/control\\.js\\?v=${controlVersion}`));
+  assert.doesNotMatch(controlHtml, /__CONTROL_ASSET_VERSION__/);
+  const versionedCss = await fetch(`${baseUrl}/css/control.css?v=${controlVersion}`);
+  assert.equal(versionedCss.status, 200);
+  assert.match(versionedCss.headers.get('cache-control') || '', /immutable/);
+
+  const outputResponse = await fetch(`${baseUrl}/output.html?session=test`);
+  assert.equal(outputResponse.status, 200);
+  const outputHtml = await outputResponse.text();
+  assert.match(outputHtml, /css\/output\.css\?v=[a-f0-9]{12}/);
+  assert.doesNotMatch(outputHtml, /__OUTPUT_ASSET_VERSION__/);
   assert.equal((await fetch(`${baseUrl}/.git/config`)).status, 404);
   assert.equal((await fetch(`${baseUrl}/Design/Overlay%20Design%20System%20Template/Overlay%20Control.dc.html`)).status, 404);
   assert.equal((await fetch(`${baseUrl}/`, { method: 'POST' })).status, 405);

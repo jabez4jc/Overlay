@@ -22,6 +22,7 @@ const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
+const crypto = require('crypto');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { PNG } = require('pngjs');
@@ -38,6 +39,15 @@ const ALLOWED_WS_ACTIONS = new Set([
   'settings', 'session-settings-save', 'session-presets-save', 'show', 'clear', 'show-ticker', 'clear-ticker',
   'atem-export-config', 'atem-export-status', 'atem-export-refresh',
 ]);
+
+function createAssetVersion(files) {
+  const hash = crypto.createHash('sha256');
+  for (const file of files) hash.update(fs.readFileSync(path.join(ROOT, file)));
+  return hash.digest('hex').slice(0, 12);
+}
+
+const CONTROL_ASSET_VERSION = createAssetVersion(['css/control.css', 'js/data.js', 'js/control.js']);
+const OUTPUT_ASSET_VERSION = createAssetVersion(['css/output.css', 'js/output.js']);
 
 const ATEM_PNG_EXPORT_ENABLED = process.env.ATEM_PNG_EXPORT !== '0';
 const ATEM_PNG_EXPORT_PATH = process.env.ATEM_PNG_PATH
@@ -498,13 +508,20 @@ const server = http.createServer(async (req, res) => {
       writeResponse(res, 404, 'text/plain; charset=utf-8', '404 Not Found');
       return;
     }
+    let responseData = data;
+    if (publicPath === '/index.html') {
+      responseData = Buffer.from(data.toString('utf8').replaceAll('__CONTROL_ASSET_VERSION__', CONTROL_ASSET_VERSION));
+    } else if (publicPath === '/output.html') {
+      responseData = Buffer.from(data.toString('utf8').replaceAll('__OUTPUT_ASSET_VERSION__', OUTPUT_ASSET_VERSION));
+    }
     const ext  = path.extname(filePath).toLowerCase();
     const mime = MIME[ext] || 'application/octet-stream';
+    const isVersionedAsset = reqUrl.searchParams.has('v') && (publicPath.startsWith('/css/') || publicPath.startsWith('/js/'));
     res.writeHead(200, {
       'Content-Type':  mime,
-      'Cache-Control': 'no-cache',         // always fresh for live use
+      'Cache-Control': isVersionedAsset ? 'public, max-age=31536000, immutable' : 'no-cache',
     });
-    res.end(req.method === 'HEAD' ? undefined : data);
+    res.end(req.method === 'HEAD' ? undefined : responseData);
   });
 });
 
