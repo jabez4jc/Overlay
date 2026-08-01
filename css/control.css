@@ -58,6 +58,56 @@ html, body {
 
 button, input, select, textarea { font: inherit; }
 
+/* Consistent form indicators across both themes. Native controls varied by
+   browser and became unreadable when the light theme styled every input as a
+   text field. Alignment radios remain visually hidden by their stronger rule. */
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid var(--border-light);
+  background: var(--surface-2);
+  color: #fff;
+  cursor: pointer;
+  vertical-align: middle;
+}
+input[type="checkbox"] { border-radius: 3px; }
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]::before {
+  content: '';
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-1px) rotate(-45deg) scale(0);
+  transition: transform .1s ease;
+}
+input[type="radio"]::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: scale(0);
+  transition: transform .1s ease;
+}
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+input[type="checkbox"]:checked::before,
+input[type="radio"]:checked::before { transform: translateY(-1px) rotate(-45deg) scale(1); }
+input[type="radio"]:checked::before { transform: scale(1); }
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled { opacity: .55; cursor: not-allowed; }
+
 :where(button, input, select, textarea, summary, a):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -3323,7 +3373,7 @@ html[data-control-theme="modernist"] {
   --color-bg: #f3f2f2;
   --color-surface: #eae9e9;
   --color-text: #201e1d;
-  --color-accent: #ec3013;
+  --color-accent: #d72b12;
   --color-divider: rgba(32,30,29,.4);
   --bg: var(--color-bg);
   --surface: var(--color-surface);
@@ -3334,13 +3384,13 @@ html[data-control-theme="modernist"] {
   --text-muted: #605d5d;
   --text-dim: #7d7979;
   --accent: var(--color-accent);
-  --accent-rgb: 236, 48, 19;
+  --accent-rgb: 215, 43, 18;
   --accent-dim: rgba(var(--accent-rgb), .13);
   --green: #277a43;
   --red: #d82910;
   --blue: #335ea8;
-  --show-btn: #ec3013;
-  --show-btn-h: #c8270e;
+  --show-btn: #d72b12;
+  --show-btn-h: #b8210c;
   --clear-btn: #201e1d;
   --clear-btn-h: #444141;
   --radius: 0;
@@ -3473,20 +3523,34 @@ html[data-control-theme="modernist"] :is(.panel-kicker, .section-kicker)::after 
 html[data-control-theme="modernist"] :is(label, .field-label, .setting-label) {
   color: #444141;
 }
-html[data-control-theme="modernist"] :is(input, select, textarea) {
+html[data-control-theme="modernist"] :is(input[type="text"], input[type="number"], select, textarea) {
   border-color: #9b9797;
   background: #f8f4f4;
   color: #201e1d;
   box-shadow: none;
 }
-html[data-control-theme="modernist"] :is(input, select, textarea):hover {
+html[data-control-theme="modernist"] :is(input[type="text"], input[type="number"], select, textarea):hover {
   border-color: #605d5d;
 }
-html[data-control-theme="modernist"] :is(input, select, textarea):focus {
+html[data-control-theme="modernist"] :is(input[type="text"], input[type="number"], select, textarea):focus {
   border-color: #ec3013;
   box-shadow: 0 0 0 2px rgba(236,48,19,.14);
 }
-html[data-control-theme="modernist"] input[type="color"] { background: #f8f4f4; }
+html[data-control-theme="modernist"] input::placeholder { color: #6f6b6b; opacity: 1; }
+html[data-control-theme="modernist"] input[type="color"] {
+  border-color: #777272;
+  background: #fff;
+}
+html[data-control-theme="modernist"] :is(input[type="checkbox"], input[type="radio"]) {
+  border-color: #605d5d;
+  background: #fff;
+  color: #fff;
+  box-shadow: none;
+}
+html[data-control-theme="modernist"] :is(input[type="checkbox"], input[type="radio"]):checked {
+  border-color: #b8210c;
+  background: #d72b12;
+}
 
 html[data-control-theme="modernist"] .monitors-section {
   border-color: rgba(32,30,29,.35);
@@ -3615,6 +3679,118 @@ html[data-control-theme="modernist"] .sg-divider {
   color: #605d5d;
   background-image: linear-gradient(90deg, rgba(32,30,29,.4), transparent);
 }
+
+/* Complete Modernist settings port. These components intentionally use dark
+   inverse surfaces in Nocturne, so token inheritance alone is insufficient. */
+html[data-control-theme="modernist"] :is(
+  .browser-source-info, .textfx-tabs, .text-effects-card, .textfx-section,
+  .bsi-export-row, .bsi-notes
+) {
+  border-color: #777272;
+  background: #fff;
+  background-image: none;
+  color: #201e1d;
+  box-shadow: none;
+}
+html[data-control-theme="modernist"] :is(
+  .chroma-opt, .align-opt, .file-btn, .bsi-tab, .bsi-copy,
+  .bsi-help-btn, .textfx-tab, .textfx-collapse-btn, .preset-chip
+) {
+  border-color: #777272;
+  background: #f8f4f4;
+  color: #201e1d;
+  box-shadow: none;
+}
+html[data-control-theme="modernist"] :is(
+  .chroma-opt, .align-opt, .file-btn, .bsi-tab, .bsi-copy,
+  .bsi-help-btn, .textfx-tab, .textfx-collapse-btn
+):hover {
+  border-color: #201e1d;
+  background: #eae9e9;
+  color: #201e1d;
+}
+html[data-control-theme="modernist"] :is(.chroma-opt, .align-opt):has(input:checked),
+html[data-control-theme="modernist"] :is(.bsi-tab.is-active, .textfx-tab.active) {
+  border-color: #b8210c;
+  background: rgba(215,43,18,.1);
+  color: #9f1d09;
+}
+html[data-control-theme="modernist"] :is(
+  .bsi-label, .bsi-pin-state, .bsi-notes, .file-name, .slider-value,
+  .label-hint, .textfx-inline-check, .presets-empty, .session-settings-help,
+  .session-transfer-guide, .overlay-style-scope
+) { color: #605d5d; }
+html[data-control-theme="modernist"] :is(
+  .bsi-pin-toggle, .textfx-color-inline label, .textfx-toggle-pill,
+  .session-transfer-guide strong
+) { color: #201e1d; }
+html[data-control-theme="modernist"] :is(.bsi-url, .text-effects-title) { color: #9f1d09; }
+html[data-control-theme="modernist"] .bsi-notes code {
+  border: 1px solid #c5c1c1;
+  background: #eae9e9;
+  color: #201e1d;
+}
+html[data-control-theme="modernist"] .session-save-note {
+  border-color: rgba(31,111,59,.45);
+  background: rgba(31,111,59,.09);
+  color: #1f6f3b;
+}
+html[data-control-theme="modernist"] .file-clear-btn {
+  border-color: rgba(174,35,20,.45);
+  background: rgba(174,35,20,.08);
+  color: #8f1d0e;
+}
+html[data-control-theme="modernist"] .textfx-section-head { border-bottom-color: #9b9797; }
+html[data-control-theme="modernist"] .textfx-section.disabled .textfx-section-body { opacity: .72; }
+html[data-control-theme="modernist"] .settings-subsection > summary > svg { color: #605d5d; }
+html[data-control-theme="modernist"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23201e1d' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+html[data-control-theme="modernist"] input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+html[data-control-theme="modernist"] input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border: 1px solid #777272;
+  background: #d7d3d3;
+}
+html[data-control-theme="modernist"] input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -8px;
+  border: 2px solid #201e1d;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 2px 2px 0 rgba(32,30,29,.18);
+}
+html[data-control-theme="modernist"] input[type="range"]::-moz-range-track {
+  height: 3px;
+  border: 1px solid #777272;
+  background: #d7d3d3;
+}
+html[data-control-theme="modernist"] input[type="range"]::-moz-range-progress {
+  height: 4px;
+  background: #d72b12;
+}
+html[data-control-theme="modernist"] input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #201e1d;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 2px 2px 0 rgba(32,30,29,.18);
+}
+
 html[data-control-theme="modernist"] :is(.session-modal-backdrop, .guide-backdrop) {
   background: rgba(32,30,29,.62);
 }

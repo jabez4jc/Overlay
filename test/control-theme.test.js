@@ -103,3 +103,16 @@ test('uses a themed accessible modal when saving content presets', () => {
   assert.doesNotMatch(js, /fetch\('\/api\/session-presets\?session='/);
   assert.match(html, /id="preset-save-status" role="status" aria-live="polite"/);
 });
+
+test('ports every nested settings control to the Modernist light theme', () => {
+  const css = read('css/control.css');
+  assert.match(css, /input\[type="checkbox"\]::before/);
+  assert.match(css, /input\[type="radio"\]::before/);
+  assert.match(css, /modernist"\] :is\(input\[type="checkbox"\], input\[type="radio"\]\):checked/);
+  assert.match(css, /\.browser-source-info, \.textfx-tabs, \.text-effects-card, \.textfx-section/);
+  assert.match(css, /\.chroma-opt, \.align-opt, \.file-btn, \.bsi-tab, \.bsi-copy/);
+  assert.match(css, /modernist"\] input\[type="range"\]::-webkit-slider-thumb/);
+  assert.match(css, /modernist"\] input\[type="range"\]::-moz-range-thumb/);
+  assert.match(css, /modernist"\] \.session-save-note/);
+  assert.doesNotMatch(css, /modernist"\] :is\(input, select, textarea\)/);
+});
